@@ -390,7 +390,7 @@ private fun Home(
             val centralRowIndex = remember { gridRows / 2 - 2 }
             val centralColumnIndex = remember { gridColumns / 2 - 1 }
             val offsetEvenRows = false
-            val initialScale = gridColumns / 4.7f
+            val initialScale = (gridColumns / 4.6f).log { "initialScale" }
             val centralPosition = remember {
                 HexGridCellPosition(
                     column = centralColumnIndex,

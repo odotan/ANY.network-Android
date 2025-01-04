@@ -22,11 +22,13 @@ class ContactsRepository @Inject constructor(
         if (permissionsManager.isContactsPermissionGranted()) {
             val phoneContacts = phoneDataSource.getContacts()
 
-            // Update Room database with new contacts from phone (optional sync)
-            phoneContacts.forEach { roomDataSource.addContact(it) }
-
             // Emit contacts from the phone data source
             emit(phoneContacts)
+
+            // Update Room database with new contacts from phone (optional sync)
+            roomDataSource.deleteAllContacts()
+            phoneContacts.forEach { roomDataSource.addContact(it) }
+
         }
     }
 
