@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">ANY.network</string>
+
+    <!-- General  -->
+    <string name="title_skip">Skip</string>
+    <string name="label_search">Type to search or add</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_screen_title">ANY network contacts re-imagined</string>
+    <string name="onboarding_screen_subtitle">Create your card with all your contact methods Phone, email, Instagram, Telegram etc…\n\nany network really\n\nYour card is private by default and cannot be seen by anyone. People you share your card with can request to see any part of your card, and you can choose to show it to them You can make part or all of your card public</string>
+
+    <!-- Connect -->
+    <string name="connect_screen_title">Connect</string>
+    <string name="connect_screen_subtitle">Press the hexagon to begin</string>
+
+    <!-- Contact permissions -->
+    <string name="contact_permissions_title">"Your Contacts -\nSupercharged!"</string>
+    <string name="contact_permissions_subtitle_1">"ANY network needs contact permissions to give you a new phone-book experience."</string>
+    <string name="contact_permissions_subtitle_2">"It will still work without contact permissions, but it won’t show your contact list."</string>
+    <string name="contact_permissions_subtitle_3">"Even if you allow, your contacts will not be shared with ANY servers without your consent.\n\nYou can change this at any time under Settings"</string>
+    <string name="contact_permissions_dialog_title">Allow your contact permissions</string>
+    <string name="contact_permissions_dialog_subtitle">You can change this setting at any time\n\nYour contacts are stored locally and are not shared with ANY network without your consent.</string>
+    <string name="contact_permissions_dialog_button_dont_allow">Not now</string>
+    <string name="contact_permissions_dialog_button_allow">Allow</string>
+    <string name="contact_permissions_button_allow">Allow Contact Permissions</string>
+</resources>

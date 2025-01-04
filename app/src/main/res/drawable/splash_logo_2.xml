@@ -1,0 +1,37 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="143dp"
+    android:height="43.61dp"
+    android:viewportWidth="143"
+    android:viewportHeight="43.61">
+  <group
+      android:name="splashLogo2">
+    <path
+        android:pathData="M3.5,22.11v18m36,-18v18m0,-18a18,18 0,0 0,-36 0"
+        android:strokeWidth="7"
+        android:fillColor="#00000000"
+        android:strokeColor="#1cc580"
+        android:strokeLineCap="round"/>
+    <path
+        android:pathData="M21.5,22.11m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0"
+        android:strokeWidth="6"
+        android:fillColor="#00000000"
+        android:strokeColor="#1cc580"/>
+    <path
+        android:pathData="M53.5,22.11v18m36,-18v18m0,-18a18,18 0,0 0,-36 0"
+        android:strokeWidth="7"
+        android:fillColor="#00000000"
+        android:strokeColor="#6e4cd4"
+        android:strokeLineCap="round"/>
+    <path
+        android:pathData="M121.5,37.61m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0"
+        android:strokeWidth="6"
+        android:fillColor="#00000000"
+        android:strokeColor="#ff64ff"/>
+    <path
+        android:pathData="M139.17,4.14a18,18 0,1 1,-35.33 -0.03"
+        android:strokeWidth="7"
+        android:fillColor="#00000000"
+        android:strokeColor="#ff64ff"
+        android:strokeLineCap="round"/>
+  </group>
+</vector>
