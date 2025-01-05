@@ -101,16 +101,6 @@ class MainActivity : ComponentActivity() {
 
                         composable<Route.ContactsPermissions> { ContactsPermissionsRoot(navController, contentResolver) }
 
-                        composable<Route.Home>(
-                            enterTransition = { null }, // No enter transition
-                            exitTransition = { fadeOut(tween(1000)) }, // No exit transition
-                        ) {
-//                            Box(modifier = Modifier.fillMaxSize()
-//                                .background(MaterialTheme.colorScheme.background)) {
-                                HomeRoot(navController)
-//                            }
-                        }
-
 //                        composable<Route.Search> { SearchRoot(navController) }
 
                         composable<Route.NewContact> {

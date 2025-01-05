@@ -5,6 +5,7 @@ package com.anynetwork.app.ui.screens.externalprofile
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.Spring
@@ -124,6 +125,7 @@ import com.anynetwork.app.ui.components.hexagon.TransparentHexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.createPolygon
 import com.anynetwork.app.ui.components.hexagon.hexCellsBackgroundColors
 import com.anynetwork.app.ui.components.textfield.ProfileTextFieldLeading
+import com.anynetwork.app.ui.navigation.Route
 import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.BackButtonClick
 import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.EditButtonClick
 import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.FavoriteButtonClick
@@ -185,12 +187,12 @@ fun ExternalProfileRoot(
     input: String? = null,
     isEnterAnimationFinished: Boolean = true,
 ) {
+
     val viewModel: ExternalProfileViewModel = hiltViewModel<ExternalProfileViewModel>().apply {
         val navigateEvent by navigationEvents.collectAsState()
         navigateEvent.log { "navigationEvent" }
         if (navigateEvent == NavigateBack) {
-            navController.popBackStack()
-            resetNavigationState()
+            navController.popBackStack(Route.Home, inclusive = false)
         }
 
         val viewEffect by viewEffectFlow.collectAsState()
@@ -216,6 +218,9 @@ fun ExternalProfileRoot(
             }
             else -> {}
         }
+    }
+    BackHandler {
+        navController.popBackStack(Route.Home, inclusive = false)
     }
     LaunchedEffect(Unit) {
         viewModel.loadContact(id = id, input = input)
@@ -787,7 +792,7 @@ private fun ExternalProfile(
         topBar = ToolbarState.Shown(
             navigationIconState = NavigationIconState.Custom {
                 IconButton(onClick = {
-                    navController.popBackStack()
+                    navController.popBackStack(Route.Home, inclusive = false)
                 }) {
                     Image(
                         painter = painterResource(R.drawable.ic_back_arrow),

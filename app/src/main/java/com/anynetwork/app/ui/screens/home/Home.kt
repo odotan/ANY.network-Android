@@ -524,9 +524,8 @@ private fun Home(
                     colors
                 }
             }
-            val photoUri = viewState.photoUri
             val optimizedPhotoUri by remember {
-                derivedStateOf { photoUri }
+                derivedStateOf { viewState.photoUri }
             }
 
 
@@ -558,6 +557,7 @@ private fun Home(
                         val backgroundColor = backgroundColorsGrid[row][column]
 
                         if (cellIndex == centralIndex && !screenMode.isSearching) {
+                            optimizedPhotoUri.log { "" }
                             if (optimizedPhotoUri != null) {
                                 ImageHexagonContentStyle(
                                     id = cellIndex,
@@ -579,14 +579,15 @@ private fun Home(
                                         Image(
                                             modifier = Modifier
                                                 .align(Alignment.Center)
-                                                .fillMaxSize(0.4f),
+                                                .fillMaxSize(0.4f)
+                                                .align(Alignment.Center),
                                             painter = rememberAsyncImagePainter(
                                                 model = ImageRequest.Builder(LocalContext.current)
                                                     .data(R.drawable.ic_profile)
                                                     .size(100)
                                                     .build()
                                             ),
-                                            contentScale = ContentScale.Crop,
+                                            contentScale = ContentScale.FillWidth,
                                             contentDescription = null,
                                         )
                                     },
@@ -599,28 +600,20 @@ private fun Home(
                                 )
                             }
                         } else {
-                            if (optimizedHexGridContacts.isEmpty()) {
-                                EmptyHexagonContentStyle(
-                                    id = cellIndex,
-                                    background = Background.SingleColor(
-                                        backgroundColor
-                                    ),
-                                )
-                            } else {
-                                val contactForCell =
-                                    cellsPositions.take(optimizedHexGridContacts.size).find {
-                                        it.row == row && it.column == column
-                                    }
+                            val contactForCell =
+                                cellsPositions.take(optimizedHexGridContacts.size).find {
+                                    it.row == row && it.column == column
+                                }
 
-                                if (contactForCell != null) {
-                                    val gridItem = optimizedHexGridContacts[cellsPositions.indexOf(
-                                        contactForCell
-                                    )]
-                                    CustomHexagonContentStyle(
-                                        id = cellIndex,
-                                        background = Background.SingleColor(backgroundColor),
-                                        isDraggable = gridItem !is GridItem.SearchGridItem,
-                                        content = { scale ->
+                            if (contactForCell != null) {
+                                val gridItem = optimizedHexGridContacts[cellsPositions.indexOf(
+                                    contactForCell
+                                )]
+                                CustomHexagonContentStyle(
+                                    id = cellIndex,
+                                    background = Background.SingleColor(backgroundColor),
+                                    isDraggable = gridItem !is GridItem.SearchGridItem,
+                                    content = { scale ->
                                             if (gridItem.contact.avatarUri != null) {
                                                 Image(
                                                     modifier = Modifier
@@ -662,124 +655,124 @@ private fun Home(
 //                                                fontSize = 18.csp * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv) * scale,
 //                                            )
 //                                        )
-                                        },
-                                        onClick = { offset ->
-                                            viewModel.onViewAction(
-                                                HomeViewEvent.GridItemClick(
-                                                    contact = gridItem.contact,
-                                                    offsetX = offset.x,
-                                                    offsetY = offset.y,
-                                                )
+                                    },
+                                    onClick = { offset ->
+                                        viewModel.onViewAction(
+                                            HomeViewEvent.GridItemClick(
+                                                contact = gridItem.contact,
+                                                offsetX = offset.x,
+                                                offsetY = offset.y,
                                             )
+                                        )
 //                                        onContactClick.invoke(gridItem.contact, it)
-                                        },
-                                        onLongClick = {
-                                            viewModel.onViewAction(HomeViewEvent.HexagonalGridCellLongClick)
-                                        },
-                                        isShakable = true,
-                                        removableStrategy = RemovableStrategy {
-                                            viewModel.onViewAction(
-                                                HomeViewEvent.GridItemButtonRemove(
-                                                    gridItem = gridItem
-                                                )
+                                    },
+                                    onLongClick = {
+                                        viewModel.onViewAction(HomeViewEvent.HexagonalGridCellLongClick)
+                                    },
+                                    isShakable = true,
+                                    removableStrategy = RemovableStrategy {
+                                        viewModel.onViewAction(
+                                            HomeViewEvent.GridItemButtonRemove(
+                                                gridItem = gridItem
                                             )
-                                        },
-                                        overlay = gridItem.badge?.let {
-                                            {
-                                                if (screenMode is HomeScreenMode.Edit) DeleteButton(
-                                                    modifier = Modifier
-                                                        .align(Alignment.TopEnd)
-                                                        .padding(
-                                                            top = 10.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv),
-                                                            end = 11.fdph * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv)
+                                        )
+                                    },
+                                    overlay = gridItem.badge?.let {
+                                        {
+                                            if (screenMode is HomeScreenMode.Edit) DeleteButton(
+                                                modifier = Modifier
+                                                    .align(Alignment.TopEnd)
+                                                    .padding(
+                                                        top = 10.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv),
+                                                        end = 11.fdph * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv)
+                                                    )
+                                                    .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv)),
+                                                onClick = {
+                                                    viewModel.onViewAction(
+                                                        HomeViewEvent.GridItemButtonRemove(
+                                                            gridItem
                                                         )
-                                                        .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv)),
-                                                    onClick = {
-                                                        viewModel.onViewAction(
-                                                            HomeViewEvent.GridItemButtonRemove(
-                                                                gridItem
-                                                            )
-                                                        )
-                                                    }
-                                                )
+                                                    )
+                                                }
+                                            )
 
-                                                Badge(
-                                                    Modifier
-                                                        .align(Alignment.BottomEnd)
-                                                        .padding(
-                                                            bottom = 10.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv),
-                                                            end = 11.fdph * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv)
-                                                        )
-                                                        .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
-                                                        .zIndex(2f),
-                                                    color = it.color,
-                                                    iconResourceId = it.iconResId,
-                                                    iconColorFilter = it.iconColorFilter,
-                                                    onClick = {
-                                                        when (it) {
-                                                            is GridItem.Badge.PhoneBadge -> {
-                                                                val mobilePhone =
-                                                                    gridItem.contact.phone
-                                                                val number =
-                                                                    Uri.parse("tel:$mobilePhone")
-                                                                val callIntent =
-                                                                    Intent(
-                                                                        Intent.ACTION_DIAL,
-                                                                        number
-                                                                    )
-                                                                context.startActivity(callIntent)
-                                                            }
-
-                                                            is GridItem.Badge.EmailBadge -> {
-                                                                val email = gridItem.contact.email
-                                                                val intent =
-                                                                    Intent(Intent.ACTION_SENDTO)
-                                                                intent.putExtra(
-                                                                    Intent.EXTRA_EMAIL,
-                                                                    email
+                                            Badge(
+                                                Modifier
+                                                    .align(Alignment.BottomEnd)
+                                                    .padding(
+                                                        bottom = 10.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv),
+                                                        end = 11.fdph * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv)
+                                                    )
+                                                    .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
+                                                    .zIndex(2f),
+                                                color = it.color,
+                                                iconResourceId = it.iconResId,
+                                                iconColorFilter = it.iconColorFilter,
+                                                onClick = {
+                                                    when (it) {
+                                                        is GridItem.Badge.PhoneBadge -> {
+                                                            val mobilePhone =
+                                                                gridItem.contact.phone
+                                                            val number =
+                                                                Uri.parse("tel:$mobilePhone")
+                                                            val callIntent =
+                                                                Intent(
+                                                                    Intent.ACTION_DIAL,
+                                                                    number
                                                                 )
-                                                                intent.type = "text/plain"
-                                                                intent.data =
-                                                                    Uri.parse("mailto:$email")
-
-                                                                context.startActivity(
-                                                                    Intent.createChooser(
-                                                                        intent,
-                                                                        "Send Email"
-                                                                    )
-                                                                )
-                                                            }
-
-                                                            else -> {}
+                                                            context.startActivity(callIntent)
                                                         }
+
+                                                        is GridItem.Badge.EmailBadge -> {
+                                                            val email = gridItem.contact.email
+                                                            val intent =
+                                                                Intent(Intent.ACTION_SENDTO)
+                                                            intent.putExtra(
+                                                                Intent.EXTRA_EMAIL,
+                                                                email
+                                                            )
+                                                            intent.type = "text/plain"
+                                                            intent.data =
+                                                                Uri.parse("mailto:$email")
+
+                                                            context.startActivity(
+                                                                Intent.createChooser(
+                                                                    intent,
+                                                                    "Send Email"
+                                                                )
+                                                            )
+                                                        }
+
+                                                        else -> {}
                                                     }
-                                                )
-                                            }
-                                        } ?: {}
+                                                }
+                                            )
+                                        }
+                                    } ?: {}
+                                )
+                            } else {
+                                val cellPosition = cellsPositions.find {
+                                    it.row == row && it.column == column
+                                }
+                                val cellLayer = calculateLayersForElements(cellsPositions.indexOf(cellPosition))
+                                val isOutsideHexGridHexagon = cellLayer > gridColumns / 2 - 2 || cellsPositions.indexOf(cellPosition) == -1
+                                if (isOutsideHexGridHexagon) {
+                                    TransparentHexagonContentStyle(id = cellIndex)
+                                } else if (cellsPositions.indexOf(cellPosition) % 12 == 0) {
+                                    TrashCanHexagonContentStyle(
+                                        id = cellIndex,
+                                        background = Background.SingleColor(backgroundColor)
                                     )
                                 } else {
-                                    val cellPosition = cellsPositions.find {
-                                        it.row == row && it.column == column
-                                    }
-                                    val cellLayer = calculateLayersForElements(cellsPositions.indexOf(cellPosition))
-                                    val isOutsideHexGridHexagon = cellLayer > gridColumns / 2 - 2 || cellsPositions.indexOf(cellPosition) == -1
-                                    if (isOutsideHexGridHexagon) {
-                                        TransparentHexagonContentStyle(id = cellIndex)
-                                    } else if (getElementPosition(cellIndex).getIndex() % 12 == 0/* && !isOutsideHexGridHexagon*/) {
-                                        TrashCanHexagonContentStyle(
-                                            id = cellIndex,
-                                            background = Background.SingleColor(backgroundColor)
-                                        )
-                                    } else {
-                                        EmptyHexagonContentStyle(
-                                            id = cellIndex,
-                                            background = if (false) Background.SingleColor(Color.Transparent) else Background.SingleColor(
-                                                backgroundColor
-                                            ),
-                                        )
-                                    }
+                                    EmptyHexagonContentStyle(
+                                        id = cellIndex,
+                                        background = Background.SingleColor(
+                                            backgroundColor
+                                        ),
+                                    )
                                 }
                             }
+
                         }
                     }.toMutableList()
                 }.toMutableList()

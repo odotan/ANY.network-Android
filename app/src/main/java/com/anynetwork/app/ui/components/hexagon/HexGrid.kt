@@ -112,11 +112,11 @@ fun HexagonalGrid(
 
     val currentConfig = LocalConfiguration.current
     val gridWidth = remember { currentConfig.screenWidthDp.dp }
-    val cellSize = remember { (gridWidth / rowSize) }
+    val cellSize = remember { (gridWidth / rowSize).log { "cellSize" } }
     val horizontalOffset = remember { ((cellSize) / 2) }
 
-    val verticalBorder = (gridWidth / rowSize) * 0.09163265f / 3 * 3.5f / 2.5f * borderMultiplier
-    val horizontalBorder = (gridWidth / rowSize) * 0.09163265f / 3 * borderMultiplier
+    val verticalBorder = (cellSize * 0.0483f).log { "verticalBorder" }
+    val horizontalBorder = (cellSize * 89.99f/79.93f * 0.0429f).log { "horizontalBorder" }
 
     var draggedItem by remember { mutableStateOf<Int?>(null) }
     var draggedOffset by remember { mutableStateOf(DpOffset(0.dp, 0.dp)) }
@@ -139,9 +139,9 @@ fun HexagonalGrid(
         )
     }
 
-//    val verticalSpacing = -(89.99f * cellSize / 87.93f) / 4
+    val verticalSpacing = -(96.99f * cellSize / 86.93f) * 0.24f
 //    val cellHeight = cellSize * sqrt(3f) / 2f
-    val verticalSpacing = remember { (-(2f * cellSize / sqrt(3f)) / 4).log { "verticalSpacing" } }
+//    val verticalSpacing = remember { (-(2f * cellSize / sqrt(3f)) / 4).log { "verticalSpacing" } }
 //    (verticalSpacing / initialScale).log { "verticalSpacing" }
 //    val totalHeight = (columnSize * cellHeight + (columnSize - 1) * verticalSpacing) * initialScale
     val polygon = remember { createPolygon() }
@@ -392,8 +392,6 @@ private fun StatelessRoundedHexagon(
     pointerInput: (suspend PointerInputScope.() -> Unit)? = null
 ) {
     Box(modifier = modifier
-        /*.aspectRatio(83.5f / 93.5f)*/,
-//        contentAlignment = Alignment.Center
     ) {
         RoundedHexagon(
             modifier = Modifier
@@ -401,9 +399,7 @@ private fun StatelessRoundedHexagon(
                     vertical = verticalBorder,
                     horizontal = horizontalBorder
                 )
-//                .fillMaxWidth(80/83.5f)
                 .aspectRatio(79.93f / 89.99f)
-//                .aspectRatio(83.5f / 93.5f)
                 .graphicsLayer {
                     if (shape != null) {
                         clip = true

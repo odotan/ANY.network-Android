@@ -25,7 +25,6 @@ class RoomContactsDataSource(private val contactDao: ContactDao): ContactsDataSo
     }
 
     override suspend fun addContact(contact: Contact) = withContext(Dispatchers.IO) {
-        contact.avatarUri?.log { "avatarUri" }
         contactDao.insertContact(contact.wrap())
         true
     }

@@ -6,6 +6,7 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.Spring
@@ -128,6 +129,7 @@ import com.anynetwork.app.ui.components.hexagon.TransparentHexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.createPolygon
 import com.anynetwork.app.ui.components.hexagon.hexCellsBackgroundColors
 import com.anynetwork.app.ui.components.textfield.ProfileTextFieldLeading
+import com.anynetwork.app.ui.navigation.Route
 import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileMode
 import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent
 import com.anynetwork.app.ui.screens.myprofile.MyProfileViewEffect.*
@@ -186,7 +188,7 @@ fun MyProfileRoot(
     MyProfile(
         viewModel = viewModel,
         onBackButtonClick = {
-            navController.popBackStack()
+            navController.popBackStack(Route.Home, inclusive = false)
         }
     )
 }
@@ -249,6 +251,10 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
     val emailFocusRequester = remember { FocusRequester() }
     val workEmailFocusRequester = remember { FocusRequester() }
     val otherEmailFocusRequester = remember { FocusRequester() }
+
+    BackHandler {
+        onBackButtonClick.invoke()
+    }
 
     fun phoneNumberOptions(onClick: (String) -> Unit): List<DropDownDialogMenuCategory> {
         return mutableListOf<DropDownDialogMenuCategory>().apply {

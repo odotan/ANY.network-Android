@@ -129,7 +129,7 @@ class HomeViewModel @Inject constructor(
             .distinctBy { it.phone?.normalize() }
             .sortedBy { it.name }
 
-        Timber.i("current contacts list size: ${_contacts.value.size} / new contacts list size: ${emittedContacts}")
+        Timber.i("current contacts list size: ${_contacts.value.size}")
         if (_contacts.value != distinctContacts) {
             Timber.i("updateContacts")
             _contacts.value = distinctContacts

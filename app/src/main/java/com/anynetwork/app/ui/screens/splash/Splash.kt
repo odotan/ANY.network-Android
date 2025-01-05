@@ -82,7 +82,7 @@ fun SplashRoot(navController: NavHostController) {
                             .align(Alignment.CenterHorizontally)
                     ) {
                         val purpleHexScaleAnimation = animateFloatAsState(
-                            targetValue = if (isSplashLogoPurpleHexScaled) 30f else 1f,
+                            targetValue = if (isSplashLogoPurpleHexScaled) 32f else 1f,
                             animationSpec = tween(durationMillis = 500),
                             finishedListener = {
                                 if (!skipOnboarding) {
