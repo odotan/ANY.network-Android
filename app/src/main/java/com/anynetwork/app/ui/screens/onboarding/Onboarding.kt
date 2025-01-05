@@ -76,6 +76,7 @@ import com.anynetwork.app.ui.theme.montserratFontFamily
 import com.anynetwork.app.ui.utils.csp
 import com.anynetwork.app.ui.utils.fdph
 import com.anynetwork.app.ui.utils.fdpv
+import com.anynetwork.app.ui.utils.log
 import com.anynetwork.app.ui.utils.xdph
 import com.anynetwork.app.ui.utils.xdpv
 import kotlinx.coroutines.delay
@@ -772,8 +773,9 @@ private fun Onboarding(navController: NavHostController) {
                     animationSpec = tween(slideOtherContactAvatarToCenterAnimationDuration)
                 )
 
-                val verticalBorder = (LocalConfiguration.current.screenWidthDp.dp / gridColumns) * 0.09163265f / 3 * 3.5f / 2.5f * gridColumns / 4.7f
-                val horizontalBorder = (LocalConfiguration.current.screenWidthDp.dp / gridColumns) * 0.09163265f / 3 * gridColumns / 4.7f
+                val cellSize = LocalConfiguration.current.screenWidthDp.dp / gridColumns
+                val verticalBorder = (cellSize * 0.0483f).log { "verticalBorder" }
+                val horizontalBorder = (cellSize * 89.99f/79.93f * 0.0429f).log { "horizontalBorder" }
 
                 val polygon = remember { createPolygon() }
                 val roundedPolygonShape = remember { RoundedPolygonShape(polygon) }

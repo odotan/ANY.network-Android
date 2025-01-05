@@ -158,8 +158,7 @@ import kotlin.math.absoluteValue
 
 
 @Composable
-fun HomeRoot(navController: NavHostController) {
-    val viewModel: HomeViewModel = hiltViewModel<HomeViewModel>()
+fun HomeRoot(navController: NavHostController, viewModel: HomeViewModel = hiltViewModel<HomeViewModel>()) {
 
     Home(
         viewModel,
@@ -390,7 +389,7 @@ private fun Home(
             val centralRowIndex = remember { gridRows / 2 - 2 }
             val centralColumnIndex = remember { gridColumns / 2 - 1 }
             val offsetEvenRows = false
-            val initialScale = (gridColumns / 4.6f).log { "initialScale" }
+            val initialScale = (gridColumns / 4.7f).log { "initialScale" }
             val centralPosition = remember {
                 HexGridCellPosition(
                     column = centralColumnIndex,
@@ -584,7 +583,7 @@ private fun Home(
                                             painter = rememberAsyncImagePainter(
                                                 model = ImageRequest.Builder(LocalContext.current)
                                                     .data(R.drawable.ic_profile)
-                                                    .size(100)
+                                                    .size(Size.ORIGINAL)
                                                     .build()
                                             ),
                                             contentScale = ContentScale.FillWidth,

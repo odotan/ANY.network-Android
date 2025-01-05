@@ -139,7 +139,7 @@ fun HexagonalGrid(
         )
     }
 
-    val verticalSpacing = -(96.99f * cellSize / 86.93f) * 0.24f
+    val verticalSpacing = (-(96.99f * cellSize / 86.93f) * 0.2333333f).log { "verticalSpacing" }
 //    val cellHeight = cellSize * sqrt(3f) / 2f
 //    val verticalSpacing = remember { (-(2f * cellSize / sqrt(3f)) / 4).log { "verticalSpacing" } }
 //    (verticalSpacing / initialScale).log { "verticalSpacing" }
@@ -391,7 +391,8 @@ private fun StatelessRoundedHexagon(
     isDraggable: Boolean = false,
     pointerInput: (suspend PointerInputScope.() -> Unit)? = null
 ) {
-    Box(modifier = modifier
+    Box(modifier = modifier,
+        contentAlignment = Alignment.Center
     ) {
         RoundedHexagon(
             modifier = Modifier
@@ -418,6 +419,8 @@ private fun StatelessRoundedHexagon(
             showContent = showContent,
             scale = scale
         )
+
+//        Box(modifier = Modifier.size(1.dp).background(Color.Red)) { }
 
         if (drawOverlay) {
             if (contentStyle is IconHexagonContentStyle) {

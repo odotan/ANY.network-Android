@@ -946,8 +946,9 @@ private fun ExternalProfile(
                         && !(viewState.mode as ExternalProfileMode.RequestNetwork).isSearching) 1f else 0f,
                     animationSpec = tween(500)
                 )
-                val verticalBorder = (LocalConfiguration.current.screenWidthDp.dp / gridColumns) * 0.09163265f / 3 * 3.5f / 2.5f * gridColumns / 4.7f
-                val horizontalBorder = (LocalConfiguration.current.screenWidthDp.dp / gridColumns) * 0.09163265f / 3 * gridColumns / 4.7f
+                val cellSize = LocalConfiguration.current.screenWidthDp.dp / gridColumns
+                val verticalBorder = (cellSize * 0.0483f).log { "verticalBorder" }
+                val horizontalBorder = (cellSize * 89.99f/79.93f * 0.0429f).log { "horizontalBorder" }
 
                 RoundedHexagon(
                     modifier = Modifier
@@ -1024,8 +1025,9 @@ private fun ExternalProfile(
                     }
                     val polygon = remember { createPolygon() }
                     val roundedPolygonShape = remember { RoundedPolygonShape(polygon) }
-                    val verticalBorder = (LocalConfiguration.current.screenWidthDp.dp / gridColumns) * 0.09163265f / 3 * 3.5f / 2.5f * gridColumns / 4.7f
-                    val horizontalBorder = (LocalConfiguration.current.screenWidthDp.dp / gridColumns) * 0.09163265f / 3 * gridColumns / 4.7f
+                    val cellSize = LocalConfiguration.current.screenWidthDp.dp / gridColumns
+                    val verticalBorder = (cellSize * 0.0483f).log { "verticalBorder" }
+                    val horizontalBorder = (cellSize * 89.99f/79.93f * 0.0429f).log { "horizontalBorder" }
 
                     val favoriteButtonAlpha by animateFloatAsState(
                         targetValue = if (viewState.isFavorite) 0f else 1f,
@@ -1736,10 +1738,9 @@ private fun ExternalProfile(
                         }
                     }
 
-                    val verticalBorder =
-                        (LocalConfiguration.current.screenWidthDp.dp / gridColumns) * 0.09163265f / 3 * 3.5f / 2.5f * gridColumns / 4.7f
-                    val horizontalBorder =
-                        (LocalConfiguration.current.screenWidthDp.dp / gridColumns) * 0.09163265f / 3 * gridColumns / 4.7f
+                    val cellSize = LocalConfiguration.current.screenWidthDp.dp / gridColumns
+                    val verticalBorder = (cellSize * 0.0483f).log { "verticalBorder" }
+                    val horizontalBorder = (cellSize * 89.99f/79.93f * 0.0429f).log { "horizontalBorder" }
                     Box(
                         modifier = Modifier
                             .padding(top = 113.fdpv)

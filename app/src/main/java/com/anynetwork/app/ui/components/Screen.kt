@@ -32,6 +32,7 @@ fun Screen(
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        contentColor = containerColor,
         containerColor = containerColor,
         topBar = {
             if (topBar is ToolbarState.Shown) CenterAlignedTopAppBar(

@@ -97,6 +97,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
+import coil.size.Size
 import com.anynetwork.app.R
 import com.anynetwork.app.ui.components.HexagonTextField
 import com.anynetwork.app.ui.components.HexagonTextFieldClearTrailingIcon
@@ -731,10 +732,9 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
                                                 painter = rememberAsyncImagePainter(
                                                     model = ImageRequest.Builder(LocalContext.current)
                                                         .data(R.drawable.ic_profile)
-                                                        .size(100)
+                                                        .size(Size.ORIGINAL)
                                                         .build()
                                                 ),
-                                                contentScale = ContentScale.Crop,
                                                 contentDescription = null,
                                             )
                                         } else {
@@ -1012,8 +1012,9 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
                 }
                 val polygon = remember { createPolygon() }
                 val roundedPolygonShape = remember { RoundedPolygonShape(polygon) }
-                val verticalBorder = (LocalConfiguration.current.screenWidthDp.dp / gridColumns) * 0.09163265f / 3 * 3.5f / 2.5f * gridColumns / 4.7f
-                val horizontalBorder = (LocalConfiguration.current.screenWidthDp.dp / gridColumns) * 0.09163265f / 3 * gridColumns / 4.7f
+                val cellSize = LocalConfiguration.current.screenWidthDp.dp / gridColumns
+                val verticalBorder = (cellSize * 0.0483f).log { "verticalBorder" }
+                val horizontalBorder = (cellSize * 89.99f/79.93f * 0.0429f).log { "horizontalBorder" }
 
                 RoundedHexagon(
                     modifier = Modifier
