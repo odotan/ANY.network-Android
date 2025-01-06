@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
@@ -32,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -99,8 +102,8 @@ fun HexagonalGrid(
     offsetEvenRows: Boolean = true,
     showIndexes: Boolean = false,
     isEditModeActivating: Boolean = false,
-    borderMultiplier: Float = 1f
-) {
+    gridScaling: Float = 1f
+    ) {
     var gridCellsItems: List<HexagonContentStyle> = remember(items) {
         listOf()
     }
@@ -111,7 +114,7 @@ fun HexagonalGrid(
     gridCellsItems = items.flatten()
 
     val currentConfig = LocalConfiguration.current
-    val gridWidth = remember { currentConfig.screenWidthDp.dp }
+    val gridWidth = remember { currentConfig.screenWidthDp.dp * gridScaling }
     val cellSize = remember { (gridWidth / rowSize).log { "cellSize" } }
     val horizontalOffset = remember { ((cellSize) / 2) }
 
@@ -147,12 +150,16 @@ fun HexagonalGrid(
     val polygon = remember { createPolygon() }
 
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = if (gridScaling > 1f) Modifier.fillMaxSize()
+            .requiredWidth(gridWidth * gridScaling)
+            .requiredHeight(currentConfig.screenWidthDp.dp * gridScaling)
+        else Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
         FlowRow(
             modifier = modifier
                 .offset(y = with(LocalDensity.current) { offsetY.toDp() })
+                .scale(1/gridScaling)
                 .zoomable(
                     zoomState,
                     zoomEnabled = isScrollEnabled,

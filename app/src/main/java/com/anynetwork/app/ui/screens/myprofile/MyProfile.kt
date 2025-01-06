@@ -1003,7 +1003,6 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
                         113f.fdpv.toPx()
                     }) * (dragPercentage.value/100).log { "hex grid offset" }
                 }.roundToInt(),
-                borderMultiplier = gridColumns / 4.7f
             )
 
             trailingCellOffset?.let {

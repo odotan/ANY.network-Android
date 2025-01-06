@@ -742,7 +742,6 @@ private fun Onboarding(navController: NavHostController) {
                     }
                 },
                 isScrollEnabled = false,
-                borderMultiplier = gridColumns / 4.7f,
             )
 
             markHamlinCellOffset?.let {

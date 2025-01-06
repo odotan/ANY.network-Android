@@ -925,7 +925,6 @@ private fun ExternalProfile(
                     }) * (dragPercentage.value / 100)
                 }.roundToInt(),
                 isEditModeActivating = viewState.mode is ExternalProfileMode.Edit,
-                borderMultiplier = gridColumns / 4.7f,
             )
 
             leadingCellOffset?.let {

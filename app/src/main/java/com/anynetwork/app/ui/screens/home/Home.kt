@@ -390,6 +390,7 @@ private fun Home(
             val centralColumnIndex = remember { gridColumns / 2 - 1 }
             val offsetEvenRows = false
             val initialScale = (gridColumns / 4.7f).log { "initialScale" }
+            val gridScaling = remember { 4f }
             val centralPosition = remember {
                 HexGridCellPosition(
                     column = centralColumnIndex,
@@ -638,7 +639,7 @@ private fun Home(
                                                     style = TextStyle(
                                                         fontFamily = montserratFontFamily,
                                                         fontWeight = FontWeight.SemiBold,
-                                                        fontSize = 24.csp * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv) * scale,
+                                                        fontSize = 24.csp * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv) * scale * gridScaling,
                                                     )
                                                 )
                                             }
@@ -682,10 +683,10 @@ private fun Home(
                                                 modifier = Modifier
                                                     .align(Alignment.TopEnd)
                                                     .padding(
-                                                        top = 10.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv),
-                                                        end = 11.fdph * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv)
+                                                        top = 10.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv * gridScaling),
+                                                        end = 11.fdph * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv * gridScaling)
                                                     )
-                                                    .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv)),
+                                                    .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv * gridScaling)),
                                                 onClick = {
                                                     viewModel.onViewAction(
                                                         HomeViewEvent.GridItemButtonRemove(
@@ -699,10 +700,10 @@ private fun Home(
                                                 Modifier
                                                     .align(Alignment.BottomEnd)
                                                     .padding(
-                                                        bottom = 10.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv),
-                                                        end = 11.fdph * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv)
+                                                        bottom = 10.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv * gridScaling),
+                                                        end = 11.fdph * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv * gridScaling)
                                                     )
-                                                    .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
+                                                    .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv * gridScaling))
                                                     .zIndex(2f),
                                                 color = it.color,
                                                 iconResourceId = it.iconResId,
@@ -788,13 +789,8 @@ private fun Home(
                 rowSize = gridColumns,
                 minScale = 2f,
 //                maxScale = initialScale,
-                initialScale = initialScale,
                 changeScale = changeScale,
-                onZoom = remember {{ zoom, offset ->
-                    Timber.i("onZoom: zoom - $zoom, offset - $offset")
-                    isGridCentered = false
-                }},
-                offsetEvenRows = offsetEvenRows,
+                initialScale = initialScale,
                 onCellPositionCalculated = remember {{ index, offset, width, height ->
                     if (index == centralIndex) {
                         if (centralOffset == null) centralOffset = offset
@@ -802,8 +798,14 @@ private fun Home(
                         Timber.i("home start animation cell position calculated for central cell")
                     }
                 }},
+                onZoom = remember {{ zoom, offset ->
+                    Timber.i("onZoom: zoom - $zoom, offset - $offset")
+                    isGridCentered = false
+                }},
                 isScrollEnabled = true,
                 offsetY = 0,
+                offsetEvenRows = offsetEvenRows,
+                gridScaling = gridScaling
             )
         },
         content = {
