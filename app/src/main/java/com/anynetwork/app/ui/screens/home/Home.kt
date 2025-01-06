@@ -584,7 +584,7 @@ private fun Home(
                                             painter = rememberAsyncImagePainter(
                                                 model = ImageRequest.Builder(LocalContext.current)
                                                     .data(R.drawable.ic_profile)
-                                                    .size(Size.ORIGINAL)
+                                                    .size(Size(500, 500))
                                                     .build()
                                             ),
                                             contentScale = ContentScale.FillWidth,

@@ -898,7 +898,6 @@ private fun ExternalProfile(
                 modifier = Modifier.alpha(if (viewState.mode is ExternalProfileMode.NewContact) 0f else 1f),
                 items = items,
                 rowSize = gridColumns,
-                minScale = 0.8f,
                 initialScale = scale,
                 onCellPositionCalculated = { index, offset, width, height ->
                     Timber.i("onCellPositionCalculated for index: $index")
@@ -925,6 +924,7 @@ private fun ExternalProfile(
                     }) * (dragPercentage.value / 100)
                 }.roundToInt(),
                 isEditModeActivating = viewState.mode is ExternalProfileMode.Edit,
+                gridScaling = 1f
             )
 
             leadingCellOffset?.let {

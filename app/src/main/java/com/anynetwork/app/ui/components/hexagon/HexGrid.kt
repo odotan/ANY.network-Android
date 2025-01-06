@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
@@ -68,7 +69,6 @@ import com.anynetwork.app.ui.utils.log
 import kotlinx.coroutines.delay
 import kotlinx.parcelize.Parcelize
 import timber.log.Timber
-import kotlin.math.sqrt
 import kotlin.random.Random
 
 sealed class ShadowStyle {
@@ -115,11 +115,12 @@ fun HexagonalGrid(
 
     val currentConfig = LocalConfiguration.current
     val gridWidth = remember { currentConfig.screenWidthDp.dp * gridScaling }
-    val cellSize = remember { (gridWidth / rowSize).log { "cellSize" } }
-    val horizontalOffset = remember { ((cellSize) / 2) }
+    val cellWidth = remember { (gridWidth / rowSize).log { "cellWidth" } }
+    val cellHeight = remember { cellWidth * 96.99f/86.93f }
+    val horizontalOffset = remember { ((cellWidth) / 2) }
 
-    val verticalBorder = (cellSize * 0.0483f).log { "verticalBorder" }
-    val horizontalBorder = (cellSize * 89.99f/79.93f * 0.0429f).log { "horizontalBorder" }
+    val verticalBorder = (cellWidth * 0.04403f).log { "verticalBorder" }
+    val horizontalBorder = (cellHeight * 0.0395f).log { "horizontalBorder" }
 
     var draggedItem by remember { mutableStateOf<Int?>(null) }
     var draggedOffset by remember { mutableStateOf(DpOffset(0.dp, 0.dp)) }
@@ -142,7 +143,7 @@ fun HexagonalGrid(
         )
     }
 
-    val verticalSpacing = (-(96.99f * cellSize / 86.93f) * 0.2333333f).log { "verticalSpacing" }
+    val verticalSpacing = (-(96.99f * cellWidth / 86.93f) * 0.2333333f).log { "verticalSpacing" }
 //    val cellHeight = cellSize * sqrt(3f) / 2f
 //    val verticalSpacing = remember { (-(2f * cellSize / sqrt(3f)) / 4).log { "verticalSpacing" } }
 //    (verticalSpacing / initialScale).log { "verticalSpacing" }
@@ -213,8 +214,8 @@ fun HexagonalGrid(
                                 else -> 0.dp
                             }
                         )
-                        .width(cellSize)
-                        //                    .background(Color(Random.nextLong()))
+                        .width(cellWidth)
+                        .height(cellHeight)
                         .then(if (cellPositions[index] == null)
                             Modifier.onGloballyPositioned { coordinates ->
 
@@ -367,7 +368,7 @@ fun HexagonalGrid(
             ) {
                 StatelessRoundedHexagon(
                     modifier = Modifier
-                        .size((cellSize/* + verticalBorder*/) * zoomState.scale * 1.2f)
+                        .size((cellWidth/* + verticalBorder*/) * zoomState.scale * 1.2f)
                         .alpha(0.8f),
                     shape = roundedPolygonShape,
                     contentStyle = gridCellsItems[index],

@@ -732,7 +732,7 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
                                                 painter = rememberAsyncImagePainter(
                                                     model = ImageRequest.Builder(LocalContext.current)
                                                         .data(R.drawable.ic_profile)
-                                                        .size(Size.ORIGINAL)
+                                                        .size(Size(500, 500))
                                                         .build()
                                                 ),
                                                 contentDescription = null,
