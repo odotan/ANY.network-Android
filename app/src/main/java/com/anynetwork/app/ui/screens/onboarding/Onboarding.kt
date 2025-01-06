@@ -773,8 +773,8 @@ private fun Onboarding(navController: NavHostController) {
                 )
 
                 val cellSize = LocalConfiguration.current.screenWidthDp.dp / gridColumns
-                val verticalBorder = (cellSize * 0.0483f).log { "verticalBorder" }
-                val horizontalBorder = (cellSize * 89.99f/79.93f * 0.0429f).log { "horizontalBorder" }
+                val verticalBorder = (cellSize * 0.04403f).log { "verticalBorder" }
+                val horizontalBorder = (cellSize * 89.99f/79.93f * 0.0395f).log { "horizontalBorder" }
 
                 val polygon = remember { createPolygon() }
                 val roundedPolygonShape = remember { RoundedPolygonShape(polygon) }

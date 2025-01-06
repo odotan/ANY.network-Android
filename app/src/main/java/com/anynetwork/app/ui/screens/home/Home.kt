@@ -20,6 +20,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
@@ -576,20 +577,23 @@ private fun Home(
                                     background = Background.SingleColor(PrimaryColor),
                                     isHoverable = false,
                                     content = {
-                                        Image(
-                                            modifier = Modifier
-                                                .align(Alignment.Center)
-                                                .fillMaxSize(0.4f)
-                                                .align(Alignment.Center),
-                                            painter = rememberAsyncImagePainter(
-                                                model = ImageRequest.Builder(LocalContext.current)
-                                                    .data(R.drawable.ic_profile)
-                                                    .size(Size(500, 500))
-                                                    .build()
-                                            ),
-                                            contentScale = ContentScale.FillWidth,
-                                            contentDescription = null,
-                                        )
+                                        Box(
+                                            modifier = Modifier.fillMaxSize()
+                                                .align(Alignment.Center),) {
+                                            Image(
+                                                modifier = Modifier
+                                                    .align(Alignment.Center)
+                                                    .fillMaxSize(0.33f),
+                                                painter = rememberAsyncImagePainter(
+                                                    model = ImageRequest.Builder(LocalContext.current)
+                                                        .data(R.drawable.ic_profile)
+                                                        .size(Size(580, 660))
+                                                        .build()
+                                                ),
+                                                contentScale = ContentScale.FillWidth,
+                                                contentDescription = null,
+                                            )
+                                        }
                                     },
                                     onClick = { offset ->
                                         onMyProfileClick.invoke()

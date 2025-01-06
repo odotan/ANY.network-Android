@@ -728,11 +728,11 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
                                             Image(
                                                 modifier = Modifier
                                                     .align(Alignment.Center)
-                                                    .fillMaxSize(0.4f),
+                                                    .fillMaxSize(0.335f),
                                                 painter = rememberAsyncImagePainter(
                                                     model = ImageRequest.Builder(LocalContext.current)
                                                         .data(R.drawable.ic_profile)
-                                                        .size(Size(500, 500))
+                                                        .size(Size(580, 660))
                                                         .build()
                                                 ),
                                                 contentDescription = null,
@@ -1012,8 +1012,8 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
                 val polygon = remember { createPolygon() }
                 val roundedPolygonShape = remember { RoundedPolygonShape(polygon) }
                 val cellSize = LocalConfiguration.current.screenWidthDp.dp / gridColumns
-                val verticalBorder = (cellSize * 0.0483f).log { "verticalBorder" }
-                val horizontalBorder = (cellSize * 89.99f/79.93f * 0.0429f).log { "horizontalBorder" }
+                val verticalBorder = (cellSize * 0.04403f).log { "verticalBorder" }
+                val horizontalBorder = (cellSize * 89.99f/79.93f * 0.0395f).log { "horizontalBorder" }
 
                 RoundedHexagon(
                     modifier = Modifier

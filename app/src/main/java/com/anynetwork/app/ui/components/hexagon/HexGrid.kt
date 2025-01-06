@@ -360,22 +360,22 @@ fun HexagonalGrid(
                             (draggedPosition.x).toInt(),
                             (draggedPosition.y).toInt()
                         ) + IntOffset(
-                            (draggedOffset.x.toPx() * zoomState.scale).toInt(),
-                            (draggedOffset.y.toPx() * zoomState.scale).toInt()
+                            (draggedOffset.x.toPx() / gridScaling * zoomState.scale).toInt(),
+                            (draggedOffset.y.toPx() / gridScaling * zoomState.scale).toInt()
                         )
                     }
                     .zIndex(1f)
             ) {
                 StatelessRoundedHexagon(
                     modifier = Modifier
-                        .size((cellWidth/* + verticalBorder*/) * zoomState.scale * 1.2f)
+                        .size((cellWidth/* + verticalBorder*/) * zoomState.scale * 1.2f / gridScaling)
                         .alpha(0.8f),
                     shape = roundedPolygonShape,
                     contentStyle = gridCellsItems[index],
                     verticalBorder = verticalBorder,
                     horizontalBorder = horizontalBorder,
                     drawOverlay = false,
-                    scale = zoomState.scale * 1.2f
+                    scale = zoomState.scale * 1.2f / gridScaling
                 )
             }
         }

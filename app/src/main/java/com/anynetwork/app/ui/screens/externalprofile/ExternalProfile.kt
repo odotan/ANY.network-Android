@@ -92,6 +92,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
+import coil.size.Size
 import com.anynetwork.app.R
 import com.anynetwork.app.ui.base.NavigateBack
 import com.anynetwork.app.ui.components.HexagonTextField
@@ -601,14 +602,13 @@ private fun ExternalProfile(
                                     Image(
                                         modifier = Modifier
                                             .align(Alignment.Center)
-                                            .fillMaxSize(0.4f),
+                                            .fillMaxSize(0.335f),
                                         painter = rememberAsyncImagePainter(
                                             model = ImageRequest.Builder(LocalContext.current)
                                                 .data(R.drawable.ic_profile)
-                                                .size(100)
+                                                .size(Size(580, 660))
                                                 .build()
                                         ),
-                                        contentScale = ContentScale.Crop,
                                         contentDescription = null,
                                     )
                                 } else {
@@ -946,8 +946,8 @@ private fun ExternalProfile(
                     animationSpec = tween(500)
                 )
                 val cellSize = LocalConfiguration.current.screenWidthDp.dp / gridColumns
-                val verticalBorder = (cellSize * 0.0483f).log { "verticalBorder" }
-                val horizontalBorder = (cellSize * 89.99f/79.93f * 0.0429f).log { "horizontalBorder" }
+                val verticalBorder = (cellSize * 0.04403f).log { "verticalBorder" }
+                val horizontalBorder = (cellSize * 89.99f/79.93f * 0.0395f).log { "horizontalBorder" }
 
                 RoundedHexagon(
                     modifier = Modifier
@@ -1025,8 +1025,8 @@ private fun ExternalProfile(
                     val polygon = remember { createPolygon() }
                     val roundedPolygonShape = remember { RoundedPolygonShape(polygon) }
                     val cellSize = LocalConfiguration.current.screenWidthDp.dp / gridColumns
-                    val verticalBorder = (cellSize * 0.0483f).log { "verticalBorder" }
-                    val horizontalBorder = (cellSize * 89.99f/79.93f * 0.0429f).log { "horizontalBorder" }
+                    val verticalBorder = (cellSize * 0.04403f).log { "verticalBorder" }
+                    val horizontalBorder = (cellSize * 89.99f/79.93f * 0.0395f).log { "horizontalBorder" }
 
                     val favoriteButtonAlpha by animateFloatAsState(
                         targetValue = if (viewState.isFavorite) 0f else 1f,
@@ -1738,8 +1738,8 @@ private fun ExternalProfile(
                     }
 
                     val cellSize = LocalConfiguration.current.screenWidthDp.dp / gridColumns
-                    val verticalBorder = (cellSize * 0.0483f).log { "verticalBorder" }
-                    val horizontalBorder = (cellSize * 89.99f/79.93f * 0.0429f).log { "horizontalBorder" }
+                    val verticalBorder = (cellSize * 0.04403f).log { "verticalBorder" }
+                    val horizontalBorder = (cellSize * 89.99f/79.93f * 0.0395f).log { "horizontalBorder" }
                     Box(
                         modifier = Modifier
                             .padding(top = 113.fdpv)
