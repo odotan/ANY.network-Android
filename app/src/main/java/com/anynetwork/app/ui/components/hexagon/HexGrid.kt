@@ -2,7 +2,10 @@
 
 package com.anynetwork.app.ui.components.hexagon
 
+import android.content.Context
 import android.os.Parcelable
+import android.os.VibrationEffect
+import android.os.Vibrator
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -49,6 +52,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
@@ -95,6 +99,7 @@ fun HexagonalGrid(
     maxScale: Float = rowSize - 1f,
     changeScale: ChangeScale? = null,
     initialScale: Float = minScale,
+    onPlacesSwap: ((Int, Int) -> Unit)? = null,
     onCellPositionCalculated: ((Int, Offset, Int, Int) -> Unit)? = null,
     onZoom: ((zoom: Float, offset: Offset) -> Unit)? = null,
     isScrollEnabled: Boolean = true,
@@ -103,7 +108,7 @@ fun HexagonalGrid(
     showIndexes: Boolean = false,
     isEditModeActivating: Boolean = false,
     gridScaling: Float = 1f
-    ) {
+) {
     var gridCellsItems: List<HexagonContentStyle> = remember(items) {
         listOf()
     }
@@ -126,6 +131,7 @@ fun HexagonalGrid(
     var draggedOffset by remember { mutableStateOf(DpOffset(0.dp, 0.dp)) }
     var draggedPosition by remember { mutableStateOf(Offset.Zero) }
     var hoveredItem by remember { mutableStateOf<Int?>(null) }
+    var currentTargetIndex: Int? by remember { mutableStateOf<Int?>(null) }
 
     val cellPositions = remember { mutableStateMapOf<Int, LayoutCoordinates>() }
 
@@ -149,6 +155,23 @@ fun HexagonalGrid(
 //    (verticalSpacing / initialScale).log { "verticalSpacing" }
 //    val totalHeight = (columnSize * cellHeight + (columnSize - 1) * verticalSpacing) * initialScale
     val polygon = remember { createPolygon() }
+    val context = LocalContext.current
+
+    fun vibrate(context: Context) {
+        val vibrator =
+            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator?
+
+        // Check if the device supports vibration
+        if (vibrator != null && vibrator.hasVibrator()) {
+            // Subtle vibration using a short duration (e.g., 50 milliseconds)
+            vibrator.vibrate(
+                VibrationEffect.createOneShot(
+                    15,
+                    VibrationEffect.DEFAULT_AMPLITUDE
+                )
+            )
+        }
+    }
 
     Box(
         modifier = if (gridScaling > 1f) Modifier.fillMaxSize()
@@ -285,6 +308,10 @@ fun HexagonalGrid(
                                                 ?.removableStrategy
                                                 ?.onRemove
                                                 ?.invoke()
+                                        } else if (gridCellsItems[targetIndex] is NontransparentHexagonContentStyle) {
+                                            if (draggedIndex != targetIndex) {
+                                                onPlacesSwap?.invoke(draggedIndex, targetIndex)
+                                            }
                                         }
                                     }
                                 }
@@ -293,6 +320,7 @@ fun HexagonalGrid(
                                 draggedOffset = DpOffset.Zero
                                 draggedPosition = Offset.Zero
                                 hoveredItem = null
+                                currentTargetIndex = null
                             },
                             onDragCancel = {
                                 Timber.i("onDragCancel")
@@ -321,6 +349,10 @@ fun HexagonalGrid(
                                         if (closestCell != null) {
                                             val (targetIndex, _) = closestCell
                                             Timber.i("Dragged item dropped on cell $targetIndex")
+                                            if (targetIndex != currentTargetIndex && targetIndex != draggedIndex) {
+                                                currentTargetIndex = targetIndex
+                                                vibrate(context)
+                                            }
                                             hoveredItem = targetIndex
                                             // Handle drop logic here
                                         }

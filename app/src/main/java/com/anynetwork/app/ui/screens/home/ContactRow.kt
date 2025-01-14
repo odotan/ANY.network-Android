@@ -265,7 +265,6 @@ fun ContactsRow(
                                     val vibrator =
                                         context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator?
 
-
                                     // Check if the device supports vibration
                                     if (vibrator != null && vibrator.hasVibrator()) {
                                         // Subtle vibration using a short duration (e.g., 50 milliseconds)

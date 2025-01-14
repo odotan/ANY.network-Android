@@ -20,7 +20,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
@@ -76,7 +75,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
@@ -87,7 +85,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
@@ -103,7 +101,6 @@ import coil.request.ImageRequest
 import coil.size.Scale
 import coil.size.Size
 import com.anynetwork.app.R
-import com.anynetwork.app.model.Contact
 import com.anynetwork.app.ui.components.Screen
 import com.anynetwork.app.ui.components.SearchTextField
 import com.anynetwork.app.ui.components.SheetValue
@@ -118,7 +115,6 @@ import com.anynetwork.app.ui.components.hexagon.CoverBox
 import com.anynetwork.app.ui.components.hexagon.CustomHexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.DeleteButton
 import com.anynetwork.app.ui.components.hexagon.EmptyHexagonContentStyle
-import com.anynetwork.app.ui.components.hexagon.HexGridCellPosition
 import com.anynetwork.app.ui.components.hexagon.HexagonalGrid
 import com.anynetwork.app.ui.components.hexagon.IconHexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.ImageHexagonContentStyle
@@ -132,12 +128,17 @@ import com.anynetwork.app.ui.components.hexagon.calculateLayersForElements
 import com.anynetwork.app.ui.components.hexagon.createPolygon
 import com.anynetwork.app.ui.components.hexagon.generateHexagonColors
 import com.anynetwork.app.ui.components.hexagon.hexCellsBackgroundColorsGrid
+import com.anynetwork.app.ui.components.text.AutoSizeText
 import com.anynetwork.app.ui.navigation.Route
+import com.anynetwork.app.ui.screens.home.HomeViewEvent.CarouselContactInteractionClick
+import com.anynetwork.app.ui.screens.home.HomeViewEvent.ClearViewEffect
+import com.anynetwork.app.ui.screens.home.HomeViewEvent.GridItemButtonRemove
+import com.anynetwork.app.ui.screens.home.HomeViewEvent.GridItemClick
+import com.anynetwork.app.ui.screens.home.HomeViewEvent.HexagonalGridCellLongClick
+import com.anynetwork.app.ui.screens.home.HomeViewEvent.SwapGridItems
 import com.anynetwork.app.ui.theme.DarkBlue
-import com.anynetwork.app.ui.theme.EmailColor
 import com.anynetwork.app.ui.theme.GreenColor
 import com.anynetwork.app.ui.theme.PrimaryColor
-import com.anynetwork.app.ui.theme.YellowColor
 import com.anynetwork.app.ui.theme.montserratFontFamily
 import com.anynetwork.app.ui.utils.checkSelfPermission
 import com.anynetwork.app.ui.utils.csp
@@ -203,7 +204,7 @@ fun HomeRoot(navController: NavHostController, viewModel: HomeViewModel = hiltVi
                 }
                 else -> {}
             }
-            viewModel.onViewAction(HomeViewEvent.ClearViewEffect)
+            viewModel.onViewAction(ClearViewEffect)
         }
     }
 }
@@ -247,6 +248,10 @@ private fun Home(
             Timber.i("home start animation start")
             viewModel.reloadData()
             viewModel.loadProfile()
+        }
+
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            viewModel.onViewResume()
         }
     }
 
@@ -385,21 +390,12 @@ private fun Home(
             }
         ),
         hexagonGrid = {
-            val gridColumns = remember { 6 * 8 }
-            val gridRows = remember { 6 * 8 }
-            val centralRowIndex = remember { gridRows / 2 - 2 }
-            val centralColumnIndex = remember { gridColumns / 2 - 1 }
-            val offsetEvenRows = false
+            val gridColumns = viewModel.gridColumns
+            val gridRows = viewModel.gridRows
+            val offsetEvenRows = viewModel.offsetEvenRows
             val initialScale = (gridColumns / 4.7f).log { "initialScale" }
             val gridScaling = remember { 4f }
-            val centralPosition = remember {
-                HexGridCellPosition(
-                    column = centralColumnIndex,
-                    row = centralRowIndex,
-                    gridRows = gridRows,
-                    gridColumns = gridColumns
-                )
-            }
+            val centralPosition = viewModel.centralGridPosition
             var changeScale: ChangeScale? by remember {
                 mutableStateOf(null)
             }
@@ -414,97 +410,6 @@ private fun Home(
 
             centralIndex = centralPosition.getIndex()
 
-            fun createCellPosition(row: Int, column: Int) = HexGridCellPosition(
-                    column = column,
-                    row = row,
-                    gridRows = gridRows,
-                    gridColumns = gridColumns)
-
-            fun getElementPosition(index: Int): HexGridCellPosition {
-                Timber.i("getElementPosition for index: $index")
-                if (index == 0) {
-                    return centralPosition
-                }
-
-                var layer = 1
-                var count = 1
-
-                // Determine the layer in which the element is located
-                while (count + 6 * layer <= index) {
-                    count += 6 * layer
-                    layer += 1
-                }
-
-                val positionInLayer = if (layer == 1) index - count else (index - count + 1) % (6 * layer)
-                val sideLength = layer
-                val side = positionInLayer / sideLength
-                val offset = positionInLayer % sideLength
-
-                // Modify the relativePosition computation to start from the bottom-left and move counter-clockwise
-                val relativePosition = when (side) {
-                    0 -> {
-                        if (layer == 1) {
-                            createCellPosition(0, -1)
-                        } else {
-                            createCellPosition(
-                                layer - offset,
-                                -((layer + 1) / 2 + (offset + if (layer % 2 == 0) 1 else 0) / 2)
-                            )
-                        }
-                    }
-                    1 -> {
-                        if (layer == 1) {
-                            createCellPosition(-1, 0)
-                        } else {
-                            createCellPosition(-offset, -(layer - offset + offset / 2))
-                        }
-                    }
-                    2 -> {
-                        if (layer == 1) {
-                            createCellPosition(-1, 1)
-                        } else {
-                            createCellPosition(-layer, -(layer / 2) + offset)
-                        }
-                    }
-                    3 -> {
-                        if (layer == 1) {
-                            createCellPosition(0, 1)
-                        } else {
-                            createCellPosition(
-                                -layer + offset,
-                                (layer + 1) / 2 + if (layer % 2 == 0) (offset + 1) / 2 else offset / 2
-                            )
-                        }
-                    }
-                    4 -> {
-                        if (layer == 1) {
-                            createCellPosition(1, 0)
-                        } else {
-                            createCellPosition(offset, layer - (offset + 1) / 2)
-                        }
-                    }
-                    5 -> {
-                        if (layer == 1) {
-                            createCellPosition(1, -1)
-                        } else {
-                            createCellPosition(layer, layer / 2 - offset)
-                        }
-                    }
-                    else -> createCellPosition(0, 0)
-                }
-
-                val adjustedColumn = if (relativePosition.row % 2 != 0 && relativePosition.row > 0) {
-                    centralPosition.column + relativePosition.column + 1
-                } else {
-                    centralPosition.column + relativePosition.column
-                }
-
-                return createCellPosition(
-                    column = adjustedColumn,
-                    row = centralPosition.row + relativePosition.row
-                )
-            }
-
             val hexGridContacts by viewModel.hexGridItems.collectAsState()
             val optimizedHexGridContacts by remember {
                 derivedStateOf {
@@ -518,8 +423,8 @@ private fun Home(
                         hexagonRows = gridRows,
                         hexagonCols = gridColumns,
                         colorGrid = hexCellsBackgroundColorsGrid,
-                        startRow = centralRowIndex - 4,
-                        startCol = centralColumnIndex - 2,
+                        startRow = viewModel.centralGridPosition.row - 4,
+                        startCol = viewModel.centralGridPosition.column - 2,
                         offsetEvenRows = offsetEvenRows
                     )
                     colors
@@ -529,28 +434,12 @@ private fun Home(
                 derivedStateOf { viewState.photoUri }
             }
 
-
-
-//            val contactListPosition = rememberSaveable(hexGridContacts, screenMode) {
-//                Timber.i("contactListPosition update")
-//                hexGridContacts.mapIndexed { index, _ ->
-//                    val hexPosition = getElementPosition(index + if (screenMode.isSearching) 0 else 1)
-////                    Timber.i("contact $index to ${hexPosition.row}:${hexPosition.column}")
-//
-//                    hexPosition
-//                }
-//            }
-
-            val cellsPositions = rememberSaveable {
-                (0..gridRows * gridColumns).map { getElementPosition(it) }
-            }
-
             // Find the central element
-            val items = remember(cellsPositions, optimizedPhotoUri, optimizedHexGridContacts) {
+            val items = remember(optimizedPhotoUri, optimizedHexGridContacts) {
                 Timber.i("home start animation reload items")
                 val list = List(gridRows) { row -> // Create a list with `gridRows` elements
                     List(gridColumns) { column ->  // Each element is a list with `gridColumns` elements
-                        val cellIndex = createCellPosition(
+                        val cellIndex = viewModel.createCellPosition(
                             column = column,
                             row = row,
                         ).getIndex()
@@ -568,7 +457,7 @@ private fun Home(
                                         onMyProfileClick.invoke()
                                     },
                                     onLongClick = {
-                                        viewModel.onViewAction(HomeViewEvent.HexagonalGridCellLongClick)
+                                        viewModel.onViewAction(HexagonalGridCellLongClick)
                                     },
                                 )
                             } else {
@@ -599,18 +488,20 @@ private fun Home(
                                         onMyProfileClick.invoke()
                                     },
                                     onLongClick = {
-                                        viewModel.onViewAction(HomeViewEvent.HexagonalGridCellLongClick)
+                                        viewModel.onViewAction(HexagonalGridCellLongClick)
                                     },
                                 )
                             }
                         } else {
-                            val contactForCell =
-                                cellsPositions.take(optimizedHexGridContacts.size).find {
-                                    it.row == row && it.column == column
-                                }
+                            val contactForCell = viewModel.cellPositions.take(optimizedHexGridContacts.size)
+                                    .find {
+                                        it.getIndex() == cellIndex
+                                    }
 
-                            if (contactForCell != null) {
-                                val gridItem = optimizedHexGridContacts[cellsPositions.indexOf(
+                            if (contactForCell != null && optimizedHexGridContacts[viewModel.cellPositions.indexOf(
+                                    contactForCell
+                                )] !is GridItem.EmptyGridItem) {
+                                val gridItem = optimizedHexGridContacts[viewModel.cellPositions.indexOf(
                                     contactForCell
                                 )]
                                 CustomHexagonContentStyle(
@@ -618,52 +509,54 @@ private fun Home(
                                     background = Background.SingleColor(backgroundColor),
                                     isDraggable = gridItem !is GridItem.SearchGridItem,
                                     content = { scale ->
-                                            if (gridItem.contact.avatarUri != null) {
-                                                Image(
-                                                    modifier = Modifier
-                                                        .fillMaxSize(),
-                                                    painter = rememberAsyncImagePainter(
-                                                        model = ImageRequest.Builder(LocalContext.current)
-                                                            .data(gridItem.contact.avatarUri)
-                                                            .size(Size.ORIGINAL)
-                                                            .scale(scale = Scale.FILL)
-                                                            .build()
-                                                    ),
-                                                    contentScale = ContentScale.Crop,
-                                                    contentDescription = null,
+                                        if (gridItem.contact?.avatarUri != null) {
+                                            Image(
+                                                modifier = Modifier
+                                                    .fillMaxSize(),
+                                                painter = rememberAsyncImagePainter(
+                                                    model = ImageRequest.Builder(LocalContext.current)
+                                                        .data(gridItem.contact.avatarUri)
+                                                        .size(Size.ORIGINAL)
+                                                        .scale(scale = Scale.FILL)
+                                                        .build()
+                                                ),
+                                                contentScale = ContentScale.Crop,
+                                                contentDescription = null,
+                                            )
+                                        } else {
+                                            val fullname = gridItem.contact!!
+                                                .name
+                                                .uppercase()
+                                            AutoSizeText(
+                                                modifier = Modifier.fillMaxSize(0.9f),
+                                                text = fullname,
+                                                maxLines = if (fullname.contains(" ")) 2 else 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                                color = Color(0xFFAFAEB8),
+                                                alignment = Alignment.Center,
+                                                maxTextSize = 11.csp * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv) * scale * gridScaling,
+                                                style = TextStyle(
+                                                    fontFamily = montserratFontFamily,
+                                                    fontWeight = FontWeight.SemiBold,
                                                 )
-                                            } else {
-                                                Text(
-                                                    modifier = Modifier.align(Alignment.Center),
-                                                    text = gridItem.contact
-                                                        .getDisplayNameFirstLetters()
-                                                        .uppercase(),
-                                                    textAlign = TextAlign.Center,
-                                                    color = Color(0xFFAFAEB8),
-                                                    style = TextStyle(
-                                                        fontFamily = montserratFontFamily,
-                                                        fontWeight = FontWeight.SemiBold,
-                                                        fontSize = 24.csp * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv) * scale * gridScaling,
-                                                    )
-                                                )
-                                            }
+                                            )
+                                        }
 //                                        Text(
 //                                            modifier = Modifier.align(Alignment.Center),
-//                                            text = "${contactListPosition.indexOf(contactForCell)}\n" +
-//                                                    "${calculateLayersForElements(contactListPosition.indexOf(contactForCell))}",
+//                                            text = "${cellsPositions.indexOf(contactForCell)}\n$cellIndex",
 //                                            textAlign = TextAlign.Center,
 //                                            color = Color(0xFFAFAEB8),
 //                                            style = TextStyle(
 //                                                fontFamily = montserratFontFamily,
 //                                                fontWeight = FontWeight.SemiBold,
-//                                                fontSize = 18.csp * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv) * scale,
+//                                                fontSize = 18.csp * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv) * scale * gridScaling,
 //                                            )
 //                                        )
                                     },
                                     onClick = { offset ->
                                         viewModel.onViewAction(
-                                            HomeViewEvent.GridItemClick(
-                                                contact = gridItem.contact,
+                                            GridItemClick(
+                                                contact = gridItem.contact!!,
                                                 offsetX = offset.x,
                                                 offsetY = offset.y,
                                             )
@@ -671,12 +564,12 @@ private fun Home(
 //                                        onContactClick.invoke(gridItem.contact, it)
                                     },
                                     onLongClick = {
-                                        viewModel.onViewAction(HomeViewEvent.HexagonalGridCellLongClick)
+                                        viewModel.onViewAction(HexagonalGridCellLongClick)
                                     },
                                     isShakable = true,
                                     removableStrategy = RemovableStrategy {
                                         viewModel.onViewAction(
-                                            HomeViewEvent.GridItemButtonRemove(
+                                            GridItemButtonRemove(
                                                 gridItem = gridItem
                                             )
                                         )
@@ -693,7 +586,7 @@ private fun Home(
                                                     .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv * gridScaling)),
                                                 onClick = {
                                                     viewModel.onViewAction(
-                                                        HomeViewEvent.GridItemButtonRemove(
+                                                        GridItemButtonRemove(
                                                             gridItem
                                                         )
                                                     )
@@ -716,7 +609,7 @@ private fun Home(
                                                     when (it) {
                                                         is GridItem.Badge.PhoneBadge -> {
                                                             val mobilePhone =
-                                                                gridItem.contact.phone
+                                                                gridItem.contact!!.phone
                                                             val number =
                                                                 Uri.parse("tel:$mobilePhone")
                                                             val callIntent =
@@ -728,7 +621,7 @@ private fun Home(
                                                         }
 
                                                         is GridItem.Badge.EmailBadge -> {
-                                                            val email = gridItem.contact.email
+                                                            val email = gridItem.contact!!.email
                                                             val intent =
                                                                 Intent(Intent.ACTION_SENDTO)
                                                             intent.putExtra(
@@ -755,14 +648,14 @@ private fun Home(
                                     } ?: {}
                                 )
                             } else {
-                                val cellPosition = cellsPositions.find {
+                                val cellPosition = viewModel.cellPositions.find {
                                     it.row == row && it.column == column
                                 }
-                                val cellLayer = calculateLayersForElements(cellsPositions.indexOf(cellPosition))
-                                val isOutsideHexGridHexagon = cellLayer > gridColumns / 2 - 2 || cellsPositions.indexOf(cellPosition) == -1
+                                val cellLayer = calculateLayersForElements(viewModel.cellPositions.indexOf(cellPosition))
+                                val isOutsideHexGridHexagon = cellLayer > gridColumns / 2 || viewModel.cellPositions.indexOf(cellPosition) == -1
                                 if (isOutsideHexGridHexagon) {
                                     TransparentHexagonContentStyle(id = cellIndex)
-                                } else if (cellsPositions.indexOf(cellPosition) % 12 == 0) {
+                                } else if (viewModel.cellPositions.indexOf(cellPosition) % 11 == 0) {
                                     TrashCanHexagonContentStyle(
                                         id = cellIndex,
                                         background = Background.SingleColor(backgroundColor)
@@ -784,7 +677,6 @@ private fun Home(
                 Timber.i("home start animation reload items completed")
                 list
             }
-
 
             HexagonalGrid(
                 modifier = Modifier
@@ -809,7 +701,32 @@ private fun Home(
                 isScrollEnabled = true,
                 offsetY = 0,
                 offsetEvenRows = offsetEvenRows,
-                gridScaling = gridScaling
+                gridScaling = gridScaling,
+                onPlacesSwap = { target, destination ->
+                    viewModel.cellPositions.take(optimizedHexGridContacts.size).let {
+                        val targetCellPosition = it.indexOf(
+                            it.find {
+                                it.getIndex() == target
+                            }
+                        )
+                        val targetGridItem = optimizedHexGridContacts[targetCellPosition]
+                        val destinationCellPosition = it.indexOf(
+                            it.find {
+                                it.getIndex() == destination
+                            }
+                        )
+                        val destinationGridItem = optimizedHexGridContacts[destinationCellPosition]
+
+                        viewModel.onViewAction(
+                            SwapGridItems(
+                                target = targetGridItem,
+                                targetNewIndex = targetCellPosition,
+                                destination = destinationGridItem,
+                                destinationNewIndex = destinationCellPosition
+                            )
+                        )
+                    }
+                }
             )
         },
         content = {
@@ -1317,7 +1234,7 @@ fun BottomSheet(
                             contact = contact,
                             onClick = {
                                 viewModel.onViewAction(
-                                    HomeViewEvent.GridItemClick(
+                                    GridItemClick(
                                         contact = contact,
                                         offsetX = 0f,
                                         offsetY = 0f,
@@ -1326,7 +1243,7 @@ fun BottomSheet(
                             },
                             onInteractionClick = { contact, interactionType ->
                                 viewModel.onViewAction(
-                                    HomeViewEvent.CarouselContactInteractionClick(
+                                    CarouselContactInteractionClick(
                                         contact = contact,
                                         interactionType = interactionType
                                     )
@@ -1340,43 +1257,5 @@ fun BottomSheet(
                 }
             }
         }
-    }
-}
-
-sealed class GridItem(val contact: Contact, val badge: Badge? = null) {
-    class FavoritedContactGridItem(contact: Contact): GridItem(contact, Badge.FavoriteBadge)
-    class InteractionGridItem(contact: Contact, val interactionId: Long, badge: Badge?): GridItem(contact, badge) {
-        override fun equals(other: Any?): Boolean {
-            if (other !is InteractionGridItem || !super.equals(other)) return false
-            val identicalInteractionIds = interactionId == other.interactionId
-
-            return identicalInteractionIds
-        }
-    }
-    class SearchGridItem(contact: Contact): GridItem(contact, null)
-
-    sealed class Badge(open val color: Color, open val iconResId: Int, open val iconColorFilter: ColorFilter? = null) {
-        data object FavoriteBadge: Badge(
-            color = YellowColor,
-            iconResId = R.drawable.ic_star_filled,
-            iconColorFilter = ColorFilter.tint(color = Color.White)
-        )
-        data object EmailBadge: Badge(
-            color = EmailColor,
-            iconResId = R.drawable.ic_email,
-        )
-        data object PhoneBadge: Badge(
-            color = GreenColor,
-            iconResId = R.drawable.ic_phone,
-        )
-    }
-
-    override fun equals(other: Any?): Boolean {
-        if (other !is GridItem) return false
-
-        val identicalContacts = contact == other.contact
-        val identicalBadges = badge == other.badge
-
-        return identicalContacts && identicalBadges
     }
 }
