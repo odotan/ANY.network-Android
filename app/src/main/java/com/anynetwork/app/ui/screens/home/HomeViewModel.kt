@@ -2,6 +2,7 @@ package com.anynetwork.app.ui.screens.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.anynetwork.app.BuildConfig
 import com.anynetwork.app.data.contacts.ContactsRepository
 import com.anynetwork.app.data.interaction.InteractionRepository
 import com.anynetwork.app.data.order.OrderRepository
@@ -149,15 +150,6 @@ class HomeViewModel @Inject constructor(
         } catch (e: Exception) {
             Timber.e(e, "Error reloading data")
         }
-    }
-
-    fun onViewResume() = viewModelScope.launch {
-        val latestInteractionsDeferred = async { interactionRepository.getAllInteractions() }
-        val latestInteractions = latestInteractionsDeferred.await()
-        updateInteractions(latestInteractions)
-
-        val newGridItems = processContactsForGrid(contacts.value, interactions.value)
-        updateHexGridItems(newGridItems)
     }
 
     private fun updateContacts(emittedContacts: List<Contact>) {
@@ -444,7 +436,7 @@ class HomeViewModel @Inject constructor(
                         }
                         _interactions.value.size.log { "CarouselContactInteractionClick interactions value size 2" }
                     }
-                    when (viewAction.interactionType) {
+                    if (!BuildConfig.DEBUG) when (viewAction.interactionType) {
                         Interaction.Type.Email -> contact.email?.let { email ->
                             _viewEffectFlow.value = HomeViewEffect.WriteEmail(email)
                         }

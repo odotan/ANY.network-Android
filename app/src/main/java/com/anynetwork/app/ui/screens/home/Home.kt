@@ -249,10 +249,6 @@ private fun Home(
             viewModel.reloadData()
             viewModel.loadProfile()
         }
-
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            viewModel.onViewResume()
-        }
     }
 
     val systemBarsPadding = WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
