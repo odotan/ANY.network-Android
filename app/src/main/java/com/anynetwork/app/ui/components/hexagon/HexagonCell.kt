@@ -80,7 +80,8 @@ open class NontransparentHexagonContentStyle(
     val background: Background,
     val isDraggable: Boolean,
     val isHoverable: Boolean,
-    val removableStrategy: RemovableStrategy?
+    val removableStrategy: RemovableStrategy?,
+    val sharedContentStateKey: String? = null,
 ): HexagonContentStyle(id) {
     sealed class Background {
         data class SingleColor(val value: Color): Background()
@@ -141,6 +142,7 @@ class ImageHexagonContentStyle(
     isDraggable: Boolean = false,
     isHoverable: Boolean = true,
     removableStrategy: RemovableStrategy? = null,
+    sharedContentStateKey: String? = null,
     val contentDescription: String = "",
     val image: Image,
     val alpha: Float = 1f,
@@ -151,7 +153,8 @@ class ImageHexagonContentStyle(
     background = background,
     isDraggable = isDraggable,
     isHoverable = isHoverable,
-    removableStrategy = removableStrategy
+    removableStrategy = removableStrategy,
+    sharedContentStateKey = sharedContentStateKey,
 ) {
     sealed class Image {
         data class VectorResource(val id: Int): Image()
@@ -217,6 +220,7 @@ class CustomHexagonContentStyle(
     isDraggable: Boolean = false,
     isHoverable: Boolean = true,
     removableStrategy: RemovableStrategy? = null,
+    sharedContentStateKey: String? = null,
     val content: @Composable (BoxScope.(scale: Float) -> Unit),
     val onClick: ((Offset) -> Unit) = { _ -> },
     val onLongClick: (() -> Unit) = {},
@@ -227,7 +231,8 @@ class CustomHexagonContentStyle(
     background = background,
     isDraggable = isDraggable,
     isHoverable = isHoverable,
-    removableStrategy = removableStrategy
+    removableStrategy = removableStrategy,
+    sharedContentStateKey = sharedContentStateKey
 )
 
 @Composable

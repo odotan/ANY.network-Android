@@ -15,8 +15,11 @@ import androidx.compose.animation.SharedTransitionScope.ResizeMode.Companion.Sca
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
@@ -280,15 +283,16 @@ fun SharedTransitionScope.HexagonalGrid(
                                 }
                             } else if (isRotating) {
                             Modifier.rotate(rotation.value)
-                        } else Modifier
-                        )
-                        .then(if (animatedVisibilityScope != null && index == centralIndex) Modifier.sharedBounds(
-                            sharedContentState = rememberSharedContentState(
-                                HEX_GRID_EXPLODE_MY_PROFILE_BOUNDS_KEY
-                            ),
-                            resizeMode = ScaleToBounds(FixedScale(zoomState.scale), Center),
-                            animatedVisibilityScope = animatedVisibilityScope
-                        ) else Modifier),
+                        } else Modifier)
+                        .then(if (animatedVisibilityScope != null && contentStyle is NontransparentHexagonContentStyle && contentStyle.sharedContentStateKey != null)
+                            Modifier.sharedBounds(
+                                sharedContentState = rememberSharedContentState(
+                                    contentStyle.sharedContentStateKey
+                                ),
+                                resizeMode = ScaleToBounds(FixedScale(zoomState.scale), Center),
+                                animatedVisibilityScope = animatedVisibilityScope
+                            )
+                        else Modifier),
                     shape = if (contentStyle is NontransparentHexagonContentStyle) roundedPolygonShape else null,
                     contentStyle = contentStyle,
                     verticalBorder = verticalBorder,

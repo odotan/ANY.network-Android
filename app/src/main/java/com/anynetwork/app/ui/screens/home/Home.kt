@@ -106,6 +106,7 @@ import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import coil.size.Scale
 import coil.size.Size
+import com.anynetwork.app.HEX_GRID_EXPLODE_BOUNDS_KEY
 import com.anynetwork.app.HEX_GRID_EXPLODE_MY_PROFILE_BOUNDS_KEY
 import com.anynetwork.app.R
 import com.anynetwork.app.model.Interaction
@@ -128,7 +129,6 @@ import com.anynetwork.app.ui.components.hexagon.HexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.HexagonalGrid
 import com.anynetwork.app.ui.components.hexagon.IconHexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.ImageHexagonContentStyle
-import com.anynetwork.app.ui.components.hexagon.NontransparentHexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.NontransparentHexagonContentStyle.Background
 import com.anynetwork.app.ui.components.hexagon.RemovableStrategy
 import com.anynetwork.app.ui.components.hexagon.RoundedHexagon
@@ -471,6 +471,7 @@ private fun SharedTransitionScope.Home(
                                     id = cellIndex,
                                     isHoverable = false,
                                     image = ImageHexagonContentStyle.Image.FromUri(optimizedPhotoUri!!),
+                                    sharedContentStateKey = HEX_GRID_EXPLODE_MY_PROFILE_BOUNDS_KEY,
                                     onClick = {
                                         onMyProfileClick.invoke()
                                     },
@@ -483,6 +484,7 @@ private fun SharedTransitionScope.Home(
                                     id = cellIndex,
                                     background = Background.SingleColor(PrimaryColor),
                                     isHoverable = false,
+                                    sharedContentStateKey = HEX_GRID_EXPLODE_MY_PROFILE_BOUNDS_KEY,
                                     content = {
                                         Box(
                                             modifier = Modifier.fillMaxSize()
@@ -526,6 +528,7 @@ private fun SharedTransitionScope.Home(
                                 CustomHexagonContentStyle(
                                     id = cellIndex,
                                     background = Background.SingleColor(backgroundColor),
+                                    sharedContentStateKey = "$HEX_GRID_EXPLODE_BOUNDS_KEY/${gridItem.contact!!.id}",
                                     isDraggable = gridItem !is GridItem.SearchGridItem,
                                     content = { scale ->
                                         if (gridItem.contact?.avatarUri != null) {

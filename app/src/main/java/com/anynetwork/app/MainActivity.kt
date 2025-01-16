@@ -134,7 +134,7 @@ class MainActivity : ComponentActivity() {
                             Box(modifier = Modifier.fillMaxSize()
                                 .sharedBounds(
                                     sharedContentState = rememberSharedContentState(
-                                        key = HEX_GRID_EXPLODE_BOUNDS_KEY,
+                                        key = "$HEX_GRID_EXPLODE_BOUNDS_KEY/${it.toRoute<Route.ExternalProfile>().id}",
                                     ),
                                     animatedVisibilityScope = this
                                 )) {
