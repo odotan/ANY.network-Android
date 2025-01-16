@@ -221,7 +221,7 @@ fun ExternalProfileRoot(
         }
     }
     BackHandler {
-        navController.popBackStack(Route.Home, inclusive = false)
+        viewModel.onViewEvent(BackButtonClick)
     }
     LaunchedEffect(Unit) {
         viewModel.loadContact(id = id, input = input)

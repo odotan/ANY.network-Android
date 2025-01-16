@@ -254,7 +254,11 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
     val otherEmailFocusRequester = remember { FocusRequester() }
 
     BackHandler {
-        onBackButtonClick.invoke()
+        if (mode is MyProfileMode.Edit) {
+            mode = MyProfileMode.Edit(isCanceling = true)
+        } else {
+            onBackButtonClick.invoke()
+        }
     }
 
     fun phoneNumberOptions(onClick: (String) -> Unit): List<DropDownDialogMenuCategory> {
