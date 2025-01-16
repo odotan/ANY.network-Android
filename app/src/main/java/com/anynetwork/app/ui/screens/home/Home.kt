@@ -1,4 +1,6 @@
-@file:OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class,
+    ExperimentalSharedTransitionApi::class
+)
 
 package com.anynetwork.app.ui.screens.home
 
@@ -10,6 +12,9 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.exponentialDecay
@@ -59,6 +64,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -100,6 +106,7 @@ import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import coil.size.Scale
 import coil.size.Size
+import com.anynetwork.app.HEX_GRID_EXPLODE_MY_PROFILE_BOUNDS_KEY
 import com.anynetwork.app.R
 import com.anynetwork.app.model.Interaction
 import com.anynetwork.app.ui.components.Screen
@@ -117,9 +124,11 @@ import com.anynetwork.app.ui.components.hexagon.CoverBox
 import com.anynetwork.app.ui.components.hexagon.CustomHexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.DeleteButton
 import com.anynetwork.app.ui.components.hexagon.EmptyHexagonContentStyle
+import com.anynetwork.app.ui.components.hexagon.HexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.HexagonalGrid
 import com.anynetwork.app.ui.components.hexagon.IconHexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.ImageHexagonContentStyle
+import com.anynetwork.app.ui.components.hexagon.NontransparentHexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.NontransparentHexagonContentStyle.Background
 import com.anynetwork.app.ui.components.hexagon.RemovableStrategy
 import com.anynetwork.app.ui.components.hexagon.RoundedHexagon
@@ -162,10 +171,15 @@ import kotlin.math.absoluteValue
 
 
 @Composable
-fun HomeRoot(navController: NavHostController, viewModel: HomeViewModel = hiltViewModel<HomeViewModel>()) {
+fun SharedTransitionScope.HomeRoot(
+    navController: NavHostController,
+    animatedVisibilityScope: AnimatedVisibilityScope,
+    viewModel: HomeViewModel = hiltViewModel<HomeViewModel>()
+) {
 
     Home(
-        viewModel,
+        viewModel = viewModel,
+        animatedVisibilityScope = animatedVisibilityScope,
         onMyProfileClick = {
             navController.navigate(Route.MyProfile)
         },
@@ -235,7 +249,8 @@ val anchoredDraggableState = AnchoredDraggableState(
     decayAnimationSpec = exponentialDecay()
 )
 @Composable
-private fun Home(
+private fun SharedTransitionScope.Home(
+    animatedVisibilityScope: AnimatedVisibilityScope,
     viewModel: HomeViewModel,
     onMyProfileClick: () -> Unit,
     onCreateNewContactClick: (String?) -> Unit,
@@ -260,6 +275,9 @@ private fun Home(
     var centralIndex: Int? by remember { mutableStateOf(null) }
     var centralHeight: Int? by rememberSaveable { mutableStateOf(null) }
 
+    var clickedCellContentStyle: HexagonContentStyle? by remember { mutableStateOf(null) }
+    var clickedCellPosition: Offset? by remember { mutableStateOf(null) }
+
     var collapsedOffset by rememberSaveable { mutableStateOf(0f) }
     var partiallyExpandedOffset by rememberSaveable { mutableStateOf(0f) }
     var expandedOffset by rememberSaveable { mutableStateOf(0f) }
@@ -269,6 +287,8 @@ private fun Home(
     var bottomSheetCurrentState by rememberSaveable { mutableStateOf(BottomSheetOffsetMode.Automatic) }
     var showBottomSheet by rememberSaveable { mutableStateOf(false) }
     var showAllowContactsPermissionsDialog by remember { mutableStateOf(false) }
+
+    var currentGridZoom: Float by rememberSaveable { mutableFloatStateOf(0f) }
 
     val viewState by viewModel.viewState.collectAsState()
     LaunchedEffect(Unit) {
@@ -466,7 +486,8 @@ private fun Home(
                                     content = {
                                         Box(
                                             modifier = Modifier.fillMaxSize()
-                                                .align(Alignment.Center),) {
+                                                .align(Alignment.Center),
+                                            ) {
                                             Image(
                                                 modifier = Modifier
                                                     .align(Alignment.Center)
@@ -677,6 +698,7 @@ private fun Home(
                 onZoom = remember {{ zoom, offset ->
                     Timber.i("onZoom: zoom - $zoom, offset - $offset")
                     isGridCentered = false
+                    currentGridZoom = zoom
                 }},
                 isScrollEnabled = true,
                 offsetY = 0,
@@ -706,7 +728,9 @@ private fun Home(
                             )
                         )
                     }
-                }
+                },
+                animatedVisibilityScope = animatedVisibilityScope,
+                centralIndex = centralPosition.getIndex()
             )
         },
         content = {

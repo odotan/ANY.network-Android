@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalLayoutApi::class)
+@file:OptIn(ExperimentalLayoutApi::class, ExperimentalSharedTransitionApi::class)
 
 package com.anynetwork.app.ui.components.hexagon
 
@@ -8,6 +8,10 @@ import android.net.Uri
 import android.os.Parcelable
 import android.os.VibrationEffect
 import android.os.Vibrator
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.SharedTransitionScope.ResizeMode.Companion.ScaleToBounds
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -37,6 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
@@ -48,6 +53,8 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.FixedScale
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.boundsInRoot
@@ -63,6 +70,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
 import androidx.compose.ui.zIndex
+import com.anynetwork.app.HEX_GRID_EXPLODE_MY_PROFILE_BOUNDS_KEY
 import com.anynetwork.app.ui.components.hexagon.HexGridCellPosition.Neighbor.BottomLeft
 import com.anynetwork.app.ui.components.hexagon.HexGridCellPosition.Neighbor.BottomRight
 import com.anynetwork.app.ui.components.hexagon.HexGridCellPosition.Neighbor.Left
@@ -97,9 +105,10 @@ data class ChangeScale(
 )
 
 @Composable
-fun HexagonalGrid(
+fun SharedTransitionScope.HexagonalGrid(
     modifier: Modifier = Modifier,
     items: List<List<HexagonContentStyle>>,
+    centralIndex: Int? = null,
     rowSize: Int = 6,
     columnSize: Int = 14,
     minScale: Float = 1f,
@@ -114,7 +123,8 @@ fun HexagonalGrid(
     offsetEvenRows: Boolean = true,
     showIndexes: Boolean = false,
     isEditModeActivating: Boolean = false,
-    gridScaling: Float = 1f
+    gridScaling: Float = 1f,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null
 ) {
     var gridCellsItems: List<HexagonContentStyle> = remember(items) {
         listOf()
@@ -137,8 +147,13 @@ fun HexagonalGrid(
     var draggedItem by remember { mutableStateOf<Int?>(null) }
     var draggedOffset by remember { mutableStateOf(DpOffset(0.dp, 0.dp)) }
     var draggedPosition by remember { mutableStateOf(Offset.Zero) }
+
     var hoveredItem by remember { mutableStateOf<Int?>(null) }
+
     var currentTargetIndex: Int? by remember { mutableStateOf<Int?>(null) }
+
+    var clickedItem: Int? by remember { mutableStateOf(null) }
+    var clickedPosition: Offset? by remember { mutableStateOf(null) }
 
     val cellPositions = remember { mutableStateMapOf<Int, LayoutCoordinates>() }
 
@@ -266,7 +281,14 @@ fun HexagonalGrid(
                             } else if (isRotating) {
                             Modifier.rotate(rotation.value)
                         } else Modifier
-                        ),
+                        )
+                        .then(if (animatedVisibilityScope != null && index == centralIndex) Modifier.sharedBounds(
+                            sharedContentState = rememberSharedContentState(
+                                HEX_GRID_EXPLODE_MY_PROFILE_BOUNDS_KEY
+                            ),
+                            resizeMode = ScaleToBounds(FixedScale(zoomState.scale), Center),
+                            animatedVisibilityScope = animatedVisibilityScope
+                        ) else Modifier),
                     shape = if (contentStyle is NontransparentHexagonContentStyle) roundedPolygonShape else null,
                     contentStyle = contentStyle,
                     verticalBorder = verticalBorder,
@@ -382,13 +404,33 @@ fun HexagonalGrid(
         }
     }
 
-//        Box(
-//            modifier = Modifier
-//                .size(5.dp) // Adjust size as needed
-//                .background(Color.Red, CircleShape) // Customize appearance
-//                .align(Alignment.Center)
-//        )
-    // Render Dragged Item Above
+//    clickedItem?.let { index ->
+//        clickedPosition?.let { clickedPosition ->
+//            val roundedPolygonShape = remember(polygon) { RoundedPolygonShape(polygon) }
+//            Box(
+//                Modifier
+//                    .offset {
+//                        IntOffset(
+//                            (clickedPosition.x).toInt(),
+//                            (clickedPosition.y).toInt()
+//                        )
+//                    }
+//                    .zIndex(1f)
+//            ) {
+//                StatelessRoundedHexagon(
+//                    modifier = Modifier
+//                        .size((cellWidth) * zoomState.scale / gridScaling),
+//                    shape = roundedPolygonShape,
+//                    contentStyle = gridCellsItems[index],
+//                    verticalBorder = verticalBorder,
+//                    horizontalBorder = horizontalBorder,
+//                    drawOverlay = false,
+//                    scale = zoomState.scale / gridScaling
+//                )
+//            }
+//        }
+//    }
+
     draggedItem?.let { index ->
         if (draggedPosition != Offset.Zero) {
             draggedPosition.log { "draggedPosition" }

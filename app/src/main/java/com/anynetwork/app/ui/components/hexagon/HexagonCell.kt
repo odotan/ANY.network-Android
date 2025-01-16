@@ -211,6 +211,7 @@ class ContactContentStyle(
 
 @Stable
 class CustomHexagonContentStyle(
+    val modifier: Modifier = Modifier,
     id: Int,
     background: Background = Background.SingleColor(Color(0xFF6E4CD4)),
     isDraggable: Boolean = false,

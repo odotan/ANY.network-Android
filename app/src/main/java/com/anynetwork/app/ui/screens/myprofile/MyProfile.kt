@@ -1,4 +1,6 @@
-@file:OptIn(ExperimentalFoundationApi::class, ExperimentalAnimatedInsets::class)
+@file:OptIn(ExperimentalFoundationApi::class, ExperimentalAnimatedInsets::class,
+    ExperimentalSharedTransitionApi::class
+)
 
 package com.anynetwork.app.ui.screens.myprofile
 
@@ -9,6 +11,8 @@ import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -182,7 +186,7 @@ import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
 @Composable
-fun MyProfileRoot(
+fun SharedTransitionScope.MyProfileRoot(
     navController: NavHostController
 ) {
     val viewModel: MyProfileViewModel = hiltViewModel<MyProfileViewModel>()
@@ -201,7 +205,7 @@ sealed class MyProfileMode {
 }
 
 @Composable
-private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewModel) {
+private fun SharedTransitionScope.MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewModel) {
     val scale = 6 / 4.7f
 
     val context = LocalContext.current

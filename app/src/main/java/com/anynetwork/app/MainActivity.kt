@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalSharedTransitionApi::class, ExperimentalSharedTransitionApi::class)
+@file:OptIn(ExperimentalSharedTransitionApi::class)
 
 package com.anynetwork.app
 
@@ -9,9 +9,12 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.navigation.compose.NavHost
@@ -29,6 +32,9 @@ import com.anynetwork.app.ui.screens.splash.SplashRoot
 import com.anynetwork.app.ui.screens.testing.GridPlaygroundScreen
 import com.anynetwork.app.ui.theme.ANYnetworkTheme
 import dagger.hilt.android.AndroidEntryPoint
+
+const val HEX_GRID_EXPLODE_MY_PROFILE_BOUNDS_KEY = "HEX_GRID_EXPLODE_MY_PROFILE_BOUNDS_KEY"
+const val HEX_GRID_EXPLODE_BOUNDS_KEY = "HEX_GRID_EXPLODE_BOUNDS_KEY"
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -53,57 +59,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             ANYnetworkTheme {
                 val navController = rememberNavController()
-                NavHost(
-                    navController = navController,
-                    startDestination = Route.Splash,
-                    enterTransition = {
-                        fadeIn()
-                    },
-                    exitTransition = { fadeOut() },
-                    popEnterTransition = {
-                        fadeIn()
-                    },
-                    popExitTransition = {
-                        fadeOut()
-                    }
-                ) {
-                    composable<Route.Splash> { SplashRoot(navController) }
-
-                    composable<Route.GridPlayground> {
-                        it.toRoute<Route.GridPlayground>().mode.let { it -> GridPlaygroundScreen(mode = it) }
-                    }
-
-                    composable<Route.Onboarding> { OnboardingRoot(navController) }
-
-                    composable<Route.Connect> { ConnectRoot() }
-
-                    composable<Route.ContactsPermissions> { ContactsPermissionsRoot(navController, contentResolver) }
-
-//                        composable<Route.Search> { SearchRoot(navController) }
-
-                    composable<Route.NewContact> {
-                        ExternalProfileRoot(
-                            navController = navController,
-                            id = null,
-                            input = it.toRoute<Route.NewContact>().input,
-                        )
-                    }
-
-                    composable<Route.MyProfile> {
-                        MyProfileRoot(navController)
-                    }
-
-                    composable<Route.ExternalProfileWithOffset> {
-                        ExternalProfileRoot(
-                            navController = navController,
-                            id = it.toRoute<Route.ExternalProfileWithOffset>().id,
-                            clickOffsetX = it.toRoute<Route.ExternalProfileWithOffset>().clickOffsetX,
-                            clickOffsetY = it.toRoute<Route.ExternalProfileWithOffset>().clickOffsetY,
-                        )
-                    }
-
-
-                    composable<Route.Home>(
+                SharedTransitionLayout {
+                    NavHost(
+                        navController = navController,
+                        startDestination = Route.Splash,
                         enterTransition = {
                             fadeIn()
                         },
@@ -115,14 +74,76 @@ class MainActivity : ComponentActivity() {
                             fadeOut()
                         }
                     ) {
-                        HomeRoot(navController)
-                    }
+                        composable<Route.Splash> { SplashRoot(navController) }
 
-                    composable<Route.ExternalProfile> {
-                        ExternalProfileRoot(
-                            id = it.toRoute<Route.ExternalProfile>().id,
-                            navController = navController,
-                        )
+                        composable<Route.GridPlayground> {
+                            it.toRoute<Route.GridPlayground>().mode.let { GridPlaygroundScreen(mode = it) }
+                        }
+
+                        composable<Route.Onboarding> { OnboardingRoot(navController) }
+
+                        composable<Route.Connect> { ConnectRoot() }
+
+                        composable<Route.ContactsPermissions> {
+                            ContactsPermissionsRoot(
+                                navController,
+                                contentResolver
+                            )
+                        }
+
+//                        composable<Route.Search> { SearchRoot(navController) }
+
+                        composable<Route.NewContact> {
+                            ExternalProfileRoot(
+                                navController = navController,
+                                id = null,
+                                input = it.toRoute<Route.NewContact>().input,
+                            )
+                        }
+
+                        composable<Route.MyProfile> {
+                            Box(modifier = Modifier.fillMaxSize()
+                                .sharedBounds(
+                                    sharedContentState = rememberSharedContentState(
+                                        key = HEX_GRID_EXPLODE_MY_PROFILE_BOUNDS_KEY,
+                                    ),
+                                    animatedVisibilityScope = this
+                                )
+                            )
+                            MyProfileRoot(navController)
+                        }
+
+                        composable<Route.ExternalProfileWithOffset> {
+                            ExternalProfileRoot(
+                                navController = navController,
+                                id = it.toRoute<Route.ExternalProfileWithOffset>().id,
+                                clickOffsetX = it.toRoute<Route.ExternalProfileWithOffset>().clickOffsetX,
+                                clickOffsetY = it.toRoute<Route.ExternalProfileWithOffset>().clickOffsetY,
+                            )
+                        }
+
+
+                        composable<Route.Home> {
+                            HomeRoot(
+                                navController = navController,
+                                animatedVisibilityScope = this
+                            )
+                        }
+
+                        composable<Route.ExternalProfile> {
+                            Box(modifier = Modifier.fillMaxSize()
+                                .sharedBounds(
+                                    sharedContentState = rememberSharedContentState(
+                                        key = HEX_GRID_EXPLODE_BOUNDS_KEY,
+                                    ),
+                                    animatedVisibilityScope = this
+                                )) {
+                                ExternalProfileRoot(
+                                    id = it.toRoute<Route.ExternalProfile>().id,
+                                    navController = navController,
+                                )
+                            }
+                        }
                     }
                 }
             }

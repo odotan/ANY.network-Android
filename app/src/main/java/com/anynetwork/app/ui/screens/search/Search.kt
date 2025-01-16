@@ -1,5 +1,9 @@
+@file:OptIn(ExperimentalSharedTransitionApi::class)
+
 package com.anynetwork.app.ui.screens.search
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -63,7 +67,7 @@ import com.anynetwork.app.ui.utils.xdpv
 import kotlin.math.roundToInt
 
 @Composable
-fun SearchRoot(navController: NavController) {
+fun SharedTransitionScope.SearchRoot(navController: NavController) {
     Search(
         onBackButtonClick = {
             navController.popBackStack()
@@ -83,7 +87,7 @@ sealed class SearchScreenMode {
 }
 
 @Composable
-private fun Search(
+private fun SharedTransitionScope.Search(
     onBackButtonClick: () -> Unit,
     onContactClick: (name: String) -> Unit,
     onCreateNewContactClick: () -> Unit,

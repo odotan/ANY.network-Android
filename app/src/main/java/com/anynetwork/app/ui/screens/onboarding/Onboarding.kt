@@ -1,8 +1,12 @@
-@file:OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class,
+    ExperimentalSharedTransitionApi::class
+)
 
 package com.anynetwork.app.ui.screens.onboarding
 
 import android.content.Context
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -82,14 +86,14 @@ import com.anynetwork.app.ui.utils.xdpv
 import kotlinx.coroutines.delay
 
 @Composable
-fun OnboardingRoot(navController: NavHostController) {
+fun SharedTransitionScope.OnboardingRoot(navController: NavHostController) {
     Onboarding(navController)
 }
 
 data class OnboardingImageCellConfig(val resource: Int, val background: Color)
 
 @Composable
-private fun Onboarding(navController: NavHostController) {
+private fun SharedTransitionScope.Onboarding(navController: NavHostController) {
     val scale = 6f/4.7f
 
     val context = LocalContext.current
