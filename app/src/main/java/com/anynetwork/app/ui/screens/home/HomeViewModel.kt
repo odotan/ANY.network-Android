@@ -44,7 +44,9 @@ class HomeViewModel @Inject constructor(
 
     private val _contacts = MutableStateFlow<List<Contact>>(emptyList())
     val contacts: StateFlow<List<Contact>> = _contacts
-        .distinctUntilChanged { old, new -> old.size == new.size }
+        .distinctUntilChanged { old, new ->
+            old.size == new.size
+        }
         .onEach { newValue ->
             newValue.size.log { "contacts emitted size" }
         }
@@ -124,13 +126,6 @@ class HomeViewModel @Inject constructor(
                     }
                 }
         }
-
-//        addRandomItemAround(
-//            latestGridPosition = centralGridPosition.apply { getIndex().log { "centralGridPosition" } },
-//            occupiedPositions = emptySet(),
-//            createCellPosition = ::HexGridCellPosition
-//        )!!.getIndex().log { "random item around centralGridPosition" }
-//        getElementIndex(centralGridPosition.getNeighborPosition(HexGridCellPosition.Neighbor.Left).getNeighborPosition(HexGridCellPosition.Neighbor.Left)).log { "element index for central grid position" }
     }
 
     fun reloadData() = viewModelScope.launch {
@@ -460,14 +455,8 @@ class HomeViewModel @Inject constructor(
                     }
                 }
 
-                _hexGridItems.value = _hexGridItems.value.filterNot { gridItem ->
-                    when (viewAction.gridItem) {
-                        is GridItem.InteractionGridItem ->
-                            gridItem is GridItem.InteractionGridItem && gridItem.interactionId == viewAction.gridItem.interactionId
-                        is GridItem.FavoritedContactGridItem ->
-                            gridItem is GridItem.FavoritedContactGridItem && gridItem.contact!!.id == viewAction.gridItem.contact!!.id
-                        else -> false
-                    }
+                _hexGridItems.value = _hexGridItems.value.toMutableList().apply {
+                    set(hexGridItems.value.indexOf(viewAction.gridItem), GridItem.EmptyGridItem())
                 }
 
                 // Perform additional repository actions separately

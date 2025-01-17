@@ -273,6 +273,7 @@ class ExternalProfileViewModel @Inject constructor(
                                 mode = ExternalProfileMode.Normal
                             )
                         }
+                        _viewEffectFlow.value = ExternalProfileViewEffect.ContactUpdated
                     }
                 }
             }
@@ -495,4 +496,5 @@ sealed class ExternalProfileViewEffect: ViewEffect() {
     data object RequestFocusOnOtherEmailTextField: ExternalProfileViewEffect()
     data class CallPhoneNumber(val phoneNumber: String): ExternalProfileViewEffect()
     data class WriteEmail(val emailAddress: String): ExternalProfileViewEffect()
+    data object ContactUpdated: ExternalProfileViewEffect()
 }

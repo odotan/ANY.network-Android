@@ -1,7 +1,9 @@
 package com.anynetwork.app.model
 
 import androidx.compose.runtime.Immutable
+import kotlinx.serialization.Serializable
 
+@Serializable
 @Immutable
 data class Contact(
     val id: Long,
@@ -52,8 +54,8 @@ data class Contact(
 
     fun otherEmail() = emails.firstOrNull { it.type == Email.Type.Other }?.value
 
-    data class Phone(val type: Type, val value: String) {
-        sealed class Type {
+    @Serializable data class Phone(val type: Type, val value: String) {
+        @Serializable sealed class Type {
             data object Mobile: Type()
             data object Home: Type()
             data object Work: Type()
@@ -65,8 +67,8 @@ data class Contact(
         }
     }
 
-    data class Email(val type: Type, val value: String) {
-        sealed class Type {
+    @Serializable data class Email(val type: Type, val value: String) {
+        @Serializable sealed class Type {
             data object Home: Type()
             data object Work: Type()
             data object Other: Type()
@@ -83,7 +85,8 @@ data class Contact(
         if (other !is Contact) return false
 
         return id == other.id &&
-                name == other.name &&
+                firstName() == other.firstName() &&
+                lastName() == other.lastName() &&
                 mobilePhone() == other.mobilePhone() &&
                 workPhone() == other.workPhone() &&
                 homeEmail() == other.homeEmail() &&

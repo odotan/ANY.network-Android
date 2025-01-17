@@ -244,7 +244,7 @@ private fun Home(
     val context = LocalContext.current
 
     LaunchedEffect(lifecycleOwner) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.CREATED) {
             Timber.i("home start animation start")
             viewModel.reloadData()
             viewModel.loadProfile()
@@ -409,7 +409,8 @@ private fun Home(
             val hexGridContacts by viewModel.hexGridItems.collectAsState()
             val optimizedHexGridContacts by remember {
                 derivedStateOf {
-                    hexGridContacts.log { "optimizedHexGridContacts" }
+                    hexGridContacts.size.log { "optimizedHexGridContacts size" }
+                    hexGridContacts
                 }
             }
 

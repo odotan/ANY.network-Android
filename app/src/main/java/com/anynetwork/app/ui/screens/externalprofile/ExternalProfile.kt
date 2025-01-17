@@ -23,6 +23,7 @@ import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.anchoredDraggable
+import androidx.compose.foundation.gestures.animateTo
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -56,6 +57,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -64,6 +66,9 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.FocusState
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
@@ -148,6 +153,7 @@ import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.Up
 import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateWorkEmail
 import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateWorkFax
 import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateWorkPhone
+import com.anynetwork.app.ui.screens.home.HomeViewModel
 import com.anynetwork.app.ui.screens.myprofile.offsetToAvoidKeyboard
 import com.anynetwork.app.ui.theme.DarkBlue
 import com.anynetwork.app.ui.theme.EmailColor
@@ -172,6 +178,8 @@ import com.anynetwork.app.ui.utils.xdph
 import com.anynetwork.app.ui.utils.xdpv
 import com.google.accompanist.insets.ExperimentalAnimatedInsets
 import com.yalantis.ucrop.UCrop
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.File
 import java.util.UUID
@@ -216,6 +224,10 @@ fun ExternalProfileRoot(
                 val callIntent = Intent(Intent.ACTION_DIAL, number)
                 context.startActivity(callIntent)
                 onViewEvent(ExternalProfileViewEvent.ClearViewEffect)
+            }
+            is ExternalProfileViewEffect.ContactUpdated -> {
+                val homeViewModel = hiltViewModel<HomeViewModel>()
+                homeViewModel.reloadData()
             }
             else -> {}
         }
@@ -281,6 +293,8 @@ private fun ExternalProfile(
     isEnterAnimationFinished: Boolean
 ) {
     isEnterAnimationFinished.log { "isEnterAnimationFinished" }
+    val coroutineScope = rememberCoroutineScope()
+
     val scale = gridColumns / 4.7f
     var cellWidth: Int? by remember { mutableStateOf(null) }
     var cellHeight: Int? by remember { mutableStateOf(null) }
@@ -462,7 +476,14 @@ private fun ExternalProfile(
         HexagonTextField(
             modifier = Modifier
                 .padding(top = 18.fdpv)
-                .height(54.fdpv),
+                .height(54.fdpv)
+                .onFocusChanged { focusState ->
+                    if (focusState.isFocused) {
+                        coroutineScope.launch {
+                            anchoredDraggableState.animateTo(SheetValue.Expanded)
+                        }
+                    }
+                },
             focusRequester = focusRequester,
             value = value,
             onValueChange = onValueChange,
@@ -522,15 +543,17 @@ private fun ExternalProfile(
 
     val nestedScrollConnection = remember {
         object : NestedScrollConnection {
-            // Handle pre-scroll (before LazyColumn starts scrolling)
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                val isLazyColumnAtTop = listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0
-                // Only handle scroll if sheet is not fully expanded
-                if (anchoredDraggableState.currentValue != SheetValue.Expanded || (anchoredDraggableState.currentValue == SheetValue.Expanded && available.y > 0 && isLazyColumnAtTop)) {
-                    anchoredDraggableState.dispatchRawDelta(available.y)
-                    return available
+                val delta = available.y
+
+                // If the draggable sheet can still move
+                return if (delta < 0 || anchoredDraggableState.offset > expandedOffset) {
+                    // Consume the gesture for the draggable sheet first
+                    val consumed = anchoredDraggableState.dispatchRawDelta(delta)
+                    Offset(x = 0f, y = consumed) // Return the consumed delta
+                } else {
+                    Offset.Zero // Let LazyColumn handle it
                 }
-                return Offset.Zero // Let LazyColumn handle the scroll
             }
 
             override fun onPostScroll(
@@ -538,25 +561,23 @@ private fun ExternalProfile(
                 available: Offset,
                 source: NestedScrollSource
             ): Offset {
-                val isLazyColumnAtTop = listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0
-                if (anchoredDraggableState.currentValue != SheetValue.Expanded || (anchoredDraggableState.currentValue == SheetValue.Expanded && available.y > 0 && isLazyColumnAtTop)) {
-                    anchoredDraggableState.dispatchRawDelta(available.y)
-                    return available
-                }
-                return Offset.Zero // Let LazyColumn handle the scroll
+                val delta = available.y
+
+                // If there's remaining drag, let the draggable sheet handle it
+                val consumed = anchoredDraggableState.dispatchRawDelta(delta)
+                return Offset(x = 0f, y = consumed) // Return how much the draggable consumed
             }
 
-            // Handle fling gestures
+//            override fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
+//                // Optionally handle fling here if needed
+//                return Velocity.Zero
+//            }
             override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
-                // If sheet isn't fully expanded, or LazyColumn is at top and fling is downward, let the AnchoredDraggable handle it
-                val isLazyColumnAtTop = listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0
-                if (anchoredDraggableState.currentValue != SheetValue.Expanded || (anchoredDraggableState.currentValue == SheetValue.Expanded && available.y > 0 && isLazyColumnAtTop)) {
-                    anchoredDraggableState.settle(available.y)
-                }
                 return Velocity.Zero
             }
         }
     }
+
 
     val alpha = 1 - dragPercentage.value/100f
     val itemAlpha by animateFloatAsState(
@@ -586,7 +607,7 @@ private fun ExternalProfile(
 
                 )*/EmptyHexagonContentStyle(
                     id = cellIndex,
-                    background = SingleColor(backgroundColor)
+                    background = SingleColor(backgroundColor.copy(alpha = backgroundColor.alpha * alpha))
                 )
                 profilePictureCellPosition.isSame(column, row) -> remember(viewState.mode) {
                     CustomHexagonContentStyle(
@@ -1191,7 +1212,7 @@ private fun ExternalProfile(
                                 .imePadding()
                                 .nestedScroll(nestedScrollConnection),
                             state = listState,
-                            userScrollEnabled = dragPercentage.value.log { "dragPercentage" } == 100f,
+//                            userScrollEnabled = dragPercentage.value.log { "dragPercentage" } == 100f,
                         ) {
                             item {
                                 Spacer(modifier = Modifier.height(46.fdpv))
@@ -1206,7 +1227,14 @@ private fun ExternalProfile(
                                     HexagonTextField(
                                         modifier = Modifier
                                             .weight(1f)
-                                            .height(54.fdpv),
+                                            .height(54.fdpv)
+                                            .onFocusChanged { focusState ->
+                                                if (focusState.isFocused) {
+                                                    coroutineScope.launch {
+                                                        anchoredDraggableState.animateTo(SheetValue.Expanded)
+                                                    }
+                                                }
+                                            },
                                         focusRequester = firstNameFocusRequester,
                                         value = firstName,
                                         onValueChange = { newValue ->
@@ -1224,7 +1252,14 @@ private fun ExternalProfile(
                                     HexagonTextField(
                                         modifier = Modifier
                                             .weight(1f)
-                                            .height(54.fdpv),
+                                            .height(54.fdpv)
+                                            .onFocusChanged { focusState ->
+                                                if (focusState.isFocused) {
+                                                    coroutineScope.launch {
+                                                        anchoredDraggableState.animateTo(SheetValue.Expanded)
+                                                    }
+                                                }
+                                            },
                                         focusRequester = lastNameFocusRequester,
                                         value = lastName,
                                         onValueChange = { newValue ->
@@ -1244,7 +1279,14 @@ private fun ExternalProfile(
                                     HexagonTextField(
                                         modifier = Modifier
                                             .padding(top = 16.fdpv)
-                                            .height(54.fdpv),
+                                            .height(54.fdpv)
+                                            .onFocusChanged { focusState ->
+                                                if (focusState.isFocused) {
+                                                    coroutineScope.launch {
+                                                        anchoredDraggableState.animateTo(SheetValue.Expanded)
+                                                    }
+                                                }
+                                            },
                                         focusRequester = companyFocusRequester,
                                         value = company,
                                         onValueChange = { newValue ->
