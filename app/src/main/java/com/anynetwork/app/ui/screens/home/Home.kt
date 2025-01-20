@@ -1176,7 +1176,8 @@ fun BottomSheet(
                             ),
                             blendMode = BlendMode.DstIn
                         )
-                    },
+                    }
+                    .imePadding(),
                 state = listState,
                 userScrollEnabled = anchoredDraggableState.currentValue == SheetValue.Expanded || anchoredDraggableState.currentValue == SheetValue.Full
             ) {
@@ -1250,7 +1251,7 @@ fun BottomSheet(
                     }
                 }
                 item {
-                    Spacer(modifier = Modifier.height(300.fdpv))
+                    Spacer(modifier = Modifier.height(if (!screenMode.isSearching) 300.fdpv else 160.xdpv))
                 }
             }
         }

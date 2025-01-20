@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -70,6 +71,7 @@ import com.anynetwork.app.ui.components.zoomable.ScrollGesturePropagation
 import com.anynetwork.app.ui.components.zoomable.rememberZoomState
 import com.anynetwork.app.ui.components.zoomable.zoomable
 import com.anynetwork.app.ui.utils.log
+import com.gigamole.composeshadowsplus.common.shadowsPlus
 import kotlinx.coroutines.delay
 import kotlinx.parcelize.Parcelize
 import timber.log.Timber
@@ -356,13 +358,13 @@ fun HexagonalGrid(
                                             hoveredItem = targetIndex
                                             // Handle drop logic here
                                         }
-                                        val centerX =
-                                            draggedItemCoordinates.positionInRoot().x + draggedItemCoordinates.size.width / 2
-                                        val centerY =
-                                            draggedItemCoordinates.positionInRoot().y + draggedItemCoordinates.size.height / 2
+                                        val x =
+                                            draggedItemCoordinates.positionInRoot().x
+                                        val y =
+                                            draggedItemCoordinates.positionInRoot().y
 
                                         if (draggedItem == index) {
-                                            draggedPosition = Offset(centerX, centerY)
+                                            draggedPosition = Offset(x, y)
                                         }
                                     }
                                 }
@@ -400,14 +402,15 @@ fun HexagonalGrid(
             ) {
                 StatelessRoundedHexagon(
                     modifier = Modifier
-                        .size((cellWidth/* + verticalBorder*/) * zoomState.scale * 1.2f / gridScaling)
+                        .size((cellWidth + verticalBorder + verticalBorder) * zoomState.scale / gridScaling)
                         .alpha(0.8f),
                     shape = roundedPolygonShape,
+                    shadowStyle = ShadowStyle.Shown(),
                     contentStyle = gridCellsItems[index],
-                    verticalBorder = verticalBorder,
-                    horizontalBorder = horizontalBorder,
+                    verticalBorder = 0.dp,
+                    horizontalBorder = 0.dp,
                     drawOverlay = false,
-                    scale = zoomState.scale * 1.2f / gridScaling
+                    scale = zoomState.scale * 1f / gridScaling
                 )
             }
         }
@@ -422,6 +425,7 @@ private fun StatelessRoundedHexagon(
     onClick: ((Offset) -> Unit)? = null,
     showIndexes: Boolean = false,
     index: Int? = null,
+    shadowStyle: ShadowStyle = ShadowStyle.None,
     verticalBorder: Dp,
     horizontalBorder: Dp,
     drawOverlay: Boolean = true,
@@ -443,6 +447,9 @@ private fun StatelessRoundedHexagon(
                 .aspectRatio(79.93f / 89.99f)
                 .graphicsLayer {
                     if (shape != null) {
+                        if (shadowStyle is ShadowStyle.Shown) {
+                            shadowElevation = 10f
+                        }
                         clip = true
                         this.shape = shape
                     }
@@ -452,7 +459,13 @@ private fun StatelessRoundedHexagon(
                         Unit,
                         pointerInput
                     ) else Modifier
-                ),
+                )
+//                .then(
+//                    if (shadowStyle is ShadowStyle.Shown && shape != null) {
+//                        Modifier.shadowsPlus(shape = shape, color = shadowStyle.color)
+//                    } else Modifier
+//                )
+            ,
             onClick = onClick,
             contentStyle = contentStyle,
             hovered = hovered,

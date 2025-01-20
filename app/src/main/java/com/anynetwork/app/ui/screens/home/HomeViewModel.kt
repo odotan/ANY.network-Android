@@ -221,10 +221,6 @@ class HomeViewModel @Inject constructor(
         return when (viewState.value.mode) {
             is HomeScreenMode.SearchingGrid, HomeScreenMode.SearchingList -> {
                 searchContacts.value.toMutableList()
-                    .apply {
-                        addAll(searchContacts.value)
-                        addAll(searchContacts.value)
-                    }
                     .map { GridItem.SearchGridItem(it) }
             }
             else -> {
