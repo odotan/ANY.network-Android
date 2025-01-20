@@ -42,10 +42,12 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -55,8 +57,13 @@ import androidx.graphics.shapes.RoundedPolygon
 import coil.compose.rememberAsyncImagePainter
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import coil.size.Scale
 import com.anynetwork.app.R
+import com.anynetwork.app.model.Contact
+import com.anynetwork.app.ui.components.text.AutoSizeText
+import com.anynetwork.app.ui.screens.home.GridItem
 import com.anynetwork.app.ui.theme.montserratFontFamily
+import com.anynetwork.app.ui.utils.csp
 import com.anynetwork.app.ui.utils.fdph
 import com.anynetwork.app.ui.utils.fdpv
 import com.anynetwork.app.ui.utils.fsp
@@ -126,6 +133,7 @@ class PopupHexagonContentStyle(
 ) {
     data class Option(val title: String, val message: String, val onClick: () -> Unit)
 }
+
 @Stable
 class ImageHexagonContentStyle(
     id: Int,
@@ -178,6 +186,29 @@ class IconHexagonContentStyle(
         data class VectorResource(val id: Int): Image()
     }
 }
+
+@Stable
+class ContactContentStyle(
+    id: Int,
+    background: Background,
+    isDraggable: Boolean = true,
+    isHoverable: Boolean = true,
+    removableStrategy: RemovableStrategy? = null,
+    val onClick: ((Offset) -> Unit) = { _ -> },
+    val onLongClick: (() -> Unit) = {},
+    val isShakable: Boolean = false,
+    val gridColumns: Int,
+    val gridScaling: Float,
+    val contact: Contact,
+    val badge: GridItem.Badge? = null
+): NontransparentHexagonContentStyle(
+    id = id,
+    background = background,
+    isDraggable = isDraggable,
+    isHoverable = isHoverable,
+    removableStrategy = removableStrategy
+)
+
 @Stable
 class CustomHexagonContentStyle(
     id: Int,
@@ -256,6 +287,40 @@ fun RoundedHexagon(
                     contentAlignment = Alignment.Center
                     ) {
                     when (contentStyle) {
+                        is ContactContentStyle -> {
+                            if (contentStyle.contact.avatarUri != null) {
+                                Image(
+                                    modifier = Modifier
+                                        .fillMaxSize(),
+                                    painter = rememberAsyncImagePainter(
+                                        model = ImageRequest.Builder(LocalContext.current)
+                                            .data(contentStyle.contact.avatarUri)
+                                            .size(coil.size.Size.ORIGINAL)
+                                            .scale(scale = Scale.FILL)
+                                            .build()
+                                    ),
+                                    contentScale = ContentScale.Crop,
+                                    contentDescription = null,
+                                )
+                            } else {
+                                val fullname = contentStyle.contact
+                                    .name
+                                    .uppercase()
+                                AutoSizeText(
+                                    modifier = Modifier.fillMaxSize(0.9f),
+                                    text = fullname,
+                                    maxLines = if (fullname.contains(" ")) 2 else 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    color = Color(0xFFAFAEB8),
+                                    alignment = Alignment.Center,
+                                    maxTextSize = 11.csp * (LocalConfiguration.current.screenWidthDp.dp / contentStyle.gridColumns / 79.93f.fdpv) * scale * contentStyle.gridScaling,
+                                    style = TextStyle(
+                                        fontFamily = montserratFontFamily,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                )
+                            }
+                        }
                         is TrashCanHexagonContentStyle -> {
                             val alpha by animateFloatAsState(
                                 targetValue = when {

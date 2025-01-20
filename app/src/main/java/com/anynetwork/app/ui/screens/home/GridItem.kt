@@ -1,5 +1,7 @@
 package com.anynetwork.app.ui.screens.home
 
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import com.anynetwork.app.R
@@ -8,6 +10,8 @@ import com.anynetwork.app.ui.theme.EmailColor
 import com.anynetwork.app.ui.theme.GreenColor
 import com.anynetwork.app.ui.theme.YellowColor
 
+@Stable
+@Immutable
 sealed class GridItem(val contact: Contact?, val badge: Badge? = null) {
     class FavoritedContactGridItem(contact: Contact): GridItem(contact, Badge.FavoriteBadge)
     class InteractionGridItem(contact: Contact, val interactionId: Long, badge: Badge?): GridItem(contact, badge) {
@@ -21,6 +25,8 @@ sealed class GridItem(val contact: Contact?, val badge: Badge? = null) {
     class SearchGridItem(contact: Contact): GridItem(contact, null)
     class EmptyGridItem: GridItem(null, null)
 
+    @Stable
+    @Immutable
     sealed class Badge(open val color: Color, open val iconResId: Int, open val iconColorFilter: ColorFilter? = null) {
         data object FavoriteBadge: Badge(
             color = YellowColor,

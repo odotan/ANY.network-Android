@@ -1,10 +1,12 @@
 package com.anynetwork.app.model
 
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.Stable
 import kotlinx.serialization.Serializable
 
 @Serializable
 @Immutable
+@Stable
 data class Contact(
     val id: Long,
     val name: String,
@@ -95,16 +97,16 @@ data class Contact(
                 isFavorite == other.isFavorite
     }
 
-//    override fun hashCode(): Int {
-//        var result = id.hashCode()
-//        result = 31 * result + name.hashCode()
-//        result = 31 * result + phones.hashCode()
-//        result = 31 * result + emails.hashCode()
-//        result = 31 * result + (avatarUri?.hashCode() ?: 0)
-//        result = 31 * result + isFavorite.hashCode()
-//        result = 31 * result + (company?.hashCode() ?: 0)
-//        result = 31 * result + (title?.hashCode() ?: 0)
-//        result = 31 * result + (department?.hashCode() ?: 0)
-//        return result
-//    }
+    override fun hashCode(): Int {
+        var result = id.hashCode()
+        result = 31 * result + name.hashCode()
+        result = 31 * result + phones.hashCode()
+        result = 31 * result + emails.hashCode()
+        result = 31 * result + (avatarUri?.hashCode() ?: 0)
+        result = 31 * result + isFavorite.hashCode()
+        result = 31 * result + (company?.hashCode() ?: 0)
+        result = 31 * result + (title?.hashCode() ?: 0)
+        result = 31 * result + (department?.hashCode() ?: 0)
+        return result
+    }
 }

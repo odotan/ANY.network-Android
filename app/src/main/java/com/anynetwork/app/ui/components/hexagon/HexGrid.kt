@@ -3,6 +3,8 @@
 package com.anynetwork.app.ui.components.hexagon
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Parcelable
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -70,6 +72,9 @@ import com.anynetwork.app.ui.components.hexagon.HexGridCellPosition.Neighbor.Top
 import com.anynetwork.app.ui.components.zoomable.ScrollGesturePropagation
 import com.anynetwork.app.ui.components.zoomable.rememberZoomState
 import com.anynetwork.app.ui.components.zoomable.zoomable
+import com.anynetwork.app.ui.screens.home.GridItem
+import com.anynetwork.app.ui.utils.fdph
+import com.anynetwork.app.ui.utils.fdpv
 import com.anynetwork.app.ui.utils.log
 import com.gigamole.composeshadowsplus.common.shadowsPlus
 import kotlinx.coroutines.delay
@@ -276,6 +281,7 @@ fun HexagonalGrid(
                             is CustomHexagonContentStyle -> contentStyle.onClick.invoke(
                                 cellPosition.boundsInRoot().center
                             )
+                            is ContactContentStyle -> contentStyle.onClick.invoke(cellPosition.boundsInRoot().center)
 
                             is IconHexagonContentStyle -> contentStyle.onClick.invoke(cellPositions[index]!!.positionOnScreen())
                             else -> {}
@@ -482,6 +488,60 @@ private fun StatelessRoundedHexagon(
                 contentStyle.overlay?.invoke(this)
             } else if (contentStyle is CustomHexagonContentStyle) {
                 contentStyle.overlay?.invoke(this)
+            } else if (contentStyle is ContactContentStyle && contentStyle.badge != null) {
+                contentStyle.badge.let {
+                    Badge(
+                        Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(
+                                bottom = 10.fdpv * (LocalConfiguration.current.screenWidthDp.dp / contentStyle.gridColumns / 79.93f.fdpv * contentStyle.gridScaling),
+                                end = 11.fdph * (LocalConfiguration.current.screenWidthDp.dp / contentStyle.gridColumns / 79.93f.fdpv * contentStyle.gridScaling)
+                            )
+                            .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / contentStyle.gridColumns / 79.93f.fdpv * contentStyle.gridScaling))
+                            .zIndex(2f),
+                        color = it.color,
+                        iconResourceId = it.iconResId,
+                        iconColorFilter = it.iconColorFilter,
+                        onClick = {
+//                        when (it) {
+//                            is GridItem.Badge.PhoneBadge -> {
+//                                val mobilePhone =
+//                                    gridItem.contact!!.phone
+//                                val number =
+//                                    Uri.parse("tel:$mobilePhone")
+//                                val callIntent =
+//                                    Intent(
+//                                        Intent.ACTION_DIAL,
+//                                        number
+//                                    )
+//                                context.startActivity(callIntent)
+//                            }
+//
+//                            is GridItem.Badge.EmailBadge -> {
+//                                val email = gridItem.contact!!.email
+//                                val intent =
+//                                    Intent(Intent.ACTION_SENDTO)
+//                                intent.putExtra(
+//                                    Intent.EXTRA_EMAIL,
+//                                    email
+//                                )
+//                                intent.type = "text/plain"
+//                                intent.data =
+//                                    Uri.parse("mailto:$email")
+//
+//                                context.startActivity(
+//                                    Intent.createChooser(
+//                                        intent,
+//                                        "Send Email"
+//                                    )
+//                                )
+//                            }
+//
+//                            else -> {}
+//                        }
+                        }
+                    )
+                }
             }
         }
     }

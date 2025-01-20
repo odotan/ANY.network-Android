@@ -112,6 +112,7 @@ import com.anynetwork.app.ui.components.dialog.Message
 import com.anynetwork.app.ui.components.dialog.MessageAction
 import com.anynetwork.app.ui.components.hexagon.Badge
 import com.anynetwork.app.ui.components.hexagon.ChangeScale
+import com.anynetwork.app.ui.components.hexagon.ContactContentStyle
 import com.anynetwork.app.ui.components.hexagon.CoverBox
 import com.anynetwork.app.ui.components.hexagon.CustomHexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.DeleteButton
@@ -491,9 +492,9 @@ private fun Home(
                             }
                         } else {
                             val contactForCell = viewModel.cellPositions.take(optimizedHexGridContacts.size)
-                                    .find {
-                                        it.getIndex() == cellIndex
-                                    }
+                                .find {
+                                    it.getIndex() == cellIndex
+                                }
 
                             if (contactForCell != null && optimizedHexGridContacts[viewModel.cellPositions.indexOf(
                                     contactForCell
@@ -650,8 +651,8 @@ private fun Home(
                             }
 
                         }
-                    }.toMutableList()
-                }.toMutableList()
+                    }
+                }
 
                 Timber.i("home start animation reload items completed")
                 list
