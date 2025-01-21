@@ -281,6 +281,7 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
             if (homeFax == null) add(DropDownDialogMenuCategory("Home Fax") {
                 onClick.invoke("Home Fax")
             })
+
             if (pager == null) add(DropDownDialogMenuCategory("Pager") {
                 onClick.invoke("Pager")
             })
@@ -478,46 +479,37 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
 
     val nestedScrollConnection = remember {
         object : NestedScrollConnection {
-            // Handle pre-scroll (before LazyColumn starts scrolling)
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                // Only intercept the scroll if the sheet is not expanded, or if it's expanded but LazyColumn is at the top and the user is dragging down
-                val isLazyColumnAtTop = listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0
-                return if ((anchoredDraggableState.currentValue != SheetValue.Expanded || (anchoredDraggableState.currentValue == SheetValue.Expanded && available.y > 0 && isLazyColumnAtTop))) {
-                    // If the sheet isn't fully expanded, or LazyColumn is at top and dragging downwards, consume scrolls
-                    anchoredDraggableState.dispatchRawDelta(available.y)
-                    available
+                val delta = available.y
+
+                // If the draggable sheet can still move
+                return if (delta < 0 || anchoredDraggableState.offset > expandedOffset) {
+                    // Consume the gesture for the draggable sheet first
+                    val consumed = anchoredDraggableState.dispatchRawDelta(delta)
+                    Offset(x = 0f, y = consumed) // Return the consumed delta
                 } else {
-                    // Otherwise, allow LazyColumn to handle the scroll
-                    Offset.Zero
+                    Offset.Zero // Let LazyColumn handle it
                 }
             }
 
-            // Handle post-scroll (after LazyColumn scrolls)
             override fun onPostScroll(
                 consumed: Offset,
                 available: Offset,
                 source: NestedScrollSource
             ): Offset {
-                // Handle dragging when sheet isn't fully expanded
-                val isLazyColumnAtTop = listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0
-                return if (anchoredDraggableState.currentValue != SheetValue.Expanded || (anchoredDraggableState.currentValue == SheetValue.Expanded && available.y > 0 && isLazyColumnAtTop)) {
-                    anchoredDraggableState.dispatchRawDelta(available.y)
-                    available
-                } else {
-                    Offset.Zero
-                }
+                val delta = available.y
+
+                // If there's remaining drag, let the draggable sheet handle it
+                val consumed = anchoredDraggableState.dispatchRawDelta(delta)
+                return Offset(x = 0f, y = consumed) // Return how much the draggable consumed
             }
 
-            // Handle fling gestures
+            //            override fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
+//                // Optionally handle fling here if needed
+//                return Velocity.Zero
+//            }
             override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
-                // If sheet isn't fully expanded, or LazyColumn is at top and fling is downward, let the AnchoredDraggable handle it
-                val isLazyColumnAtTop = listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0
-                return if (anchoredDraggableState.currentValue != SheetValue.Expanded || (anchoredDraggableState.currentValue == SheetValue.Expanded && available.y > 0 && isLazyColumnAtTop)) {
-                    anchoredDraggableState.settle(available.y)
-                    available
-                } else {
-                    Velocity.Zero
-                }
+                return Velocity.Zero
             }
         }
     }

@@ -952,7 +952,6 @@ fun AnimatedCover() {
         animationSpec = tween(coverAnimationDuration),
         finishedListener = {
             showHomeCover = false
-//                viewModel.reloadData()
         }
     )
     CoverBox(alpha)

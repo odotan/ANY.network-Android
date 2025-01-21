@@ -578,7 +578,6 @@ private fun ExternalProfile(
         }
     }
 
-
     val alpha = 1 - dragPercentage.value/100f
     val itemAlpha by animateFloatAsState(
         targetValue = if (viewState.mode is ExternalProfileMode.Edit) .3f else 1f,
