@@ -15,7 +15,7 @@ data class Contact(
     val company: String? = null,
     val title: String? = null,
     val department: String? = null,
-    val priority: Int? = 0
+    val priority: Int? = 0,
 ) {
     fun getDisplayNameFirstLetters(): String {
         return name.split(" ")

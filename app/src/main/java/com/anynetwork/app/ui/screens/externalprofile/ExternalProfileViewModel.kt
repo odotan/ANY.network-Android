@@ -212,61 +212,62 @@ class ExternalProfileViewModel @Inject constructor(
                             _navigationEventFlow.value = NavigateBack
                         }
                     } else {
+                        val updatedContact = Contact(
+                            id = _contact.value!!.id,
+                            name = "${_viewState.value.firstName} ${_viewState.value.lastName}",
+                            company = _viewState.value.company,
+                            phones = mutableListOf<Contact.Phone>().apply {
+                                _viewState.value.mobilePhone?.let {
+                                    add(Contact.Phone(type = Contact.Phone.Type.Mobile, value = it))
+                                }
+                                _viewState.value.homePhone?.let {
+                                    add(Contact.Phone(type = Contact.Phone.Type.Home, value = it))
+                                }
+                                _viewState.value.workPhone?.let {
+                                    add(Contact.Phone(type = Contact.Phone.Type.Work, value = it))
+                                }
+                                _viewState.value.mainPhone?.let {
+                                    add(Contact.Phone(type = Contact.Phone.Type.Main, value = it))
+                                }
+                                _viewState.value.workFax?.let {
+                                    add(
+                                        Contact.Phone(
+                                            type = Contact.Phone.Type.WorkFax,
+                                            value = it
+                                        )
+                                    )
+                                }
+                                _viewState.value.homeFax?.let {
+                                    add(
+                                        Contact.Phone(
+                                            type = Contact.Phone.Type.HomeFax,
+                                            value = it
+                                        )
+                                    )
+                                }
+                                _viewState.value.pager?.let {
+                                    add(Contact.Phone(type = Contact.Phone.Type.Pager, value = it))
+                                }
+                                _viewState.value.otherPhone?.let {
+                                    add(Contact.Phone(type = Contact.Phone.Type.Other, value = it))
+                                }
+                            },
+                            emails = mutableListOf<Contact.Email>().apply {
+                                _viewState.value.homeEmail?.let {
+                                    add(Contact.Email(type = Contact.Email.Type.Home, value = it))
+                                }
+                                _viewState.value.workEmail?.let {
+                                    add(Contact.Email(type = Contact.Email.Type.Work, value = it))
+                                }
+                                _viewState.value.otherEmail?.let {
+                                    add(Contact.Email(type = Contact.Email.Type.Other, value = it))
+                                }
+                            },
+                            avatarUri = _viewState.value.photoUri,
+                        )
                         val editContactResult = contactsRepository.editContact(
                             _contact.value!!.id,
-                            Contact(
-                                id = _contact.value!!.id,
-                                name = "${_viewState.value.firstName} ${_viewState.value.lastName}",
-                                company = _viewState.value.company,
-                                phones = mutableListOf<Contact.Phone>().apply {
-                                    _viewState.value.mobilePhone?.let {
-                                        add(Contact.Phone(type = Contact.Phone.Type.Mobile, value = it))
-                                    }
-                                    _viewState.value.homePhone?.let {
-                                        add(Contact.Phone(type = Contact.Phone.Type.Home, value = it))
-                                    }
-                                    _viewState.value.workPhone?.let {
-                                        add(Contact.Phone(type = Contact.Phone.Type.Work, value = it))
-                                    }
-                                    _viewState.value.mainPhone?.let {
-                                        add(Contact.Phone(type = Contact.Phone.Type.Main, value = it))
-                                    }
-                                    _viewState.value.workFax?.let {
-                                        add(
-                                            Contact.Phone(
-                                                type = Contact.Phone.Type.WorkFax,
-                                                value = it
-                                            )
-                                        )
-                                    }
-                                    _viewState.value.homeFax?.let {
-                                        add(
-                                            Contact.Phone(
-                                                type = Contact.Phone.Type.HomeFax,
-                                                value = it
-                                            )
-                                        )
-                                    }
-                                    _viewState.value.pager?.let {
-                                        add(Contact.Phone(type = Contact.Phone.Type.Pager, value = it))
-                                    }
-                                    _viewState.value.otherPhone?.let {
-                                        add(Contact.Phone(type = Contact.Phone.Type.Other, value = it))
-                                    }
-                                },
-                                emails = mutableListOf<Contact.Email>().apply {
-                                    _viewState.value.homeEmail?.let {
-                                        add(Contact.Email(type = Contact.Email.Type.Home, value = it))
-                                    }
-                                    _viewState.value.workEmail?.let {
-                                        add(Contact.Email(type = Contact.Email.Type.Work, value = it))
-                                    }
-                                    _viewState.value.otherEmail?.let {
-                                        add(Contact.Email(type = Contact.Email.Type.Other, value = it))
-                                    }
-                                },
-                                avatarUri = _viewState.value.photoUri,
-                            )
+                            updatedContact
                         )
                         if (editContactResult) {
                             _viewState.value = _viewState.value.copy(
@@ -360,24 +361,30 @@ class ExternalProfileViewModel @Inject constructor(
             }
 
             ExternalProfileViewEvent.EmailButtonClick -> viewModelScope.launch {
-                if (interactionRepository.getAllInteractions().firstOrNull { it.type == Interaction.Type.Email && it.contactId == contact.value!!.id } == null) {
+                val interaction = interactionRepository.getAllInteractions().firstOrNull { it.type == Interaction.Type.Email && it.contactId == contact.value!!.id }
+                if (interaction == null) {
                     interactionRepository.insertInteraction(
                         Interaction(
                             contactId = contact.value!!.id,
                             type = Interaction.Type.Email
                         )
                     )
+                } else {
+                    interactionRepository.updateInteractionLastModified(interaction.id)
                 }
                 _viewEffectFlow.value = ExternalProfileViewEffect.WriteEmail(contact.value!!.email!!)
             }
             ExternalProfileViewEvent.PhoneButtonClick -> viewModelScope.launch {
-                if (interactionRepository.getAllInteractions().firstOrNull { it.type == Interaction.Type.Phone && it.contactId == contact.value!!.id } == null) {
+                val interaction = interactionRepository.getAllInteractions().firstOrNull { it.type == Interaction.Type.Phone && it.contactId == contact.value!!.id }
+                if (interaction == null) {
                     interactionRepository.insertInteraction(
                         Interaction(
                             contactId = contact.value!!.id,
                             type = Interaction.Type.Phone
                         )
                     )
+                } else {
+                    interactionRepository.updateInteractionLastModified(interaction.id)
                 }
                 _viewEffectFlow.value = ExternalProfileViewEffect.CallPhoneNumber(contact.value!!.phone!!)
             }

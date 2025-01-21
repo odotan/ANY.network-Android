@@ -3,6 +3,7 @@ package com.anynetwork.app.db.entity
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.anynetwork.app.model.Contact
+import com.anynetwork.app.model.Interaction
 
 @Entity(tableName = "contacts")
 data class DbContact(
@@ -20,7 +21,7 @@ data class DbContact(
     val workEmail: String? = null,
     val otherEmail: String? = null,
     val avatarUri: String? = null,
-    val isFavorite: Boolean = false
+    val isFavorite: Boolean = false,
 )
 
 fun DbContact.unwrap(): Contact = Contact(
@@ -60,5 +61,5 @@ fun Contact.wrap(): DbContact = DbContact(
     workEmail = this.workPhone(),
     otherEmail = this.otherEmail(),
     avatarUri = this.avatarUri,
-    isFavorite = this.isFavorite
+    isFavorite = this.isFavorite,
 )

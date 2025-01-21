@@ -3,7 +3,6 @@
 package com.anynetwork.app.ui.screens.home
 
 import android.content.Context
-import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import androidx.compose.animation.AnimatedContent
@@ -33,11 +32,15 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -46,26 +49,30 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat.getSystemService
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.viewModelScope
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import coil.size.Size
 import com.anynetwork.app.R
+import com.anynetwork.app.data.carouselInteraction.CarouselInteractionRepository
+import com.anynetwork.app.data.contacts.ContactsRepository
+import com.anynetwork.app.data.interaction.InteractionRepository
 import com.anynetwork.app.model.Contact
 import com.anynetwork.app.model.Interaction
 import com.anynetwork.app.ui.components.CircularCarousel
 import com.anynetwork.app.ui.components.PickerItem
 import com.anynetwork.app.ui.components.hexagon.CustomHexagonContentStyle
-import com.anynetwork.app.ui.components.hexagon.IconHexagonContentStyle
-import com.anynetwork.app.ui.components.hexagon.IconHexagonContentStyle.Image.VectorResource
-import com.anynetwork.app.ui.components.hexagon.ImageHexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.NontransparentHexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.RoundedHexagon
 import com.anynetwork.app.ui.components.hexagon.RoundedPolygonShape
@@ -78,9 +85,17 @@ import com.anynetwork.app.ui.utils.csp
 import com.anynetwork.app.ui.utils.fdph
 import com.anynetwork.app.ui.utils.fdpv
 import com.anynetwork.app.ui.utils.fsp
+import com.anynetwork.app.ui.utils.log
 import com.anynetwork.app.ui.utils.xdph
 import com.anynetwork.app.ui.utils.xdpv
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import timber.log.Timber
+import javax.inject.Inject
 
 
 @Composable
@@ -91,6 +106,24 @@ fun ContactsRow(
     onInteractionClick: (Contact, Int) -> Unit,
     backgroundColor: Color = Color(0xFF1C1A23)
 ) {
+    val viewModel = hiltViewModel<ContactRowViewModel>(key = contact.id.toString()).apply {
+        loadContact(contact)
+    }
+    val viewState by viewModel.viewState.collectAsState()
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    LaunchedEffect(viewState) {
+        snapshotFlow { viewState.interactionType }
+            .collect { Timber.i("Observed interactionType change for ${contact.id}: $it") }
+    }
+
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            Timber.i("ContactsRow resumed for contact: ${contact.id}")
+            viewModel.loadContact(contact)
+        }
+    }
+
     var interactionType: Int? = remember { null }
     val polygon = remember { createPolygon() }
     val roundedPolygonShape = remember { RoundedPolygonShape(polygon) }
@@ -217,8 +250,20 @@ fun ContactsRow(
                         else -> inputList + inputList // Double the list if it has more than 3 elements
                     }
                 }
+                fun reorderList(list: List<PickerItem>, value: Int?): List<PickerItem> {
+                    if (value == null) return list
+                    val index = list.map { it.interactionType }.indexOf(value)
+                    if (index == -1) return list // If the value is not in the list, return the original list
+                    return list.subList(index, list.size) + list.subList(0, index)
+                }
+
+                val interactionType by remember {
+                    derivedStateOf {
+                        viewState.interactionType
+                    }
+                }
                 val interactionPickerItems = modifyList(
-                    mutableListOf<PickerItem>().apply {
+                    reorderList(mutableListOf<PickerItem>().apply {
                         if (!contact.mobilePhone().isNullOrEmpty()) {
                             add(
                                 PickerItem(
@@ -239,7 +284,7 @@ fun ContactsRow(
                                 )
                             )
                         }
-                    }
+                    }, interactionType)
                 )
 
                 if (interactionPickerItems.isNotEmpty()) {
@@ -253,14 +298,13 @@ fun ContactsRow(
                             numItems = interactionPickerItems.size,
                             background = backgroundColor,
                             onSnapToItem = {
-
+                                viewModel.onInteractionCarouselSpin(interactionType = interactionPickerItems.getOrNull(it))
                             },
                             onSpinned = {
                                 val newInteractionType =
                                     interactionPickerItems.getOrNull(it)?.interactionType
                                 if (interactionType != newInteractionType) {
                                     Timber.i("onSpinned to ${interactionPickerItems.getOrNull(it)?.value}")
-                                    interactionType = newInteractionType
 
                                     val vibrator =
                                         context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator?
@@ -279,11 +323,11 @@ fun ContactsRow(
                                 subtitle = interactionPickerItems.getOrNull(it)?.value ?: "phone"
                             },
                             onClick = {
+                                contact.id.log { "onClick" }
                                 onInteractionClick(
                                     contact,
                                     interactionPickerItems[it].interactionType
                                 )
-                                Timber.i("Interaction type is $it")
                             }
                         ) { index ->
                             val item = interactionPickerItems[index]
@@ -320,6 +364,31 @@ fun ContactsRow(
     }
 }
 
+@HiltViewModel
+class ContactRowViewModel @Inject constructor(
+    val carouselInteractionRepository: CarouselInteractionRepository
+): ViewModel() {
+    private val _viewState = MutableStateFlow(ContactRowViewState())
+    val viewState: StateFlow<ContactRowViewState> = _viewState
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), _viewState.value)
+
+    var contact: Contact? = null
+
+    fun loadContact(contact: Contact) = viewModelScope.launch {
+        this@ContactRowViewModel.contact = contact
+        val interaction = carouselInteractionRepository.getLatestInteraction(contact.id)
+        val interactionType = interaction?.type ?: Interaction.Type.Phone
+        _viewState.value = ContactRowViewState(interactionType = interactionType)
+    }
+
+    fun onInteractionCarouselSpin(interactionType: PickerItem?) = viewModelScope.launch {
+        carouselInteractionRepository.upsertInteraction(
+            contactId = contact!!.id,
+            interactionType = interactionType!!.interactionType
+        )
+    }
+}
+
 @ExperimentalAnimationApi
 fun addAnimation(duration: Int = 400): ContentTransform {
     return slideInHorizontally(animationSpec = tween(durationMillis = duration)) { width -> -width } + fadeIn(
@@ -328,3 +397,7 @@ fun addAnimation(duration: Int = 400): ContentTransform {
         animationSpec = tween(durationMillis = duration)
     )
 }
+
+data class ContactRowViewState(
+    val interactionType: Int? = null
+)

@@ -406,17 +406,17 @@ class HomeViewModel @Inject constructor(
             is HomeViewEvent.CarouselContactInteractionClick -> viewModelScope.launch {
                 viewAction.apply {
                     Timber.i("CarouselContactInteractionClick(contact: ${contact.name}, type: ${interactionType})")
-                    val interactionNotAddedYet = interactions.value
+                    val interaction = interactions.value
                         .firstOrNull {
                             it.type == interactionType && it.contactId == contact.id
-                        } == null
-                    if (interactionNotAddedYet) {
+                        }
+                    if (interaction == null) {
                         val interaction = Interaction(
                             contactId = contact.id,
                             type = viewAction.interactionType
                         )
                         val interactionId = interactionRepository.insertInteraction(interaction)
-                        _interactions.value.size.log { "CarouselContactInteractionClick interactions value size 1" }
+
                         _interactions.value = interactionRepository.getAllInteractions()
                         val order = addAtRandomGridPlace(
                             itemType = Order.Type.INTERACTION,
@@ -425,9 +425,12 @@ class HomeViewModel @Inject constructor(
                         gridOrder = gridOrder.apply {
                             toMutableList().add(order)
                         }
-                        _interactions.value.size.log { "CarouselContactInteractionClick interactions value size 2" }
+
+                    } else {
+                        interactionRepository.updateInteractionLastModified(interaction.id)
                     }
-                    if (!BuildConfig.DEBUG) when (viewAction.interactionType) {
+
+                    when (viewAction.interactionType) {
                         Interaction.Type.Email -> contact.email?.let { email ->
                             _viewEffectFlow.value = HomeViewEffect.WriteEmail(email)
                         }
@@ -438,7 +441,51 @@ class HomeViewModel @Inject constructor(
                             }
                         }
                     }
-                    if (interactionNotAddedYet) {
+                    if (interaction == null) {
+                        val newGridItems = processContactsForGrid(contacts.value, _interactions.value)
+                        updateHexGridItems(newGridItems)
+                    }
+                }
+            }
+            is HomeViewEvent.BadgeInteractionClick -> viewModelScope.launch {
+                viewAction.apply {
+                    Timber.i("CarouselContactInteractionClick(contact: ${contact.name}, type: ${interactionType})")
+                    val interaction = interactions.value
+                        .firstOrNull {
+                            it.type == interactionType && it.contactId == contact.id
+                        }
+                    if (interaction == null) {
+                        val interaction = Interaction(
+                            contactId = contact.id,
+                            type = viewAction.interactionType
+                        )
+                        val interactionId = interactionRepository.insertInteraction(interaction)
+
+                        _interactions.value = interactionRepository.getAllInteractions()
+                        val order = addAtRandomGridPlace(
+                            itemType = Order.Type.INTERACTION,
+                            itemId = interactionId
+                        )
+                        gridOrder = gridOrder.apply {
+                            toMutableList().add(order)
+                        }
+
+                    } else {
+                        interactionRepository.updateInteractionLastModified(interaction.id)
+                    }
+
+                    when (viewAction.interactionType) {
+                        Interaction.Type.Email -> contact.email?.let { email ->
+                            _viewEffectFlow.value = HomeViewEffect.WriteEmail(email)
+                        }
+
+                        Interaction.Type.Phone -> {
+                            _viewEffectFlow.value = contact.phone?.let { phoneNumber ->
+                                HomeViewEffect.CallPhoneNumber(phoneNumber)
+                            }
+                        }
+                    }
+                    if (interaction == null) {
                         val newGridItems = processContactsForGrid(contacts.value, _interactions.value)
                         updateHexGridItems(newGridItems)
                     }
@@ -558,6 +605,7 @@ sealed class HomeViewEvent {
     data class GridItemButtonRemove(val gridItem: GridItem): HomeViewEvent()
     data class SwapGridItems(val target: GridItem, val targetNewIndex: Int, val destination: GridItem, val destinationNewIndex: Int): HomeViewEvent()
     data class CarouselContactInteractionClick(val contact: Contact, val interactionType: Int): HomeViewEvent()
+    data class BadgeInteractionClick(val contact: Contact, val interactionType: Int): HomeViewEvent()
     data object ClearViewEffect: HomeViewEvent()
 }
 

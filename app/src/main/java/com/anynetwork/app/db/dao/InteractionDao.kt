@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.anynetwork.app.db.entity.DbContact
 import com.anynetwork.app.db.entity.DbInteraction
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface InteractionDao {
@@ -20,4 +21,11 @@ interface InteractionDao {
 
     @Query("DELETE FROM interaction WHERE id = :id")
     suspend fun deleteInteractionById(id: Long)
+
+    @Query("UPDATE interaction SET lastModified = :lastModified WHERE id = :id")
+    suspend fun updateLastModified(id: Long, lastModified: Long)
+
+    @Query("SELECT * FROM interaction WHERE contactId = :contactId ORDER BY lastModified DESC LIMIT 1")
+    fun getLatestInteraction(contactId: Long): DbInteraction?
+
 }

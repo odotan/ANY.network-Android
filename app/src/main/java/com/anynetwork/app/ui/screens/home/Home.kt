@@ -101,6 +101,7 @@ import coil.request.ImageRequest
 import coil.size.Scale
 import coil.size.Size
 import com.anynetwork.app.R
+import com.anynetwork.app.model.Interaction
 import com.anynetwork.app.ui.components.Screen
 import com.anynetwork.app.ui.components.SearchTextField
 import com.anynetwork.app.ui.components.SheetValue
@@ -267,7 +268,6 @@ private fun Home(
     var bottomSheetCurrentState by rememberSaveable { mutableStateOf(BottomSheetOffsetMode.Automatic) }
     var showBottomSheet by rememberSaveable { mutableStateOf(false) }
     var showAllowContactsPermissionsDialog by remember { mutableStateOf(false) }
-    val contacts by viewModel.contacts.collectAsState()
 
     val viewState by viewModel.viewState.collectAsState()
     LaunchedEffect(Unit) {
@@ -603,38 +603,20 @@ private fun Home(
                                                 iconResourceId = it.iconResId,
                                                 iconColorFilter = it.iconColorFilter,
                                                 onClick = {
+                                                    if (gridItem.contact == null) return@Badge
                                                     when (it) {
                                                         is GridItem.Badge.PhoneBadge -> {
-                                                            val mobilePhone =
-                                                                gridItem.contact!!.phone
-                                                            val number =
-                                                                Uri.parse("tel:$mobilePhone")
-                                                            val callIntent =
-                                                                Intent(
-                                                                    Intent.ACTION_DIAL,
-                                                                    number
-                                                                )
-                                                            context.startActivity(callIntent)
+                                                            viewModel.onViewAction(HomeViewEvent.BadgeInteractionClick(
+                                                                contact = gridItem.contact!!,
+                                                                interactionType = Interaction.Type.Phone
+                                                            ))
                                                         }
 
                                                         is GridItem.Badge.EmailBadge -> {
-                                                            val email = gridItem.contact!!.email
-                                                            val intent =
-                                                                Intent(Intent.ACTION_SENDTO)
-                                                            intent.putExtra(
-                                                                Intent.EXTRA_EMAIL,
-                                                                email
-                                                            )
-                                                            intent.type = "text/plain"
-                                                            intent.data =
-                                                                Uri.parse("mailto:$email")
-
-                                                            context.startActivity(
-                                                                Intent.createChooser(
-                                                                    intent,
-                                                                    "Send Email"
-                                                                )
-                                                            )
+                                                            viewModel.onViewAction(HomeViewEvent.BadgeInteractionClick(
+                                                                contact = gridItem.contact!!,
+                                                                interactionType = Interaction.Type.Email
+                                                            ))
                                                         }
 
                                                         else -> {}
