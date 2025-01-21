@@ -177,7 +177,6 @@ fun rememberCircularCarouselState(): CircularCarouselState = remember {
 fun CircularCarousel(
     modifier: Modifier = Modifier,
     numItems: Int,
-    background: Color = DarkBlue,
     state: CircularCarouselState = rememberCircularCarouselState(),
     onSnapToItem: ((Int) -> Unit)? = null,
     onSpinned:((Int) -> Unit)? = null,

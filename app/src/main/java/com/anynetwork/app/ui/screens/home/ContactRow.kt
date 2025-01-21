@@ -106,22 +106,18 @@ fun ContactsRow(
     onInteractionClick: (Contact, Int) -> Unit,
     backgroundColor: Color = Color(0xFF1C1A23)
 ) {
-    val viewModel = hiltViewModel<ContactRowViewModel>(key = contact.id.toString()).apply {
-        loadContact(contact)
+    val viewModel = hiltViewModel<ContactRowViewModel>(key = contact.id.toString())
+
+    LaunchedEffect(contact.id) {
+        viewModel.loadContact(contact)
     }
+
     val viewState by viewModel.viewState.collectAsState()
     val lifecycleOwner = LocalLifecycleOwner.current
 
     LaunchedEffect(viewState) {
         snapshotFlow { viewState.interactionType }
             .collect { Timber.i("Observed interactionType change for ${contact.id}: $it") }
-    }
-
-    LaunchedEffect(lifecycleOwner) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            Timber.i("ContactsRow resumed for contact: ${contact.id}")
-            viewModel.loadContact(contact)
-        }
     }
 
     var interactionType: Int? = remember { null }
@@ -262,33 +258,40 @@ fun ContactsRow(
                         viewState.interactionType
                     }
                 }
-                val interactionPickerItems = modifyList(
-                    reorderList(mutableListOf<PickerItem>().apply {
-                        if (!contact.mobilePhone().isNullOrEmpty()) {
-                            add(
-                                PickerItem(
-                                    resId = R.drawable.ic_phone,
-                                    iconTint = PhoneColor,
-                                    value = contact.mobilePhone()!!,
-                                    interactionType = Interaction.Type.Phone
+                LaunchedEffect(interactionType) {
+                    snapshotFlow { interactionType }
+                        .collect { Timber.i("Observed interactionType for ${contact.id} change: $it") }
+                }
+
+                val interactionPickerItems = remember(interactionType) {
+                    modifyList(
+                        reorderList(mutableListOf<PickerItem>().apply {
+                            if (!contact.mobilePhone().isNullOrEmpty()) {
+                                add(
+                                    PickerItem(
+                                        resId = R.drawable.ic_phone,
+                                        iconTint = PhoneColor,
+                                        value = contact.mobilePhone()!!,
+                                        interactionType = Interaction.Type.Phone
+                                    )
                                 )
-                            )
-                        }
-                        if (!contact.homeEmail().isNullOrEmpty()) {
-                            add(
-                                PickerItem(
-                                    resId = R.drawable.ic_email,
-                                    iconTint = EmailColor,
-                                    value = contact.homeEmail()!!,
-                                    interactionType = Interaction.Type.Email
+                            }
+                            if (!contact.homeEmail().isNullOrEmpty()) {
+                                add(
+                                    PickerItem(
+                                        resId = R.drawable.ic_email,
+                                        iconTint = EmailColor,
+                                        value = contact.homeEmail()!!,
+                                        interactionType = Interaction.Type.Email
+                                    )
                                 )
-                            )
-                        }
-                    }, interactionType)
-                )
+                            }
+                        }, interactionType)
+                    )
+                }
 
                 if (interactionPickerItems.isNotEmpty()) {
-                    key(contact) {
+                    key(contact.id) {
                         CircularCarousel(
                             modifier = Modifier
                                 .width(67.11.fdph)
@@ -296,9 +299,11 @@ fun ContactsRow(
                                 .clipToBounds()
                                 .align(Alignment.CenterVertically),
                             numItems = interactionPickerItems.size,
-                            background = backgroundColor,
                             onSnapToItem = {
-                                viewModel.onInteractionCarouselSpin(interactionType = interactionPickerItems.getOrNull(it))
+                                interactionPickerItems.getOrNull(it)
+                                    ?.let {
+                                        viewModel.onInteractionCarouselSpin(pickerItem = it)
+                                    }
                             },
                             onSpinned = {
                                 val newInteractionType =
@@ -375,16 +380,19 @@ class ContactRowViewModel @Inject constructor(
     var contact: Contact? = null
 
     fun loadContact(contact: Contact) = viewModelScope.launch {
+        Timber.i("loadContact for ${contact.id}")
         this@ContactRowViewModel.contact = contact
         val interaction = carouselInteractionRepository.getLatestInteraction(contact.id)
         val interactionType = interaction?.type ?: Interaction.Type.Phone
         _viewState.value = ContactRowViewState(interactionType = interactionType)
     }
 
-    fun onInteractionCarouselSpin(interactionType: PickerItem?) = viewModelScope.launch {
+    fun onInteractionCarouselSpin(pickerItem: PickerItem) = viewModelScope.launch {
+        val interactionType = pickerItem.interactionType
+//        _viewState.value = ContactRowViewState(interactionType = interactionType)
         carouselInteractionRepository.upsertInteraction(
             contactId = contact!!.id,
-            interactionType = interactionType!!.interactionType
+            interactionType = interactionType
         )
     }
 }

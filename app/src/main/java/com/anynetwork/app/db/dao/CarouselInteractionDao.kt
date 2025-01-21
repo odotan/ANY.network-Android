@@ -21,7 +21,7 @@ interface CarouselInteractionDao {
     @Query("DELETE FROM carousel_interaction WHERE id = :id")
     suspend fun deleteInteractionById(id: Long)
 
-    @Query("UPDATE carousel_interaction SET lastModified = :lastModified AND type = :interactionType WHERE contactId = :contactId")
+    @Query("UPDATE carousel_interaction SET lastModified = :lastModified, type = :interactionType WHERE contactId = :contactId")
     suspend fun updateInteraction(contactId: Long, lastModified: Long, interactionType: Int)
 
     @Query("SELECT * FROM carousel_interaction WHERE contactId = :contactId ORDER BY lastModified DESC LIMIT 1")
