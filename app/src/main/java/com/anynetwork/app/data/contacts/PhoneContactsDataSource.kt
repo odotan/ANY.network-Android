@@ -303,7 +303,7 @@ class PhoneContactsDataSource(private val context: Context): ContactsDataSource 
     override suspend fun favoriteContact(contactId: Long, isFavorite: Boolean): Boolean = withContext(Dispatchers.IO) {
         val result = Contacts(context).query()
             .where {
-                Contact.Id equalTo contactId.toString()
+                (Contact.Id equalTo contactId.toString())
             }
             .find()
             .firstOrNull()

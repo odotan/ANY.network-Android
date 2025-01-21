@@ -45,7 +45,7 @@ class HomeViewModel @Inject constructor(
     private val _contacts = MutableStateFlow<List<Contact>>(emptyList())
     val contacts: StateFlow<List<Contact>> = _contacts
         .distinctUntilChanged { old, new ->
-            old.size == new.size
+            old.isContactListIdenticalTo(new)
         }
         .onEach { newValue ->
             newValue.size.log { "contacts emitted size" }
@@ -201,6 +201,11 @@ class HomeViewModel @Inject constructor(
 
     // Extension function to compare lists deeply
     private fun List<GridItem>.isIdenticalTo(other: List<GridItem>): Boolean {
+        if (this.size != other.size) return false
+        return this.zip(other).all { (a, b) -> a == b }
+    }
+
+    private fun List<Contact>.isContactListIdenticalTo(other: List<Contact>): Boolean {
         if (this.size != other.size) return false
         return this.zip(other).all { (a, b) -> a == b }
     }

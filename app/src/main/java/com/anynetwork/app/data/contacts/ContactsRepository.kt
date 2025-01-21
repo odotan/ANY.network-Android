@@ -56,7 +56,7 @@ class ContactsRepository @Inject constructor(
     suspend fun addContact(contact: Contact): Boolean =
         if (permissionsManager.isContactsPermissionGranted()) {
             phoneDataSource.addContact(contact)
-            roomDataSource.addContact(contact)
+//            roomDataSource.addContact(contact)
         } else {
             roomDataSource.addContact(contact)
         }
