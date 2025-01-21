@@ -812,7 +812,7 @@ private fun ExternalProfile(
         topBar = ToolbarState.Shown(
             navigationIconState = NavigationIconState.Custom {
                 IconButton(onClick = {
-                    navController.popBackStack(Route.Home, inclusive = false)
+                    viewModel.onViewEvent(BackButtonClick)
                 }) {
                     Image(
                         painter = painterResource(R.drawable.ic_back_arrow),

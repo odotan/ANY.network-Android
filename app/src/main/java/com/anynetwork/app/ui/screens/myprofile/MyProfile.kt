@@ -66,6 +66,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
@@ -364,7 +365,14 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
         HexagonTextField(
             modifier = Modifier
                 .padding(top = 18.fdpv)
-                .height(54.fdpv),
+                .height(54.fdpv)
+                .onFocusChanged { focusState ->
+                    if (focusState.isFocused) {
+                        coroutineScope.launch {
+                            anchoredDraggableState.animateTo(SheetValue.Expanded)
+                        }
+                    }
+                },
             focusRequester = focusRequester,
             value = value,
             onValueChange = onValueChange,
@@ -441,7 +449,14 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
             modifier = Modifier
                 .padding(top = 16.fdpv)
                 .height(54.fdpv)
-                .imePadding(),
+                .imePadding()
+                .onFocusChanged { focusState ->
+                    if (focusState.isFocused) {
+                        coroutineScope.launch {
+                            anchoredDraggableState.animateTo(SheetValue.Expanded)
+                        }
+                    }
+                },
             focusRequester = focusRequester,
             value = value,
             onValueChange = onValueChange,
@@ -1241,7 +1256,14 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
                                     HexagonTextField(
                                         modifier = Modifier
                                             .weight(1f)
-                                            .height(54.fdpv),
+                                            .height(54.fdpv)
+                                            .onFocusChanged { focusState ->
+                                                if (focusState.isFocused) {
+                                                    coroutineScope.launch {
+                                                        anchoredDraggableState.animateTo(SheetValue.Expanded)
+                                                    }
+                                                }
+                                            },
                                         value = firstName,
                                         onValueChange = { newValue ->
                                             viewModel.onViewEvent(
@@ -1256,7 +1278,14 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
                                     HexagonTextField(
                                         modifier = Modifier
                                             .weight(1f)
-                                            .height(54.fdpv),
+                                            .height(54.fdpv)
+                                            .onFocusChanged { focusState ->
+                                                if (focusState.isFocused) {
+                                                    coroutineScope.launch {
+                                                        anchoredDraggableState.animateTo(SheetValue.Expanded)
+                                                    }
+                                                }
+                                            },
                                         value = lastName,
                                         onValueChange = { newValue ->
                                             viewModel.onViewEvent(
@@ -1271,7 +1300,14 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
                             item {HexagonTextField(
                                 modifier = Modifier
                                     .padding(top = 16.fdpv)
-                                    .height(54.fdpv),
+                                    .height(54.fdpv)
+                                    .onFocusChanged { focusState ->
+                                        if (focusState.isFocused) {
+                                            coroutineScope.launch {
+                                                anchoredDraggableState.animateTo(SheetValue.Expanded)
+                                            }
+                                        }
+                                    },
                                 value = company,
                                 onValueChange = { newValue ->
                                     viewModel.onViewEvent(UpdateCompany(newValue ?: ""))
