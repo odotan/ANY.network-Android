@@ -115,7 +115,6 @@ import com.anynetwork.app.ui.components.dialog.Message
 import com.anynetwork.app.ui.components.dialog.MessageAction
 import com.anynetwork.app.ui.components.hexagon.Badge
 import com.anynetwork.app.ui.components.hexagon.ChangeScale
-import com.anynetwork.app.ui.components.hexagon.ContactContentStyle
 import com.anynetwork.app.ui.components.hexagon.CoverBox
 import com.anynetwork.app.ui.components.hexagon.CustomHexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.DeleteButton
@@ -145,6 +144,7 @@ import com.anynetwork.app.ui.theme.DarkBlue
 import com.anynetwork.app.ui.theme.GreenColor
 import com.anynetwork.app.ui.theme.PrimaryColor
 import com.anynetwork.app.ui.theme.montserratFontFamily
+import com.anynetwork.app.ui.utils.SP_HOME_ANCHORED_DRAGGABLE_INITIAL_REVEALED
 import com.anynetwork.app.ui.utils.SP_HOME_ANCHORED_STATE
 import com.anynetwork.app.ui.utils.SP_HOME_GRID_ZOOM
 import com.anynetwork.app.ui.utils.SP_HOME_GRID_ZOOM_OFFSET_X
@@ -225,8 +225,6 @@ enum class BottomSheetOffsetMode {
     Manual
 }
 
-var anchoredDraggableState: AnchoredDraggableState<SheetValue>? = null
-
 sealed class HomeScreenMode(val isSearching: Boolean) {
     data object Normal: HomeScreenMode(isSearching = false)
     data object Edit: HomeScreenMode(isSearching = false)
@@ -271,27 +269,28 @@ private fun Home(
     var showAllowContactsPermissionsDialog by remember { mutableStateOf(false) }
 
     val sharedPreferences = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
-    anchoredDraggableState = remember {AnchoredDraggableState(
-        initialValue = SheetValue.Collapsed,
-        positionalThreshold = { 0f },
-        velocityThreshold = { 0f },
-        snapAnimationSpec = spring(
-            dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessMedium,
-        ),
-        decayAnimationSpec = exponentialDecay(),
-        confirmValueChange = { sheetValue ->
-            Timber.i("confirmValueChange to ${sheetValue}")
-            when (sheetValue) {
-                SheetValue.Collapsed -> sharedPreferences.edit().putInt(SP_HOME_ANCHORED_STATE, SHEET_VALUE_COLLAPSED).apply()
-                SheetValue.PartiallyExpanded -> sharedPreferences.edit().putInt(SP_HOME_ANCHORED_STATE, SHEET_VALUE_PARTIALLY_EXPANDED).apply()
-                SheetValue.Expanded -> sharedPreferences.edit().putInt(SP_HOME_ANCHORED_STATE, SHEET_VALUE_EXPANDED).apply()
-                else -> {}
-            }
+    val anchoredDraggableState = remember {
+        AnchoredDraggableState(
+            initialValue = SheetValue.Collapsed,
+            positionalThreshold = { 0f },
+            velocityThreshold = { 0f },
+            snapAnimationSpec = spring(
+                dampingRatio = Spring.DampingRatioNoBouncy,
+                stiffness = Spring.StiffnessMedium,
+            ),
+            decayAnimationSpec = exponentialDecay(),
+            confirmValueChange = { sheetValue ->
+                Timber.i("confirmValueChange to ${sheetValue}")
+                when (sheetValue) {
+                    SheetValue.Collapsed -> sharedPreferences.edit().putInt(SP_HOME_ANCHORED_STATE, SHEET_VALUE_COLLAPSED).apply()
+                    SheetValue.PartiallyExpanded -> sharedPreferences.edit().putInt(SP_HOME_ANCHORED_STATE, SHEET_VALUE_PARTIALLY_EXPANDED).apply()
+                    SheetValue.Expanded -> sharedPreferences.edit().putInt(SP_HOME_ANCHORED_STATE, SHEET_VALUE_EXPANDED).apply()
+                    else -> {}
+                }
 
-            true
-        }
-    )}
+                true
+            }
+        )}
 
     val viewState by viewModel.viewState.collectAsState()
     LaunchedEffect(Unit) {
@@ -338,6 +337,25 @@ private fun Home(
     }
 
     LaunchedEffect(Unit) {
+        val sheetValue = if (sharedPreferences.contains(SP_HOME_ANCHORED_STATE)) {
+            when (sharedPreferences.getInt(SP_HOME_ANCHORED_STATE, SHEET_VALUE_PARTIALLY_EXPANDED)) {
+                SHEET_VALUE_COLLAPSED -> SheetValue.Collapsed
+                SHEET_VALUE_EXPANDED -> SheetValue.Expanded
+                else -> SheetValue.PartiallyExpanded
+            }
+        } else SheetValue.PartiallyExpanded
+        if (expandedOffset != 0f) {
+            Timber.i("onSizeChanged")
+            val newAnchors = DraggableAnchors {
+                SheetValue.Collapsed at collapsedOffset
+                SheetValue.PartiallyExpanded at partiallyExpandedOffset
+                SheetValue.Expanded at expandedOffset
+            }
+            anchoredDraggableState.updateAnchors(
+                newAnchors,
+                sheetValue
+            )
+        }
         viewModel.updateReadContactsPermissionState(
             checkSelfPermission(context, Manifest.permission.READ_CONTACTS)
         )
@@ -345,18 +363,13 @@ private fun Home(
         delay(900)
 
         showBottomSheet = true
-        delay(800 + centerMessageAlphaAnimationDuration.toLong())
 
-        if (bottomSheetCurrentState == BottomSheetOffsetMode.Automatic) {
-            val sheetValue = if (sharedPreferences.contains(SP_HOME_ANCHORED_STATE)) {
-                when (sharedPreferences.getInt(SP_HOME_ANCHORED_STATE, SHEET_VALUE_PARTIALLY_EXPANDED)) {
-                    SHEET_VALUE_COLLAPSED -> SheetValue.Collapsed
-                    SHEET_VALUE_EXPANDED -> SheetValue.Expanded
-                    else -> SheetValue.PartiallyExpanded
-                }
-            } else SheetValue.PartiallyExpanded
-            anchoredDraggableState?.animateTo(sheetValue)
-            bottomSheetCurrentState = BottomSheetOffsetMode.Manual
+        if (sharedPreferences.getBoolean(SP_HOME_ANCHORED_DRAGGABLE_INITIAL_REVEALED, false)) {
+            delay(800 + centerMessageAlphaAnimationDuration.toLong())
+            anchoredDraggableState.animateTo(sheetValue)
+            if (bottomSheetCurrentState == BottomSheetOffsetMode.Automatic) {
+                bottomSheetCurrentState = BottomSheetOffsetMode.Manual
+            }
         }
     }
 
@@ -373,9 +386,9 @@ private fun Home(
                 SheetValue.Full at fullOffset
             }
         }
-        anchoredDraggableState?.updateAnchors(
+        anchoredDraggableState.updateAnchors(
             newAnchors,
-            anchoredDraggableState!!.currentValue
+            anchoredDraggableState.currentValue
         )
         coroutineScope.launch {
             viewModel.updateScreenMode(screenMode = HomeScreenMode.Normal)
@@ -387,7 +400,7 @@ private fun Home(
                     else -> SheetValue.PartiallyExpanded
                 }
             } else SheetValue.PartiallyExpanded
-            anchoredDraggableState?.animateTo(sheetValue)
+            anchoredDraggableState.animateTo(sheetValue)
             val newAnchors = DraggableAnchors {
                 with(density) {
                     SheetValue.Collapsed at collapsedOffset
@@ -395,7 +408,7 @@ private fun Home(
                     SheetValue.Expanded at expandedOffset
                 }
             }
-            anchoredDraggableState?.updateAnchors(
+            anchoredDraggableState.updateAnchors(
                 newAnchors,
                 sheetValue
             )
@@ -456,6 +469,9 @@ private fun Home(
                 mutableStateOf(null)
             }
             LaunchedEffect(isGridCentered) {
+                sharedPreferences.edit().putFloat(SP_HOME_GRID_ZOOM, defaultZoomScale).apply()
+                sharedPreferences.edit().putFloat(SP_HOME_GRID_ZOOM_OFFSET_X, 0f).apply()
+                sharedPreferences.edit().putFloat(SP_HOME_GRID_ZOOM_OFFSET_Y, 0f).apply()
                 changeScale = if (isGridCentered) {
                     ChangeScale(
                         scale = defaultZoomScale,
@@ -835,14 +851,14 @@ private fun Home(
                         Box(modifier = Modifier
                             .fillMaxSize()
                             .offset {
-                                val sheetOffsetY = anchoredDraggableState!!
+                                val sheetOffsetY = anchoredDraggableState
                                     .offset
                                     .toInt()
                                 //                            currentOffset = sheetOffsetY.toFloat()
                                 IntOffset(x = 0, y = sheetOffsetY)
                             }
                             .anchoredDraggable(
-                                anchoredDraggableState!!,
+                                anchoredDraggableState,
                                 orientation = Orientation.Vertical
                             )
                             .onSizeChanged { sheetSize ->
@@ -861,9 +877,9 @@ private fun Home(
                                             SheetValue.Expanded at expandedOffset
                                         }
                                     }
-                                    anchoredDraggableState?.updateAnchors(
+                                    anchoredDraggableState.updateAnchors(
                                         newAnchors,
-                                        anchoredDraggableState!!.targetValue
+                                        anchoredDraggableState.targetValue
                                     )
                                 }
                             }
@@ -871,15 +887,8 @@ private fun Home(
                             BottomSheet(
                                 viewModel = viewModel,
                                 screenMode = screenMode,
-                                searchText = searchText,
                                 hazeState = hazeState,
                                 bottomSheetHazeState = bottomSheetHazeState,
-                                centerGridClick = {
-                                    isGridCentered = true
-                                },
-                                syncButtonClick = {
-                                    showAllowContactsPermissionsDialog = true
-                                },
                                 searchButtonClick = {
                                     val newAnchors = DraggableAnchors {
                                         with(density) {
@@ -894,17 +903,25 @@ private fun Home(
 //                                                        anchoredDraggableState.currentValue
 //                                                    )
                                     coroutineScope.launch {
-                                        anchoredDraggableState?.animateTo(SheetValue.Full)
-                                        anchoredDraggableState?.updateAnchors(
+                                        anchoredDraggableState.animateTo(SheetValue.Full)
+                                        anchoredDraggableState.updateAnchors(
                                             newAnchors,
                                             SheetValue.Full
                                         )
                                         viewModel.updateScreenMode(HomeScreenMode.SearchingList)
                                     }
                                 },
+                                centerGridClick = {
+                                    isGridCentered = true
+                                },
+                                syncButtonClick = {
+                                    showAllowContactsPermissionsDialog = true
+                                },
                                 onCreateNewContactClick = {
                                     onCreateNewContactClick.invoke(it)
-                                }
+                                },
+                                searchText = searchText,
+                                anchoredDraggableState = anchoredDraggableState
                             )
                         }
                     }
@@ -1044,7 +1061,8 @@ fun BottomSheet(
     centerGridClick: () -> Unit,
     syncButtonClick: () -> Unit,
     onCreateNewContactClick: (String?) -> Unit,
-    searchText: String
+    searchText: String,
+    anchoredDraggableState: AnchoredDraggableState<SheetValue>
 ) {
     Timber.i("BottomSheet recomposed")
     val readContactsPermissionGranted by viewModel.readContactsPermissionGranted.collectAsState()
@@ -1234,7 +1252,7 @@ fun BottomSheet(
                     }
                     .imePadding(),
                 state = listState,
-                userScrollEnabled = anchoredDraggableState!!.currentValue == SheetValue.Expanded || anchoredDraggableState!!.currentValue == SheetValue.Full
+                userScrollEnabled = anchoredDraggableState.currentValue == SheetValue.Expanded || anchoredDraggableState.currentValue == SheetValue.Full
             ) {
                 item {
                     Spacer(modifier = Modifier.height(36.fdpv))
