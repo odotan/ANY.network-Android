@@ -469,10 +469,10 @@ private fun Home(
                 mutableStateOf(null)
             }
             LaunchedEffect(isGridCentered) {
-                sharedPreferences.edit().putFloat(SP_HOME_GRID_ZOOM, defaultZoomScale).apply()
-                sharedPreferences.edit().putFloat(SP_HOME_GRID_ZOOM_OFFSET_X, 0f).apply()
-                sharedPreferences.edit().putFloat(SP_HOME_GRID_ZOOM_OFFSET_Y, 0f).apply()
                 changeScale = if (isGridCentered) {
+                    sharedPreferences.edit().putFloat(SP_HOME_GRID_ZOOM, defaultZoomScale).apply()
+                    sharedPreferences.edit().putFloat(SP_HOME_GRID_ZOOM_OFFSET_X, 0f).apply()
+                    sharedPreferences.edit().putFloat(SP_HOME_GRID_ZOOM_OFFSET_Y, 0f).apply()
                     ChangeScale(
                         scale = defaultZoomScale,
                         position = Offset.Zero
