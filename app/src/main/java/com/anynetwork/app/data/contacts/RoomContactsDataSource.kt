@@ -7,6 +7,7 @@ import com.anynetwork.app.model.Contact
 import com.anynetwork.app.ui.utils.log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 
 class RoomContactsDataSource(private val contactDao: ContactDao): ContactsDataSource {
     override suspend fun getContacts(): List<Contact> = withContext(Dispatchers.IO) {
@@ -20,6 +21,7 @@ class RoomContactsDataSource(private val contactDao: ContactDao): ContactsDataSo
     }
 
     override suspend fun editContact(contactId: Long, contact: Contact): Boolean = withContext(Dispatchers.IO) {
+        Timber.i("editContact - contactId:$contactId")
         val rowsUpdated = contactDao.updateContact(contact.wrap())
         return@withContext rowsUpdated > 0
     }

@@ -122,6 +122,7 @@ import com.anynetwork.app.ui.components.hexagon.EmptyHexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.HexagonalGrid
 import com.anynetwork.app.ui.components.hexagon.IconHexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.ImageHexagonContentStyle
+import com.anynetwork.app.ui.components.hexagon.NontransparentHexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.NontransparentHexagonContentStyle.Background
 import com.anynetwork.app.ui.components.hexagon.RemovableStrategy
 import com.anynetwork.app.ui.components.hexagon.RoundedHexagon
@@ -337,19 +338,27 @@ private fun Home(
     }
 
     LaunchedEffect(Unit) {
-        val sheetValue = if (sharedPreferences.contains(SP_HOME_ANCHORED_STATE)) {
-            when (sharedPreferences.getInt(SP_HOME_ANCHORED_STATE, SHEET_VALUE_PARTIALLY_EXPANDED)) {
-                SHEET_VALUE_COLLAPSED -> SheetValue.Collapsed
-                SHEET_VALUE_EXPANDED -> SheetValue.Expanded
-                else -> SheetValue.PartiallyExpanded
+        val sheetValue = when {
+            screenMode.isSearching -> SheetValue.Full
+            sharedPreferences.contains(SP_HOME_ANCHORED_STATE) -> {
+                when (sharedPreferences.getInt(SP_HOME_ANCHORED_STATE, SHEET_VALUE_PARTIALLY_EXPANDED)) {
+                    SHEET_VALUE_COLLAPSED -> SheetValue.Collapsed
+                    SHEET_VALUE_EXPANDED -> SheetValue.Expanded
+                    else -> SheetValue.PartiallyExpanded
+                }
             }
-        } else SheetValue.PartiallyExpanded
+            else -> SheetValue.PartiallyExpanded
+        }
         if (expandedOffset != 0f) {
             Timber.i("onSizeChanged")
             val newAnchors = DraggableAnchors {
-                SheetValue.Collapsed at collapsedOffset
-                SheetValue.PartiallyExpanded at partiallyExpandedOffset
-                SheetValue.Expanded at expandedOffset
+                if (!screenMode.isSearching) {
+                    SheetValue.Collapsed at collapsedOffset
+                    SheetValue.PartiallyExpanded at partiallyExpandedOffset
+                    SheetValue.Expanded at expandedOffset
+                } else {
+                    SheetValue.Full at fullOffset
+                }
             }
             anchoredDraggableState.updateAnchors(
                 newAnchors,
@@ -364,7 +373,8 @@ private fun Home(
 
         showBottomSheet = true
 
-        if (sharedPreferences.getBoolean(SP_HOME_ANCHORED_DRAGGABLE_INITIAL_REVEALED, false)) {
+        if (!sharedPreferences.getBoolean(SP_HOME_ANCHORED_DRAGGABLE_INITIAL_REVEALED, false)) {
+            sharedPreferences.edit().putBoolean(SP_HOME_ANCHORED_DRAGGABLE_INITIAL_REVEALED, true).apply()
             delay(800 + centerMessageAlphaAnimationDuration.toLong())
             anchoredDraggableState.animateTo(sheetValue)
             if (bottomSheetCurrentState == BottomSheetOffsetMode.Automatic) {
@@ -455,9 +465,8 @@ private fun Home(
             }
             val initialScale = remember {
                 when {
-                    sharedPreferences.contains(SP_HOME_GRID_ZOOM) -> sharedPreferences.getFloat(
-                        SP_HOME_GRID_ZOOM, defaultZoomScale
-                    )
+                    sharedPreferences.contains(SP_HOME_GRID_ZOOM) ->
+                        sharedPreferences.getFloat(SP_HOME_GRID_ZOOM, defaultZoomScale)
 
                     else -> defaultZoomScale
                 }
@@ -467,6 +476,22 @@ private fun Home(
             val centralPosition = viewModel.centralGridPosition
             var changeScale: ChangeScale? by remember {
                 mutableStateOf(null)
+            }
+            LaunchedEffect(screenMode) {
+                changeScale = if (screenMode is HomeScreenMode.SearchingGrid) {
+                    ChangeScale(
+                        scale = 1f,
+                        position = Offset.Zero
+                    )
+                } else {
+                    ChangeScale(
+                        scale = sharedPreferences.getFloat(SP_HOME_GRID_ZOOM, defaultZoomScale),
+                        position = Offset(
+                            sharedPreferences.getFloat(SP_HOME_GRID_ZOOM_OFFSET_X, 0f),
+                            sharedPreferences.getFloat(SP_HOME_GRID_ZOOM_OFFSET_Y, 0f)
+                        )
+                    )
+                }
             }
             LaunchedEffect(isGridCentered) {
                 changeScale = if (isGridCentered) {
@@ -735,6 +760,10 @@ private fun Home(
                 list
             }
 
+            LaunchedEffect(items) {
+                items.flatten().filterIsInstance<NontransparentHexagonContentStyle>().size.log { "items size" }
+            }
+
             HexagonalGrid(
                 modifier = Modifier
                     .haze(state = bottomSheetHazeState),
@@ -754,10 +783,14 @@ private fun Home(
                 }},
                 onZoom = remember {{ zoom, offset ->
                     Timber.i("onZoom: zoom - $zoom, offset - $offset")
-                    isGridCentered = false
-                    sharedPreferences.edit().putFloat(SP_HOME_GRID_ZOOM, zoom).apply()
-                    sharedPreferences.edit().putFloat(SP_HOME_GRID_ZOOM_OFFSET_X, offset.x).apply()
-                    sharedPreferences.edit().putFloat(SP_HOME_GRID_ZOOM_OFFSET_Y, offset.y).apply()
+                    if (!screenMode.isSearching) {
+                        isGridCentered = false
+                        sharedPreferences.edit().putFloat(SP_HOME_GRID_ZOOM, zoom).apply()
+                        sharedPreferences.edit().putFloat(SP_HOME_GRID_ZOOM_OFFSET_X, offset.x)
+                            .apply()
+                        sharedPreferences.edit().putFloat(SP_HOME_GRID_ZOOM_OFFSET_Y, offset.y)
+                            .apply()
+                    }
                 }},
                 isScrollEnabled = true,
                 offsetY = 0,

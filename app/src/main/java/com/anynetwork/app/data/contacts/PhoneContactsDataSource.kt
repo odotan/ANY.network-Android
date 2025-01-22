@@ -27,6 +27,7 @@ import contacts.core.util.setPhoto
 import contacts.permissions.insertWithPermission
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.io.ByteArrayOutputStream
 
 class PhoneContactsDataSource(private val context: Context): ContactsDataSource {
@@ -111,6 +112,7 @@ class PhoneContactsDataSource(private val context: Context): ContactsDataSource 
     }
 
     override suspend fun editContact(contactId: Long, contact: Contact): Boolean = withContext(Dispatchers.IO) {
+        Timber.i("editContact - contactId:$contactId")
         val updateResult = Contacts(context)
             .update()
             .contacts(Contacts(context).query()

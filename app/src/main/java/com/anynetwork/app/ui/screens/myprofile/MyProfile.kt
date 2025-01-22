@@ -355,10 +355,12 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
     val cropperLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        val croppedUri = UCrop.getOutput(result.data!!)
-        croppedUri?.let {
-            // Use the cropped image URI
-            viewModel.onViewEvent(UpdatePhotoUri(it.toString()))
+        result.data?.let { resultData ->
+            val croppedUri = UCrop.getOutput(resultData)
+            croppedUri?.let {
+                // Use the cropped image URI
+                viewModel.onViewEvent(UpdatePhotoUri(it.toString()))
+            }
         }
     }
 

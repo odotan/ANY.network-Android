@@ -323,6 +323,10 @@ private fun ExternalProfile(
     }
 
     val viewState by viewModel.viewState.collectAsState()
+    LaunchedEffect(viewState.isFavorite) {
+        viewState.isFavorite.log { "isFavorite" }
+    }
+
     val firstName by remember { derivedStateOf { viewState.firstName } }
     val lastName by remember { derivedStateOf { viewState.lastName } }
     val company by remember { derivedStateOf { viewState.company.log { "company" } } }
@@ -437,10 +441,12 @@ private fun ExternalProfile(
     val cropperLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        val croppedUri = UCrop.getOutput(result.data!!)
-        croppedUri?.let {
-            // Use the cropped image URI
-            viewModel.onViewEvent(UpdatePhotoUri(it.toString()))
+        result.data?.let { resultData ->
+            val croppedUri = UCrop.getOutput(resultData)
+            croppedUri?.let {
+                // Use the cropped image URI
+                viewModel.onViewEvent(UpdatePhotoUri(it.toString()))
+            }
         }
     }
 

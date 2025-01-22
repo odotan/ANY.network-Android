@@ -3,8 +3,6 @@
 package com.anynetwork.app.ui.components.hexagon
 
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.os.Parcelable
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -41,7 +39,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -72,11 +69,7 @@ import com.anynetwork.app.ui.components.hexagon.HexGridCellPosition.Neighbor.Top
 import com.anynetwork.app.ui.components.zoomable.ScrollGesturePropagation
 import com.anynetwork.app.ui.components.zoomable.rememberZoomState
 import com.anynetwork.app.ui.components.zoomable.zoomable
-import com.anynetwork.app.ui.screens.home.GridItem
-import com.anynetwork.app.ui.utils.fdph
-import com.anynetwork.app.ui.utils.fdpv
 import com.anynetwork.app.ui.utils.log
-import com.gigamole.composeshadowsplus.common.shadowsPlus
 import kotlinx.coroutines.delay
 import kotlinx.parcelize.Parcelize
 import timber.log.Timber
@@ -132,8 +125,8 @@ fun HexagonalGrid(
     val cellHeight = remember { cellWidth * 96.99f/86.93f }
     val horizontalOffset = remember { ((cellWidth) / 2) }
 
-    val verticalBorder = (cellWidth * 0.04403f).log { "verticalBorder" }
-    val horizontalBorder = (cellHeight * 0.0395f).log { "horizontalBorder" }
+    val verticalBorder = remember { (cellWidth * 0.04403f).log { "verticalBorder" } }
+    val horizontalBorder = remember { (cellHeight * 0.0395f).log { "horizontalBorder" } }
 
     var draggedItem by remember { mutableStateOf<Int?>(null) }
     var draggedOffset by remember { mutableStateOf(DpOffset(0.dp, 0.dp)) }
@@ -159,11 +152,7 @@ fun HexagonalGrid(
         )
     }
 
-    val verticalSpacing = (-(96.99f * cellWidth / 86.93f) * 0.2333333f).log { "verticalSpacing" }
-//    val cellHeight = cellSize * sqrt(3f) / 2f
-//    val verticalSpacing = remember { (-(2f * cellSize / sqrt(3f)) / 4).log { "verticalSpacing" } }
-//    (verticalSpacing / initialScale).log { "verticalSpacing" }
-//    val totalHeight = (columnSize * cellHeight + (columnSize - 1) * verticalSpacing) * initialScale
+    val verticalSpacing = remember { (-(96.99f * cellWidth / 86.93f) * 0.2333333f).log { "verticalSpacing" } }
     val polygon = remember { createPolygon() }
     val context = LocalContext.current
 
@@ -469,11 +458,6 @@ private fun StatelessRoundedHexagon(
                         pointerInput
                     ) else Modifier
                 )
-//                .then(
-//                    if (shadowStyle is ShadowStyle.Shown && shape != null) {
-//                        Modifier.shadowsPlus(shape = shape, color = shadowStyle.color)
-//                    } else Modifier
-//                )
             ,
             onClick = onClick,
             contentStyle = contentStyle,
@@ -491,60 +475,6 @@ private fun StatelessRoundedHexagon(
                 contentStyle.overlay?.invoke(this)
             } else if (contentStyle is CustomHexagonContentStyle) {
                 contentStyle.overlay?.invoke(this)
-            } else if (contentStyle is ContactContentStyle && contentStyle.badge != null) {
-                contentStyle.badge.let {
-                    Badge(
-                        Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(
-                                bottom = 10.fdpv * (LocalConfiguration.current.screenWidthDp.dp / contentStyle.gridColumns / 79.93f.fdpv * contentStyle.gridScaling),
-                                end = 11.fdph * (LocalConfiguration.current.screenWidthDp.dp / contentStyle.gridColumns / 79.93f.fdpv * contentStyle.gridScaling)
-                            )
-                            .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / contentStyle.gridColumns / 79.93f.fdpv * contentStyle.gridScaling))
-                            .zIndex(2f),
-                        color = it.color,
-                        iconResourceId = it.iconResId,
-                        iconColorFilter = it.iconColorFilter,
-                        onClick = {
-//                        when (it) {
-//                            is GridItem.Badge.PhoneBadge -> {
-//                                val mobilePhone =
-//                                    gridItem.contact!!.phone
-//                                val number =
-//                                    Uri.parse("tel:$mobilePhone")
-//                                val callIntent =
-//                                    Intent(
-//                                        Intent.ACTION_DIAL,
-//                                        number
-//                                    )
-//                                context.startActivity(callIntent)
-//                            }
-//
-//                            is GridItem.Badge.EmailBadge -> {
-//                                val email = gridItem.contact!!.email
-//                                val intent =
-//                                    Intent(Intent.ACTION_SENDTO)
-//                                intent.putExtra(
-//                                    Intent.EXTRA_EMAIL,
-//                                    email
-//                                )
-//                                intent.type = "text/plain"
-//                                intent.data =
-//                                    Uri.parse("mailto:$email")
-//
-//                                context.startActivity(
-//                                    Intent.createChooser(
-//                                        intent,
-//                                        "Send Email"
-//                                    )
-//                                )
-//                            }
-//
-//                            else -> {}
-//                        }
-                        }
-                    )
-                }
             }
         }
     }

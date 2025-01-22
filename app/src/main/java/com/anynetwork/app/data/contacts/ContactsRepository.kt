@@ -7,6 +7,7 @@ import com.anynetwork.app.ui.utils.log
 import com.anynetwork.app.utils.PermissionsManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import timber.log.Timber
 import javax.inject.Inject
 
 class ContactsRepository @Inject constructor(
@@ -26,7 +27,12 @@ class ContactsRepository @Inject constructor(
             // Emit contacts from the phone data source
 
             // Update Room database with new contacts from phone (optional sync)
-            phoneContacts.forEach { roomDataSource.addContact(it) }
+            phoneContacts.forEach {
+                if (it.name.startsWith("My Love")) {
+                    Timber.i("${it.name} id: ${it.id}")
+                }
+                roomDataSource.addContact(it)
+            }
 
             roomContacts = roomDataSource.getContacts().apply {
                 size.log { "roomContacts size" }

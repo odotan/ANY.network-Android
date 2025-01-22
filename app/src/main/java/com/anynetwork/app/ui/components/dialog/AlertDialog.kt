@@ -66,7 +66,7 @@ fun AlertDialog(
                     message?.let {
                         Text(
                             modifier = Modifier
-                                .padding(top = 12.fdpv, bottom = 23.fdpv)
+                                .padding(top = 12.fdpv)
                                 .padding(horizontal = 46.fdph),
                             text = message,
                             textAlign = TextAlign.Center,
@@ -78,6 +78,8 @@ fun AlertDialog(
                             )
                         )
                     }
+
+                    Spacer(modifier = Modifier.height(23.fdpv))
 
                     Spacer(
                         modifier = Modifier

@@ -163,7 +163,7 @@ class HomeViewModel @Inject constructor(
                     .filter { it.isFavorite }
                     .forEach { contact ->
                         if (gridOrder.firstOrNull { it.itemId == contact.id && it.itemType == Order.Type.FAVORITE_CONTACT } == null) {
-                            val itemOrder = orderRepository.insertItemOrder(
+                            val itemOrder = addAtRandomGridPlace(
                                 itemType = Order.Type.FAVORITE_CONTACT,
                                 itemId = contact.id
                             )
