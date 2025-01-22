@@ -106,6 +106,7 @@ fun HexagonalGrid(
     maxScale: Float = rowSize - 1f,
     changeScale: ChangeScale? = null,
     initialScale: Float = minScale,
+    initialOffset: Offset = Offset.Zero,
     onPlacesSwap: ((Int, Int) -> Unit)? = null,
     onCellPositionCalculated: ((Int, Offset, Int, Int) -> Unit)? = null,
     onZoom: ((zoom: Float, offset: Offset) -> Unit)? = null,
@@ -143,9 +144,11 @@ fun HexagonalGrid(
     val cellPositions = remember { mutableStateMapOf<Int, LayoutCoordinates>() }
 
     val zoomState = rememberZoomState(
-        initialScale = initialScale,
+        initialScale = initialScale.log { "initialScale" },
         minScale = minScale,
         maxScale = maxScale,
+        offsetX = initialOffset.x,
+        offsetY = initialOffset.y
     )
 
     val coroutineScope = rememberCoroutineScope()

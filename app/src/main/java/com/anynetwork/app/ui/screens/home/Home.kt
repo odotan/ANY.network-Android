@@ -102,6 +102,9 @@ import coil.size.Scale
 import coil.size.Size
 import com.anynetwork.app.R
 import com.anynetwork.app.model.Interaction
+import com.anynetwork.app.ui.components.SHEET_VALUE_COLLAPSED
+import com.anynetwork.app.ui.components.SHEET_VALUE_EXPANDED
+import com.anynetwork.app.ui.components.SHEET_VALUE_PARTIALLY_EXPANDED
 import com.anynetwork.app.ui.components.Screen
 import com.anynetwork.app.ui.components.SearchTextField
 import com.anynetwork.app.ui.components.SheetValue
@@ -142,6 +145,11 @@ import com.anynetwork.app.ui.theme.DarkBlue
 import com.anynetwork.app.ui.theme.GreenColor
 import com.anynetwork.app.ui.theme.PrimaryColor
 import com.anynetwork.app.ui.theme.montserratFontFamily
+import com.anynetwork.app.ui.utils.SP_HOME_ANCHORED_STATE
+import com.anynetwork.app.ui.utils.SP_HOME_GRID_ZOOM
+import com.anynetwork.app.ui.utils.SP_HOME_GRID_ZOOM_OFFSET_X
+import com.anynetwork.app.ui.utils.SP_HOME_GRID_ZOOM_OFFSET_Y
+import com.anynetwork.app.ui.utils.SP_NAME
 import com.anynetwork.app.ui.utils.checkSelfPermission
 import com.anynetwork.app.ui.utils.csp
 import com.anynetwork.app.ui.utils.fdph
@@ -217,6 +225,8 @@ enum class BottomSheetOffsetMode {
     Manual
 }
 
+var anchoredDraggableState: AnchoredDraggableState<SheetValue>? = null
+
 sealed class HomeScreenMode(val isSearching: Boolean) {
     data object Normal: HomeScreenMode(isSearching = false)
     data object Edit: HomeScreenMode(isSearching = false)
@@ -224,16 +234,6 @@ sealed class HomeScreenMode(val isSearching: Boolean) {
     data object SearchingGrid: HomeScreenMode(isSearching = true)
 }
 
-val anchoredDraggableState = AnchoredDraggableState(
-    initialValue = SheetValue.Collapsed,
-    positionalThreshold = { 0f },
-    velocityThreshold = { 0f },
-    snapAnimationSpec = spring(
-        dampingRatio = Spring.DampingRatioNoBouncy,
-        stiffness = Spring.StiffnessMedium,
-    ),
-    decayAnimationSpec = exponentialDecay()
-)
 @Composable
 private fun Home(
     viewModel: HomeViewModel,
@@ -269,6 +269,29 @@ private fun Home(
     var bottomSheetCurrentState by rememberSaveable { mutableStateOf(BottomSheetOffsetMode.Automatic) }
     var showBottomSheet by rememberSaveable { mutableStateOf(false) }
     var showAllowContactsPermissionsDialog by remember { mutableStateOf(false) }
+
+    val sharedPreferences = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+    anchoredDraggableState = remember {AnchoredDraggableState(
+        initialValue = SheetValue.Collapsed,
+        positionalThreshold = { 0f },
+        velocityThreshold = { 0f },
+        snapAnimationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMedium,
+        ),
+        decayAnimationSpec = exponentialDecay(),
+        confirmValueChange = { sheetValue ->
+            Timber.i("confirmValueChange to ${sheetValue}")
+            when (sheetValue) {
+                SheetValue.Collapsed -> sharedPreferences.edit().putInt(SP_HOME_ANCHORED_STATE, SHEET_VALUE_COLLAPSED).apply()
+                SheetValue.PartiallyExpanded -> sharedPreferences.edit().putInt(SP_HOME_ANCHORED_STATE, SHEET_VALUE_PARTIALLY_EXPANDED).apply()
+                SheetValue.Expanded -> sharedPreferences.edit().putInt(SP_HOME_ANCHORED_STATE, SHEET_VALUE_EXPANDED).apply()
+                else -> {}
+            }
+
+            true
+        }
+    )}
 
     val viewState by viewModel.viewState.collectAsState()
     LaunchedEffect(Unit) {
@@ -325,7 +348,14 @@ private fun Home(
         delay(800 + centerMessageAlphaAnimationDuration.toLong())
 
         if (bottomSheetCurrentState == BottomSheetOffsetMode.Automatic) {
-            anchoredDraggableState.animateTo(SheetValue.PartiallyExpanded)
+            val sheetValue = if (sharedPreferences.contains(SP_HOME_ANCHORED_STATE)) {
+                when (sharedPreferences.getInt(SP_HOME_ANCHORED_STATE, SHEET_VALUE_PARTIALLY_EXPANDED)) {
+                    SHEET_VALUE_COLLAPSED -> SheetValue.Collapsed
+                    SHEET_VALUE_EXPANDED -> SheetValue.Expanded
+                    else -> SheetValue.PartiallyExpanded
+                }
+            } else SheetValue.PartiallyExpanded
+            anchoredDraggableState?.animateTo(sheetValue)
             bottomSheetCurrentState = BottomSheetOffsetMode.Manual
         }
     }
@@ -343,14 +373,21 @@ private fun Home(
                 SheetValue.Full at fullOffset
             }
         }
-        anchoredDraggableState.updateAnchors(
+        anchoredDraggableState?.updateAnchors(
             newAnchors,
-            anchoredDraggableState.currentValue
+            anchoredDraggableState!!.currentValue
         )
         coroutineScope.launch {
             viewModel.updateScreenMode(screenMode = HomeScreenMode.Normal)
             viewModel.updateSearchText("")
-            anchoredDraggableState.animateTo(SheetValue.PartiallyExpanded)
+            val sheetValue = if (sharedPreferences.contains(SP_HOME_ANCHORED_STATE)) {
+                when (sharedPreferences.getInt(SP_HOME_ANCHORED_STATE, SHEET_VALUE_PARTIALLY_EXPANDED)) {
+                    SHEET_VALUE_COLLAPSED -> SheetValue.Collapsed
+                    SHEET_VALUE_EXPANDED -> SheetValue.Expanded
+                    else -> SheetValue.PartiallyExpanded
+                }
+            } else SheetValue.PartiallyExpanded
+            anchoredDraggableState?.animateTo(sheetValue)
             val newAnchors = DraggableAnchors {
                 with(density) {
                     SheetValue.Collapsed at collapsedOffset
@@ -358,9 +395,9 @@ private fun Home(
                     SheetValue.Expanded at expandedOffset
                 }
             }
-            anchoredDraggableState.updateAnchors(
+            anchoredDraggableState?.updateAnchors(
                 newAnchors,
-                SheetValue.PartiallyExpanded
+                sheetValue
             )
         }
     }
@@ -390,17 +427,41 @@ private fun Home(
             val gridColumns = viewModel.gridColumns
             val gridRows = viewModel.gridRows
             val offsetEvenRows = viewModel.offsetEvenRows
-            val initialScale = (gridColumns / 4.7f).log { "initialScale" }
+            val defaultZoomScale = gridColumns / 4.7f
+            val initialOffset = remember {
+                when {
+                    sharedPreferences.contains(SP_HOME_GRID_ZOOM_OFFSET_X) && sharedPreferences.contains(
+                        SP_HOME_GRID_ZOOM_OFFSET_Y
+                    ) -> Offset(
+                        x = sharedPreferences.getFloat(SP_HOME_GRID_ZOOM_OFFSET_X, 0f),
+                        y = sharedPreferences.getFloat(SP_HOME_GRID_ZOOM_OFFSET_Y, 0f)
+                    )
+
+                    else -> Offset.Zero
+                }
+            }
+            val initialScale = remember {
+                when {
+                    sharedPreferences.contains(SP_HOME_GRID_ZOOM) -> sharedPreferences.getFloat(
+                        SP_HOME_GRID_ZOOM, defaultZoomScale
+                    )
+
+                    else -> defaultZoomScale
+                }
+            }
+
             val gridScaling = remember { 4f }
             val centralPosition = viewModel.centralGridPosition
             var changeScale: ChangeScale? by remember {
                 mutableStateOf(null)
             }
             LaunchedEffect(isGridCentered) {
-                changeScale = if (isGridCentered) ChangeScale(
-                    scale = initialScale,
-                    position = Offset(0f, 0f)
-                ) else {
+                changeScale = if (isGridCentered) {
+                    ChangeScale(
+                        scale = defaultZoomScale,
+                        position = Offset.Zero
+                    )
+                } else {
                     null
                 }
             }
@@ -667,6 +728,7 @@ private fun Home(
 //                maxScale = initialScale,
                 changeScale = changeScale,
                 initialScale = initialScale,
+                initialOffset = initialOffset,
                 onCellPositionCalculated = remember {{ index, offset, width, height ->
                     if (index == centralIndex) {
                         if (centralOffset == null) centralOffset = offset
@@ -677,6 +739,9 @@ private fun Home(
                 onZoom = remember {{ zoom, offset ->
                     Timber.i("onZoom: zoom - $zoom, offset - $offset")
                     isGridCentered = false
+                    sharedPreferences.edit().putFloat(SP_HOME_GRID_ZOOM, zoom).apply()
+                    sharedPreferences.edit().putFloat(SP_HOME_GRID_ZOOM_OFFSET_X, offset.x).apply()
+                    sharedPreferences.edit().putFloat(SP_HOME_GRID_ZOOM_OFFSET_Y, offset.y).apply()
                 }},
                 isScrollEnabled = true,
                 offsetY = 0,
@@ -770,14 +835,14 @@ private fun Home(
                         Box(modifier = Modifier
                             .fillMaxSize()
                             .offset {
-                                val sheetOffsetY = anchoredDraggableState
+                                val sheetOffsetY = anchoredDraggableState!!
                                     .offset
                                     .toInt()
                                 //                            currentOffset = sheetOffsetY.toFloat()
                                 IntOffset(x = 0, y = sheetOffsetY)
                             }
                             .anchoredDraggable(
-                                anchoredDraggableState,
+                                anchoredDraggableState!!,
                                 orientation = Orientation.Vertical
                             )
                             .onSizeChanged { sheetSize ->
@@ -796,9 +861,9 @@ private fun Home(
                                             SheetValue.Expanded at expandedOffset
                                         }
                                     }
-                                    anchoredDraggableState.updateAnchors(
+                                    anchoredDraggableState?.updateAnchors(
                                         newAnchors,
-                                        anchoredDraggableState.targetValue
+                                        anchoredDraggableState!!.targetValue
                                     )
                                 }
                             }
@@ -829,8 +894,8 @@ private fun Home(
 //                                                        anchoredDraggableState.currentValue
 //                                                    )
                                     coroutineScope.launch {
-                                        anchoredDraggableState.animateTo(SheetValue.Full)
-                                        anchoredDraggableState.updateAnchors(
+                                        anchoredDraggableState?.animateTo(SheetValue.Full)
+                                        anchoredDraggableState?.updateAnchors(
                                             newAnchors,
                                             SheetValue.Full
                                         )
@@ -977,7 +1042,7 @@ fun BottomSheet(
     val readContactsPermissionGranted by viewModel.readContactsPermissionGranted.collectAsState()
 
     val context = LocalContext.current
-    val sharedPreferences = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+    val sharedPreferences = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
     var showCreateYourContactCardMessage by remember { mutableStateOf(!sharedPreferences.getBoolean("createYourContactCardMessageShown", false)) }
     var showSyncContactsMessage by remember { mutableStateOf(!sharedPreferences.getBoolean("syncContactsMessageShown", false)) }
 
@@ -1161,7 +1226,7 @@ fun BottomSheet(
                     }
                     .imePadding(),
                 state = listState,
-                userScrollEnabled = anchoredDraggableState.currentValue == SheetValue.Expanded || anchoredDraggableState.currentValue == SheetValue.Full
+                userScrollEnabled = anchoredDraggableState!!.currentValue == SheetValue.Expanded || anchoredDraggableState!!.currentValue == SheetValue.Full
             ) {
                 item {
                     Spacer(modifier = Modifier.height(36.fdpv))
