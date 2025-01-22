@@ -961,6 +961,14 @@ private fun Home(
                     )
                 }
             }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(20.dp)
+                    .align(Alignment.BottomCenter)
+                    .clickable {  }
+            )
         }
     )
 
