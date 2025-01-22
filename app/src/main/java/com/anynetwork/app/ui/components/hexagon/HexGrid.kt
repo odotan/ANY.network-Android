@@ -3,6 +3,7 @@
 package com.anynetwork.app.ui.components.hexagon
 
 import android.content.Context
+
 import android.os.Parcelable
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -34,9 +35,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
@@ -50,13 +51,13 @@ import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
 import androidx.compose.ui.zIndex
@@ -121,7 +122,9 @@ fun HexagonalGrid(
 
     val currentConfig = LocalConfiguration.current
     val gridWidth = remember { currentConfig.screenWidthDp.dp * gridScaling }
+    val gridWidthPx = with(LocalDensity.current) { gridWidth.toPx() }
     val cellWidth = remember { (gridWidth / rowSize).log { "cellWidth" } }
+    val cellWidthPx = with(LocalDensity.current) { cellWidth.toPx() }
     val cellHeight = remember { cellWidth * 96.99f/86.93f }
     val horizontalOffset = remember { ((cellWidth) / 2) }
 
@@ -173,7 +176,8 @@ fun HexagonalGrid(
     }
 
     Box(
-        modifier = if (gridScaling > 1f) Modifier.fillMaxSize()
+        modifier = if (gridScaling > 1f) Modifier
+            .fillMaxSize()
             .requiredWidth(gridWidth * gridScaling)
             .requiredHeight(currentConfig.screenWidthDp.dp * gridScaling)
         else Modifier.fillMaxSize(),
@@ -182,7 +186,7 @@ fun HexagonalGrid(
         FlowRow(
             modifier = modifier
                 .offset(y = with(LocalDensity.current) { offsetY.toDp() })
-                .scale(1/gridScaling)
+                .scale(1 / gridScaling)
                 .zoomable(
                     zoomState,
                     zoomEnabled = isScrollEnabled,
@@ -270,9 +274,11 @@ fun HexagonalGrid(
                         val cellPosition = cellPositions[index]!!
                         when (contentStyle) {
                             is ImageHexagonContentStyle -> contentStyle.onClick.invoke(cellPositions[index]!!.positionOnScreen())
-                            is CustomHexagonContentStyle -> contentStyle.onClick.invoke(
-                                cellPosition.boundsInRoot().center
-                            )
+                            is CustomHexagonContentStyle -> {
+                                contentStyle.onClick.invoke(
+                                    cellPosition.positionInWindow() .log { "cellPosition.boundsInRoot().center" }
+                                )
+                            }
                             is ContactContentStyle -> contentStyle.onClick.invoke(cellPosition.boundsInRoot().center)
 
                             is IconHexagonContentStyle -> contentStyle.onClick.invoke(cellPositions[index]!!.positionOnScreen())
@@ -369,46 +375,6 @@ fun HexagonalGrid(
                             }
                         )
                     }
-                )
-            }
-        }
-    }
-
-//        Box(
-//            modifier = Modifier
-//                .size(5.dp) // Adjust size as needed
-//                .background(Color.Red, CircleShape) // Customize appearance
-//                .align(Alignment.Center)
-//        )
-    // Render Dragged Item Above
-    draggedItem?.let { index ->
-        if (draggedPosition != Offset.Zero) {
-            draggedPosition.log { "draggedPosition" }
-            val roundedPolygonShape = remember(polygon) { RoundedPolygonShape(polygon) }
-            Box(
-                Modifier
-                    .offset {
-                        IntOffset(
-                            (draggedPosition.x).toInt(),
-                            (draggedPosition.y).toInt()
-                        ) + IntOffset(
-                            (draggedOffset.x.toPx() / gridScaling * zoomState.scale).toInt(),
-                            (draggedOffset.y.toPx() / gridScaling * zoomState.scale).toInt()
-                        )
-                    }
-                    .zIndex(1f)
-            ) {
-                StatelessRoundedHexagon(
-                    modifier = Modifier
-                        .size((cellWidth + verticalBorder + verticalBorder) * zoomState.scale / gridScaling)
-                        .alpha(0.8f),
-                    shape = roundedPolygonShape,
-                    shadowStyle = ShadowStyle.Shown(),
-                    contentStyle = gridCellsItems[index],
-                    verticalBorder = 0.dp,
-                    horizontalBorder = 0.dp,
-                    drawOverlay = false,
-                    scale = zoomState.scale * 1f / gridScaling
                 )
             }
         }
