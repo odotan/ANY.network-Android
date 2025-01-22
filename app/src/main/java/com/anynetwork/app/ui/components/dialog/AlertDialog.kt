@@ -36,7 +36,7 @@ import com.anynetwork.app.ui.utils.xdpv
 @Composable
 fun AlertDialog(
     title: String,
-    message: String,
+    message: String? = null,
     buttons: List<AlertDialogButtonState>,
     onDismiss: () -> Unit) {
     Dialog(
@@ -63,19 +63,21 @@ fun AlertDialog(
                         color = Color.White,
                     )
 
-                    Text(
-                        modifier = Modifier
-                            .padding(top = 12.fdpv, bottom = 23.fdpv)
-                            .padding(horizontal = 46.fdph),
-                        text = message,
-                        textAlign = TextAlign.Center,
-                        color = Color.White,
-                        fontSize = 13.fsp,
-                        style = TextStyle(
-                            fontFamily = montserratFontFamily,
-                            fontWeight = FontWeight.Normal,
+                    message?.let {
+                        Text(
+                            modifier = Modifier
+                                .padding(top = 12.fdpv, bottom = 23.fdpv)
+                                .padding(horizontal = 46.fdph),
+                            text = message,
+                            textAlign = TextAlign.Center,
+                            color = Color.White,
+                            fontSize = 13.fsp,
+                            style = TextStyle(
+                                fontFamily = montserratFontFamily,
+                                fontWeight = FontWeight.Normal,
+                            )
                         )
-                    )
+                    }
 
                     Spacer(
                         modifier = Modifier
@@ -87,9 +89,9 @@ fun AlertDialog(
 
                     Row(
                         modifier = Modifier
-                            .height(44.fdpv)
+                            .height(52.fdpv)
                             .fillMaxWidth()
-                            .padding(horizontal = 24.fdph),
+                            .padding(horizontal = 20.fdph),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         buttons.forEachIndexed { index, button ->
@@ -110,7 +112,7 @@ fun AlertDialog(
                                     style = TextStyle(
                                         fontFamily = sfProFontFamily,
                                         fontWeight = button.fontWeight,
-                                        fontSize = 17.fsp
+                                        fontSize = 16.fsp
                                     )
                                 )
                             }

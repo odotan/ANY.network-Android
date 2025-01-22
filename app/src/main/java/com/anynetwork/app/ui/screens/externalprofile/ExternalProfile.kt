@@ -2,9 +2,11 @@
 
 package com.anynetwork.app.ui.screens.externalprofile
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.provider.MediaStore
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -93,6 +95,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
@@ -108,6 +111,8 @@ import com.anynetwork.app.ui.components.SearchTextField
 import com.anynetwork.app.ui.components.SheetValue
 import com.anynetwork.app.ui.components.ToolbarState
 import com.anynetwork.app.ui.components.ToolbarStateTitle
+import com.anynetwork.app.ui.components.dialog.AlertDialog
+import com.anynetwork.app.ui.components.dialog.AlertDialogButtonState
 import com.anynetwork.app.ui.components.dialog.DropDownDialogMenuCategory
 import com.anynetwork.app.ui.components.dialog.ExpandableDrillDownMenu
 import com.anynetwork.app.ui.components.hexagon.CustomHexagonContentStyle
@@ -466,6 +471,55 @@ private fun ExternalProfile(
         }
     }
 
+    // Create a file for the captured image
+    val photoFile = remember {
+        File(
+            context.getExternalFilesDir("Pictures"),
+            "IMG_${System.currentTimeMillis()}.jpg"
+        )
+    }
+    val cameraPhotoUri: Uri = FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.fileprovider",
+        photoFile
+    )
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            startCrop(context, cameraPhotoUri)
+        }
+    }
+
+    var isChooseMethodEditProfilePictureDialog by remember { mutableStateOf(false) }
+    if (isChooseMethodEditProfilePictureDialog) {
+        AlertDialog(
+            title = "Edit Profile Picture",
+            buttons = listOf(
+                AlertDialogButtonState(
+                    title = "Take Picture",
+                    onClick = {
+                        val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+                            putExtra(MediaStore.EXTRA_OUTPUT, cameraPhotoUri)
+                            addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+                        cameraLauncher.launch(cameraIntent)
+                    }
+                ),
+                AlertDialogButtonState(
+                    title = "Select From Gallery",
+                    onClick = {
+                        imagePickerLauncher.launch("image/*")
+                    }
+                )
+            ),
+            onDismiss = {
+                isChooseMethodEditProfilePictureDialog = false
+            }
+        )
+    }
+
     @Composable
     fun createPhoneTextField(
         label: String,
@@ -671,7 +725,7 @@ private fun ExternalProfile(
                         },
                         onClick = { _ ->
                             if (viewState.mode is ExternalProfileMode.Edit) {
-                                imagePickerLauncher.launch("image/*")
+                                isChooseMethodEditProfilePictureDialog = true
                             }
                         },
                     )
@@ -1803,7 +1857,7 @@ private fun ExternalProfile(
                                     shape = roundedPolygonShape
                                 }),
                             onClick = {
-                                imagePickerLauncher.launch("image/*")
+                                isChooseMethodEditProfilePictureDialog = true
                             },
                             contentStyle = remember(viewState.mode) {
                                 CustomHexagonContentStyle(
@@ -1855,7 +1909,7 @@ private fun ExternalProfile(
                                         }
                                     },
                                     onClick = { _ ->
-                                        imagePickerLauncher.launch("image/*")
+                                        isChooseMethodEditProfilePictureDialog = true
                                     }
                                 )
                             },

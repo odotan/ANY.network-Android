@@ -3,9 +3,11 @@
 package com.anynetwork.app.ui.screens.myprofile
 
 import android.Manifest
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.provider.MediaStore
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -94,6 +96,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
@@ -107,6 +110,8 @@ import com.anynetwork.app.ui.components.Screen
 import com.anynetwork.app.ui.components.SheetValue
 import com.anynetwork.app.ui.components.ToolbarState
 import com.anynetwork.app.ui.components.ToolbarStateTitle
+import com.anynetwork.app.ui.components.dialog.AlertDialog
+import com.anynetwork.app.ui.components.dialog.AlertDialogButtonState
 import com.anynetwork.app.ui.components.dialog.DropDownDialogMenuCategory
 import com.anynetwork.app.ui.components.dialog.ExpandableDrillDownMenu
 import com.anynetwork.app.ui.components.hexagon.CustomHexagonContentStyle
@@ -344,6 +349,91 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
                 stiffness = Spring.StiffnessMedium,
             ),
             decayAnimationSpec = exponentialDecay()
+        )
+    }
+
+    val cropperLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val croppedUri = UCrop.getOutput(result.data!!)
+        croppedUri?.let {
+            // Use the cropped image URI
+            viewModel.onViewEvent(UpdatePhotoUri(it.toString()))
+        }
+    }
+
+    // Function to launch the cropper
+    fun startCrop(context: Context, sourceUri: Uri) {
+        val destinationUri = Uri.fromFile(File(context.cacheDir, "${UUID.randomUUID()}.jpg"))
+
+        // Configure UCrop options (you can customize it)
+        val uCrop = UCrop.of(sourceUri, destinationUri)
+            .withAspectRatio(1f, 1f) // Square crop
+            .withMaxResultSize(1080, 1080)
+
+        val uCropIntent = uCrop.getIntent(context)
+        cropperLauncher.launch(uCropIntent)
+    }
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            // Persist the permission
+            context.contentResolver.takePersistableUriPermission(
+                it,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION
+            )
+            startCrop(context, it)
+        }
+    }
+
+    // Create a file for the captured image
+    val photoFile = remember {
+        File(
+            context.getExternalFilesDir("Pictures"),
+            "IMG_${System.currentTimeMillis()}.jpg"
+        )
+    }
+    val cameraPhotoUri: Uri = FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.fileprovider",
+        photoFile
+    )
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            startCrop(context, cameraPhotoUri)
+        }
+    }
+
+    var isChooseMethodEditProfilePictureDialog by remember { mutableStateOf(false) }
+    if (isChooseMethodEditProfilePictureDialog) {
+        AlertDialog(
+            title = "Edit Profile Picture",
+            buttons = listOf(
+                AlertDialogButtonState(
+                    title = "Take Picture",
+                    onClick = {
+                        val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+                            putExtra(MediaStore.EXTRA_OUTPUT, cameraPhotoUri)
+                            addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+                        cameraLauncher.launch(cameraIntent)
+                    }
+                ),
+                AlertDialogButtonState(
+                    title = "Select From Gallery",
+                    onClick = {
+                        imagePickerLauncher.launch("image/*")
+                    }
+                )
+            ),
+            onDismiss = {
+                isChooseMethodEditProfilePictureDialog = false
+            }
         )
     }
 
@@ -663,42 +753,6 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
                 animationSpec = tween(300)
             )
 
-            val cropperLauncher = rememberLauncherForActivityResult(
-                contract = ActivityResultContracts.StartActivityForResult()
-            ) { result ->
-                val croppedUri = UCrop.getOutput(result.data!!)
-                croppedUri?.let {
-                    // Use the cropped image URI
-                    viewModel.onViewEvent(UpdatePhotoUri(it.toString()))
-                }
-            }
-
-            // Function to launch the cropper
-            fun startCrop(context: Context, sourceUri: Uri) {
-                val destinationUri = Uri.fromFile(File(context.cacheDir, "${UUID.randomUUID()}.jpg"))
-
-                // Configure UCrop options (you can customize it)
-                val uCrop = UCrop.of(sourceUri, destinationUri)
-                    .withAspectRatio(1f, 1f) // Square crop
-                    .withMaxResultSize(1080, 1080)
-
-                val uCropIntent = uCrop.getIntent(context)
-                cropperLauncher.launch(uCropIntent)
-            }
-
-            val imagePickerLauncher = rememberLauncherForActivityResult(
-                contract = ActivityResultContracts.GetContent()
-            ) { uri ->
-                uri?.let {
-                    // Persist the permission
-                    context.contentResolver.takePersistableUriPermission(
-                        it,
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    )
-                    startCrop(context, it)
-                }
-            }
-
             // Find the central element
             val items = List(gridRows) { row ->
                 List(gridColumns) { column ->
@@ -788,7 +842,7 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
                                 },
                                 onClick = { _ ->
                                     if (mode is MyProfileMode.Edit) {
-                                        imagePickerLauncher.launch("image/*")
+                                        isChooseMethodEditProfilePictureDialog = true
                                     }
                                 },
                             )
@@ -1048,101 +1102,6 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
                     ),
                 )
             }
-
-//            profilePictureCellOffset?.let {
-//                val profilePictureCellOffsetInDp = with(LocalDensity.current) {
-//                    DpOffset(it.x.toDp(), it.y.toDp())
-//                }
-//                val polygon = remember { createPolygon() }
-//                val roundedPolygonShape = remember { RoundedPolygonShape(polygon) }
-//
-//                Box(modifier = Modifier
-//                    .padding(top = 113.fdpv)
-//                    .offset(
-//                        profilePictureCellOffsetInDp.x,
-//                        (profilePictureCellOffsetInDp.y - 113.fdpv) * (1 - dragPercentage.value / 100)
-//                    )
-//                    .clickable {
-//                        imagePickerLauncher.launch("image/*")
-//                    }
-//                ) {
-//                    val verticalBorder = (LocalConfiguration.current.screenWidthDp.dp / gridColumns) * 0.09163265f / 3 * 3.5f / 2.5f * gridColumns / 4.7f
-//                    val horizontalBorder = (LocalConfiguration.current.screenWidthDp.dp / gridColumns) * 0.09163265f / 3 * gridColumns / 4.7f
-//                    RoundedHexagon(
-//                        modifier = Modifier
-//                            .width(with(LocalDensity.current) { cellWidth!!.toDp() } * scale)
-//                            .padding(
-//                                vertical = verticalBorder,
-//                                horizontal = horizontalBorder
-//                            )
-//                            .aspectRatio(79.93f / 89.99f)
-//                            .then(Modifier.graphicsLayer {
-//                                this.shadowElevation = shadowElevation
-//                                clip = true
-//                                shape = roundedPolygonShape
-//                            }),
-//                        contentStyle = remember(mode, itemAlpha) {
-//                            CustomHexagonContentStyle(
-//                                id = 0,
-//                                content = {
-//                                    Box(
-//                                        modifier = Modifier
-//                                            .alpha(alpha = itemAlpha)
-//                                            .fillMaxSize()
-//                                            .align(Alignment.Center)
-//                                            .background(Color(0xFF6E4CD4))
-//                                    ) {
-//                                        if (photoUri == null) {
-//                                            Image(
-//                                                modifier = Modifier.align(Alignment.Center),
-//                                                imageVector = ImageVector.vectorResource(id = R.drawable.ic_profile),
-//                                                contentDescription = null,
-//                                            )
-//                                        } else {
-//                                            Image(
-//                                                modifier = Modifier
-//                                                    .fillMaxSize(),
-//                                                painter = rememberAsyncImagePainter(photoUri),
-//                                                contentScale = ContentScale.Crop,
-//                                                contentDescription = null,
-//                                            )
-//                                        }
-//                                    }
-//
-//                                    if (mode is MyProfileMode.Edit) {
-//                                        Box(
-//                                            modifier = Modifier
-//                                                .align(Alignment.BottomCenter)
-//                                                .padding(bottom = 7.8.fdpv)
-//                                                .size(24.fdpv * ((with(LocalDensity.current) { cellWidth!!.toDp() }) / 79.93f.fdpv))
-//                                                .clip(CircleShape)
-//                                                .background(PrimaryColor)
-//                                                .border(
-//                                                    width = 1.fdpv,
-//                                                    color = Color.White,
-//                                                    shape = CircleShape
-//                                                ),
-//                                            contentAlignment = Alignment.Center
-//                                        ) {
-//                                            Image(
-//                                                modifier = Modifier
-//                                                    .fillMaxWidth(fraction = 10.18f / 24),
-//                                                painter = painterResource(R.drawable.ic_edit_only_pen),
-//                                                contentDescription = "edit profile",
-//                                            )
-//                                        }
-//                                    }
-//                                },
-//                                onClick = {
-//                                    if (mode is MyProfileMode.Edit) {
-//                                        imagePickerLauncher.launch("image/*")
-//                                    }
-//                                },
-//                            )
-//                        }
-//                    )
-//                }
-//            }
         },
         applyInnerPaddingToContent = false,
         content = {
