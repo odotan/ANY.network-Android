@@ -287,40 +287,40 @@ fun RoundedHexagon(
                     contentAlignment = Alignment.Center
                     ) {
                     when (contentStyle) {
-                        is ContactContentStyle -> {
-                            if (contentStyle.contact.avatarUri != null) {
-                                Image(
-                                    modifier = Modifier
-                                        .fillMaxSize(),
-                                    painter = rememberAsyncImagePainter(
-                                        model = ImageRequest.Builder(LocalContext.current)
-                                            .data(contentStyle.contact.avatarUri)
-                                            .size(coil.size.Size.ORIGINAL)
-                                            .scale(scale = Scale.FILL)
-                                            .build()
-                                    ),
-                                    contentScale = ContentScale.Crop,
-                                    contentDescription = null,
-                                )
-                            } else {
-                                val fullname = contentStyle.contact
-                                    .name
-                                    .uppercase()
-                                AutoSizeText(
-                                    modifier = Modifier.fillMaxSize(0.9f),
-                                    text = fullname,
-                                    maxLines = if (fullname.contains(" ")) 2 else 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    color = Color(0xFFAFAEB8),
-                                    alignment = Alignment.Center,
-                                    maxTextSize = 11.csp * (LocalConfiguration.current.screenWidthDp.dp / contentStyle.gridColumns / 79.93f.fdpv) * scale * contentStyle.gridScaling,
-                                    style = TextStyle(
-                                        fontFamily = montserratFontFamily,
-                                        fontWeight = FontWeight.SemiBold,
-                                    )
-                                )
-                            }
-                        }
+//                        is ContactContentStyle -> {
+//                            if (contentStyle.contact.avatarUri != null) {
+//                                Image(
+//                                    modifier = Modifier
+//                                        .fillMaxSize(),
+//                                    painter = rememberAsyncImagePainter(
+//                                        model = ImageRequest.Builder(LocalContext.current)
+//                                            .data(contentStyle.contact.avatarUri)
+//                                            .size(coil.size.Size.ORIGINAL)
+//                                            .scale(scale = Scale.FILL)
+//                                            .build()
+//                                    ),
+//                                    contentScale = ContentScale.Crop,
+//                                    contentDescription = null,
+//                                )
+//                            } else {
+//                                val fullname = contentStyle.contact
+//                                    .name
+//                                    .uppercase()
+//                                AutoSizeText(
+//                                    modifier = Modifier.fillMaxSize(0.9f),
+//                                    text = fullname,
+//                                    maxLines = if (fullname.contains(" ")) 2 else 1,
+//                                    overflow = TextOverflow.Ellipsis,
+//                                    color = Color(0xFFAFAEB8),
+//                                    alignment = Alignment.Center,
+//                                    maxTextSize = 11.csp * (LocalConfiguration.current.screenWidthDp.dp / contentStyle.gridColumns / 79.93f.fdpv) * scale * contentStyle.gridScaling,
+//                                    style = TextStyle(
+//                                        fontFamily = montserratFontFamily,
+//                                        fontWeight = FontWeight.SemiBold,
+//                                    )
+//                                )
+//                            }
+//                        }
                         is TrashCanHexagonContentStyle -> {
                             val alpha by animateFloatAsState(
                                 targetValue = when {

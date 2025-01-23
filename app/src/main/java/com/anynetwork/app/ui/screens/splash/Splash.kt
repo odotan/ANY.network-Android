@@ -29,9 +29,11 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.anynetwork.app.R
 import com.anynetwork.app.ui.navigation.Route
+import com.anynetwork.app.ui.screens.home.HomeViewModel
 import com.anynetwork.app.ui.utils.fdph
 import com.anynetwork.app.ui.utils.fdpv
 import com.anynetwork.app.ui.utils.xdph
@@ -43,7 +45,6 @@ import timber.log.Timber
 @Composable
 fun SplashRoot(navController: NavHostController) {
     Box(modifier = Modifier.background(Color(0xFF120E1E))) {
-
         val context = LocalContext.current
         val sharedPreferences = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
         val skipOnboarding = sharedPreferences.getBoolean("onboardingCompleted", false)

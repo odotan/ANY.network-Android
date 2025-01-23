@@ -89,8 +89,8 @@ class HomeViewModel @Inject constructor(
 
     private var gridOrder: List<Order> = listOf()
 
-    val gridColumns = 6 * 8
-    val gridRows = 6 * 8
+    val gridColumns = 6 * 6
+    val gridRows = 6 * 6
     val centralGridPosition = HexGridCellPosition(
         row = gridRows / 2 - 2,
         column = gridColumns / 2 - 1,
