@@ -760,9 +760,9 @@ private fun Home(
                 list
             }
 
-            LaunchedEffect(items) {
-                items.flatten().filterIsInstance<NontransparentHexagonContentStyle>().size.log { "items size" }
-            }
+//            LaunchedEffect(items) {
+//                items.flatten().filterIsInstance<NontransparentHexagonContentStyle>().size.log { "items size" }
+//            }
 
             HexagonalGrid(
                 modifier = Modifier

@@ -23,7 +23,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -72,13 +71,10 @@ import com.anynetwork.app.ui.utils.fsp
 class RemovableStrategy(val onRemove: () -> Unit)
 
 @Stable
-@Immutable
 sealed class HexagonContentStyle(@Stable val id: Int)
 @Stable
-@Immutable
 open class TransparentHexagonContentStyle(id: Int): HexagonContentStyle(id)
 @Stable
-@Immutable
 open class NontransparentHexagonContentStyle(
     id: Int,
     val background: Background,
@@ -96,7 +92,6 @@ open class NontransparentHexagonContentStyle(
     }
 }
 @Stable
-@Immutable
 class EmptyHexagonContentStyle(
     id: Int,
     background: Background = Background.SingleColor(Color(0xFF6E4CD4)),
@@ -113,7 +108,6 @@ class EmptyHexagonContentStyle(
     removableStrategy = removableStrategy
 )
 @Stable
-@Immutable
 class TrashCanHexagonContentStyle(
     id: Int,
     background: Background = Background.SingleColor(Color(0xFF6E4CD4)),
@@ -141,7 +135,6 @@ class PopupHexagonContentStyle(
 }
 
 @Stable
-@Immutable
 class ImageHexagonContentStyle(
     id: Int,
     background: Background = Background.SingleColor(Color(0xFF6E4CD4)),
@@ -168,7 +161,6 @@ class ImageHexagonContentStyle(
     }
 }
 @Stable
-@Immutable
 class IconHexagonContentStyle(
     id: Int,
     background: Background = Background.SingleColor(Color(0xFF6E4CD4)),
@@ -218,7 +210,6 @@ class ContactContentStyle(
 )
 
 @Stable
-@Immutable
 class CustomHexagonContentStyle(
     id: Int,
     background: Background = Background.SingleColor(Color(0xFF6E4CD4)),

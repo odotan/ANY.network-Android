@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.anynetwork.app.ui.components.button.BackButton
 import com.anynetwork.app.ui.components.text.Header
+import com.anynetwork.app.ui.utils.fdph
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,7 +44,8 @@ fun Screen(
                 ),
                 title = {
                     Box(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize()
+                            .padding(horizontal = 55.fdph),
                         contentAlignment = Alignment.Center
                     ) {
                         when (val titleState = topBar.titleState) {
