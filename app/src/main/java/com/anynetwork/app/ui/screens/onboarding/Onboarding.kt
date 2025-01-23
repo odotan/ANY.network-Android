@@ -220,6 +220,7 @@ private fun Onboarding(navController: NavHostController) {
     }
 
     Screen(
+        modifier = Modifier.fillMaxSize(),
         containerColor = Color(0xFF120E1E),
         hexagonGrid = {
             val gridColumns = 6

@@ -276,7 +276,7 @@ fun HexagonalGrid(
                             is ImageHexagonContentStyle -> contentStyle.onClick.invoke(cellPositions[index]!!.positionOnScreen())
                             is CustomHexagonContentStyle -> {
                                 contentStyle.onClick.invoke(
-                                    cellPosition.positionInWindow() .log { "cellPosition.boundsInRoot().center" }
+                                    cellPosition.positionOnScreen() .log { "cellPosition.boundsInRoot().center" }
                                 )
                             }
                             is ContactContentStyle -> contentStyle.onClick.invoke(cellPosition.boundsInRoot().center)

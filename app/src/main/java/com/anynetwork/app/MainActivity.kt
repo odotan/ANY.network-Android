@@ -189,12 +189,13 @@ class MainActivity : ComponentActivity() {
                         val height = currentConfig.screenHeightDp.toFloat()
 
                         val toolbarHeight = TopAppBarDefaults.LargeAppBarCollapsedHeight.toFloatPx()
+                        val statusBarHeight = 20.dp.toFloatPx()
 
                         // Define animation states
-                        var scaleX by remember { mutableStateOf(width / 1000f) } // Start scaled based on initial width
-                        var scaleY by remember { mutableStateOf(height / 1000f) } // Start scaled based on initial height
+                        var scaleX by remember { mutableStateOf(0.1f) } // Start scaled based on initial width
+                        var scaleY by remember { mutableStateOf(0.1f) } // Start scaled based on initial height
                         var translateX by remember { mutableStateOf((x - width).log { "cellPosition.boundsInRoot().center.x" }) }
-                        var translateY by remember { mutableStateOf((y - height - toolbarHeight).log { "cellPosition.boundsInRoot().center.y" }) }
+                        var translateY by remember { mutableStateOf((y - height - toolbarHeight - statusBarHeight).log { "cellPosition.boundsInRoot().center.y" }) }
                         var opacity by remember { mutableStateOf(0f) }
 
                         // Trigger the animation when the screen is displayed
