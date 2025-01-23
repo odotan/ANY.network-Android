@@ -860,105 +860,105 @@ private fun Home(
             val background = DarkBlue.copy(alpha = backgroundAlpha)
             val hazeState = remember { HazeState() }
 
-                val showBottomSheetAnimationAlpha by animateFloatAsState(
-                    targetValue = if (showBottomSheet) 1f else 0f,
-                    animationSpec = tween(showBottomSheetAnimationDuration)
-                )
-                LaunchedEffect(showBottomSheetAnimationAlpha) {
-                    showBottomSheetAnimationAlpha.log { "showBottomSheetAnimationAlpha" }
-                }
-                AnimatedVisibility(
-                    visible = screenMode !is HomeScreenMode.SearchingGrid,
-                    enter = fadeIn(animationSpec = tween(durationMillis = 300)),
-                    exit = fadeOut(animationSpec = tween(durationMillis = 300))
+            val showBottomSheetAnimationAlpha by animateFloatAsState(
+                targetValue = if (showBottomSheet) 1f else 0f,
+                animationSpec = tween(showBottomSheetAnimationDuration)
+            )
+            LaunchedEffect(showBottomSheetAnimationAlpha) {
+                showBottomSheetAnimationAlpha.log { "showBottomSheetAnimationAlpha" }
+            }
+            AnimatedVisibility(
+                visible = screenMode !is HomeScreenMode.SearchingGrid,
+                enter = fadeIn(animationSpec = tween(durationMillis = 300)),
+                exit = fadeOut(animationSpec = tween(durationMillis = 300))
+            ) {
+                BoxWithConstraints(
+                    modifier = Modifier
+                        .alpha(showBottomSheetAnimationAlpha)
+                        .drawBehind {
+                            drawRect(background)
+                        }
                 ) {
-                    BoxWithConstraints(
-                        modifier = Modifier
-                            .alpha(showBottomSheetAnimationAlpha)
-                            .drawBehind {
-                                drawRect(background)
-                            }
-                    ) {
-                        layoutHeight = constraints.maxHeight
+                    layoutHeight = constraints.maxHeight
 
-                        Box(modifier = Modifier
-                            .fillMaxSize()
-                            .offset {
-                                val sheetOffsetY = anchoredDraggableState
-                                    .offset
-                                    .toInt()
-                                //                            currentOffset = sheetOffsetY.toFloat()
-                                IntOffset(x = 0, y = sheetOffsetY)
-                            }
-                            .anchoredDraggable(
-                                anchoredDraggableState,
-                                orientation = Orientation.Vertical
-                            )
-                            .onSizeChanged { sheetSize ->
-                                if (expandedOffset == 0f) {
-                                    Timber.i("onSizeChanged")
-                                    val newAnchors = DraggableAnchors {
-                                        with(density) {
-                                            expandedOffset = 275.fdpv.toPx()
-                                            partiallyExpandedOffset = 399.fdpv.toPx()
-                                            collapsedOffset = (layoutHeight - 120.fdpv.toPx())
-                                            fullOffset =
-                                                systemBarsPadding.toPx() + TopAppBarDefaults.LargeAppBarCollapsedHeight.toPx()
+                    Box(modifier = Modifier
+                        .fillMaxSize()
+                        .offset {
+                            val sheetOffsetY = anchoredDraggableState
+                                .offset
+                                .toInt()
+                            //                            currentOffset = sheetOffsetY.toFloat()
+                            IntOffset(x = 0, y = sheetOffsetY)
+                        }
+                        .anchoredDraggable(
+                            anchoredDraggableState,
+                            orientation = Orientation.Vertical
+                        )
+                        .onSizeChanged { sheetSize ->
+                            if (expandedOffset == 0f) {
+                                Timber.i("onSizeChanged")
+                                val newAnchors = DraggableAnchors {
+                                    with(density) {
+                                        expandedOffset = 275.fdpv.toPx()
+                                        partiallyExpandedOffset = 399.fdpv.toPx()
+                                        collapsedOffset = (layoutHeight - 120.fdpv.toPx())
+                                        fullOffset =
+                                            systemBarsPadding.toPx() + TopAppBarDefaults.LargeAppBarCollapsedHeight.toPx()
 
-                                            SheetValue.Collapsed at collapsedOffset
-                                            SheetValue.PartiallyExpanded at partiallyExpandedOffset
-                                            SheetValue.Expanded at expandedOffset
-                                        }
+                                        SheetValue.Collapsed at collapsedOffset
+                                        SheetValue.PartiallyExpanded at partiallyExpandedOffset
+                                        SheetValue.Expanded at expandedOffset
                                     }
-                                    anchoredDraggableState.updateAnchors(
-                                        newAnchors,
-                                        anchoredDraggableState.targetValue
-                                    )
                                 }
+                                anchoredDraggableState.updateAnchors(
+                                    newAnchors,
+                                    anchoredDraggableState.targetValue
+                                )
                             }
-                        ) {
-                            BottomSheet(
-                                viewModel = viewModel,
-                                screenMode = screenMode,
-                                hazeState = hazeState,
-                                bottomSheetHazeState = bottomSheetHazeState,
-                                searchButtonClick = {
-                                    val newAnchors = DraggableAnchors {
-                                        with(density) {
-                                            SheetValue.Collapsed at collapsedOffset
-                                            SheetValue.PartiallyExpanded at partiallyExpandedOffset
-                                            SheetValue.Expanded at expandedOffset
-                                            SheetValue.Full at fullOffset
-                                        }
+                        }
+                    ) {
+                        BottomSheet(
+                            viewModel = viewModel,
+                            screenMode = screenMode,
+                            hazeState = hazeState,
+                            bottomSheetHazeState = bottomSheetHazeState,
+                            searchButtonClick = {
+                                val newAnchors = DraggableAnchors {
+                                    with(density) {
+                                        SheetValue.Collapsed at collapsedOffset
+                                        SheetValue.PartiallyExpanded at partiallyExpandedOffset
+                                        SheetValue.Expanded at expandedOffset
+                                        SheetValue.Full at fullOffset
                                     }
+                                }
 //                                                    anchoredDraggableState.updateAnchors(
 //                                                        newAnchors,
 //                                                        anchoredDraggableState.currentValue
 //                                                    )
-                                    coroutineScope.launch {
-                                        anchoredDraggableState.animateTo(SheetValue.Full)
-                                        anchoredDraggableState.updateAnchors(
-                                            newAnchors,
-                                            SheetValue.Full
-                                        )
-                                        viewModel.updateScreenMode(HomeScreenMode.SearchingList)
-                                    }
-                                },
-                                centerGridClick = {
-                                    isGridCentered = true
-                                },
-                                syncButtonClick = {
-                                    showAllowContactsPermissionsDialog = true
-                                },
-                                onCreateNewContactClick = {
-                                    onCreateNewContactClick.invoke(it)
-                                },
-                                searchText = searchText,
-                                anchoredDraggableState = anchoredDraggableState
-                            )
-                        }
+                                coroutineScope.launch {
+                                    anchoredDraggableState.animateTo(SheetValue.Full)
+                                    anchoredDraggableState.updateAnchors(
+                                        newAnchors,
+                                        SheetValue.Full
+                                    )
+                                    viewModel.updateScreenMode(HomeScreenMode.SearchingList)
+                                }
+                            },
+                            centerGridClick = {
+                                isGridCentered = true
+                            },
+                            syncButtonClick = {
+                                showAllowContactsPermissionsDialog = true
+                            },
+                            onCreateNewContactClick = {
+                                onCreateNewContactClick.invoke(it)
+                            },
+                            searchText = searchText,
+                            anchoredDraggableState = anchoredDraggableState
+                        )
                     }
                 }
+            }
 
             if (screenMode.isSearching) Column(
                 modifier = Modifier

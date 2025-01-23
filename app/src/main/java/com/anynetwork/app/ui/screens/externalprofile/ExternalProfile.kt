@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -50,6 +51,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardColors
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -183,6 +186,11 @@ import com.anynetwork.app.ui.utils.xdph
 import com.anynetwork.app.ui.utils.xdpv
 import com.google.accompanist.insets.ExperimentalAnimatedInsets
 import com.yalantis.ucrop.UCrop
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.haze
+import dev.chrisbanes.haze.hazeChild
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -431,6 +439,13 @@ private fun ExternalProfile(
             percentage.coerceIn(0f, 100f) // Ensure percentage is between 0 and 100
         }
     }
+
+    val hazeState = remember { HazeState() }
+    val hazeStyle = HazeStyle(
+        backgroundColor = Color.White.copy(alpha = .1f),
+        blurRadius = 10.dp,
+        tint = HazeTint.Unspecified
+    )
 
     val targetBlur = if (viewState.mode is ExternalProfileMode.Edit || viewState.mode is ExternalProfileMode.NewContact) 20.dp else 0.dp
     val animatedBlur by animateDpAsState(
@@ -976,7 +991,10 @@ private fun ExternalProfile(
 
             var triggerRecalculation by remember(isEnterAnimationFinished) { mutableStateOf(isEnterAnimationFinished) }.log { "triggerRecalculation" }
             HexagonalGrid(
-                modifier = Modifier.alpha(if (viewState.mode is ExternalProfileMode.NewContact) 0f else 1f),
+                modifier = Modifier
+                    .alpha(if (viewState.mode is ExternalProfileMode.NewContact) 0f else 1f)
+                    .haze(state = hazeState)
+                ,
                 items = items,
                 rowSize = gridColumns,
                 initialScale = scale,
@@ -1008,7 +1026,7 @@ private fun ExternalProfile(
                 gridScaling = 1f
             )
 
-            leadingCellOffset?.let {
+            /*leadingCellOffset?.let {
                 val centralOffsetInDp = with(LocalDensity.current) {
                     DpOffset(it.x.toDp(), it.y.toDp())
                 }
@@ -1170,7 +1188,7 @@ private fun ExternalProfile(
                         }
                     )
                 }
-            }
+            }*/
         },
         content = {
             val density = LocalDensity.current
@@ -1923,7 +1941,156 @@ private fun ExternalProfile(
                         )
                     }
                 }
+            } else if (viewState.mode is ExternalProfileMode.Normal) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 31.fdpv)
+                            .fillMaxWidth()
+                            .height(48.fdpv)
+                    ) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .width(46.fdph),
+                            colors = CardColors(Color.Transparent, Color.Transparent, Color.Transparent, Color.Transparent),
+                            shape = RoundedCornerShape(
+                                topStart = 0.dp,
+                                topEnd = 24.fdph,
+                                bottomEnd = 24.fdph,
+                                bottomStart = 0.dp
+                            )
+                        ) {
+                            Box(modifier = Modifier.fillMaxSize()
+                                .hazeChild(
+                                    state = hazeState,
+                                    style = hazeStyle
+                                )
+                            ) {
+                                IconButton(
+                                    modifier = Modifier
+                                        .align(Alignment.Center),
+                                    onClick = {}
+                                ) {
+                                    Image(
+                                        modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
+                                        painter = painterResource(R.drawable.ic_arrow_left),
+                                        contentDescription = "back button",
+                                    )
+                                }
+                            }
+                        }
+
+                        Card(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .align(Alignment.Center),
+                            colors = CardColors(Color.Transparent, Color.Transparent, Color.Transparent, Color.Transparent),
+                            shape = RoundedCornerShape(
+                                topStart = 24.fdph,
+                                topEnd = 24.fdph,
+                                bottomEnd = 24.fdph,
+                                bottomStart = 24.fdph
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .hazeChild(
+                                        state = hazeState,
+                                        style = hazeStyle
+                                    )
+                                    .padding(horizontal = 9.fdph),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                IconButton(
+                                    modifier = Modifier,
+                                    onClick = {}
+                                ) {
+                                    Image(
+                                        modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
+                                        painter = painterResource(R.drawable.ic_rounded_plus_2),
+                                        contentDescription = "back button",
+                                    )
+                                }
+
+                                VerticalLine()
+
+                                IconButton(
+                                    modifier = Modifier,
+                                    onClick = {}
+                                ) {
+                                    Image(
+                                        modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
+                                        painter = painterResource(R.drawable.ic_other_profile_trailing_2),
+                                        contentDescription = "back button",
+                                    )
+                                }
+
+                                VerticalLine()
+
+                                IconButton(
+                                    modifier = Modifier,
+                                    onClick = {}
+                                ) {
+                                    Image(
+                                        modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
+                                        painter = painterResource(R.drawable.ic_star),
+                                        contentDescription = "back button",
+                                    )
+                                }
+
+                                VerticalLine()
+
+                                IconButton(
+                                    modifier = Modifier,
+                                    onClick = {}
+                                ) {
+                                    Image(
+                                        modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
+                                        painter = painterResource(R.drawable.ic_search_2),
+                                        contentDescription = "back button",
+                                    )
+                                }
+                            }
+                        }
+
+                        Card(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .width(46.fdph)
+                                .align(Alignment.CenterEnd),
+                            colors = CardColors(Color.Transparent, Color.Transparent, Color.Transparent, Color.Transparent),
+                            shape = RoundedCornerShape(
+                                topStart = 24.fdph,
+                                topEnd = 0.dp,
+                                bottomEnd = 0.dp,
+                                bottomStart = 24.fdph
+                            )
+                        ) {
+                            Box(modifier = Modifier.fillMaxSize()
+                                .hazeChild(
+                                    state = hazeState,
+                                    style = hazeStyle
+                                )
+                            ) {
+                                IconButton(
+                                    modifier = Modifier
+                                        .align(Alignment.Center),
+                                    onClick = {}
+                                ) {
+                                    Image(
+                                        modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
+                                        painter = painterResource(R.drawable.ic_rounded_plus_2),
+                                        contentDescription = "back button",
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
+
             if (viewState.mode is ExternalProfileMode.RequestNetwork && (viewState.mode as ExternalProfileMode.RequestNetwork).isSearching) {
                 Column(
                     modifier = Modifier
@@ -1963,6 +2130,18 @@ private fun ExternalProfile(
     }
 }
 
+@Composable
+fun VerticalLine() {
+    Box(
+        modifier = Modifier
+            .padding(5.fdph)
+            .width(1.fdph)
+            .fillMaxHeight()
+            .padding(vertical = 13.fdpv)
+            .clip(RoundedCornerShape(50))
+            .background(Color.White.copy(alpha = 0.15f))
+    )
+}
 
 private fun createCellPosition(row: Int, column: Int) = HexGridCellPosition(
     column = column,
