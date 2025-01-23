@@ -111,9 +111,10 @@ class HomeViewModel @Inject constructor(
                     withContext(Dispatchers.Default) {
                         val filteredContacts = contacts.value
                             .filter {
-                                it.matchesQuery(searchQuery.value)
+                                it.matchesQuery(searchQuery.value.log { "filteredContacts with search query" })
                             }
-                            .sortedBy { it.name }
+                            .sortedWith(compareBy({ it.name.firstOrNull()?.isLetter() == true }, { it.name }))
+
                         _searchContacts.value = filteredContacts
 
                         val newGridItems = processContactsForGrid(filteredContacts, interactions.value)
@@ -225,8 +226,7 @@ class HomeViewModel @Inject constructor(
     private fun processContactsForGrid(contacts: List<Contact>, interactions: List<Interaction>): List<GridItem> {
         return when (viewState.value.mode) {
             is HomeScreenMode.SearchingGrid, HomeScreenMode.SearchingList -> {
-                searchContacts.value.toMutableList()
-                    .map { GridItem.SearchGridItem(it) }
+                contacts.map { GridItem.SearchGridItem(it) }
             }
             else -> {
                 contacts

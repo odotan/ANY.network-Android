@@ -233,6 +233,7 @@ fun ExternalProfileRoot(
             is ExternalProfileViewEffect.ContactUpdated -> {
                 val homeViewModel = hiltViewModel<HomeViewModel>()
                 homeViewModel.reloadData()
+                onViewEvent(ExternalProfileViewEvent.ClearViewEffect)
             }
             else -> {}
         }
