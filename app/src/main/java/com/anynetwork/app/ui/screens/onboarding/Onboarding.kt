@@ -3,6 +3,7 @@
 package com.anynetwork.app.ui.screens.onboarding
 
 import android.content.Context
+import android.os.Build
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -36,6 +37,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
@@ -43,7 +45,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.NavHostController
+import com.anynetwork.app.BuildConfig
 import com.anynetwork.app.R
 import com.anynetwork.app.ui.components.Screen
 import com.anynetwork.app.ui.components.hexagon.CoverBox
@@ -129,8 +134,9 @@ private fun Onboarding(navController: NavHostController) {
     var slideOtherContactAvatarToCenterAnimationDuration = 800
     var showContactFlowerAnimationDuration = 800
 
-    val fastPace = true
+    val fastPace = false//BuildConfig.DEBUG
     val fastPaceDelay = 200L
+
     LaunchedEffect(Unit) {
         // Defer the animation start to improve performance
         delay(if (fastPace) fastPaceDelay else 300)
@@ -157,7 +163,7 @@ private fun Onboarding(navController: NavHostController) {
         showMainMessage = true
         delay(if (fastPace) fastPaceDelay else (1500 + centerMessageAlphaAnimationDuration.toLong()))
 
-        paddingTopCenterMessage = 430.fdpv
+        paddingTopCenterMessage = 410.fdpv
         showFirstGroupOfContacts = true
         delay(if (fastPace) fastPaceDelay else (600 + centerMessageAlphaAnimationDurationAnimationDuration.toLong()))
 
@@ -220,6 +226,7 @@ private fun Onboarding(navController: NavHostController) {
     }
 
     Screen(
+        modifier = Modifier.fillMaxSize(),
         containerColor = Color(0xFF120E1E),
         hexagonGrid = {
             val gridColumns = 6
