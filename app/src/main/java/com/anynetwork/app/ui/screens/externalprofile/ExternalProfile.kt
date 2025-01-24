@@ -426,6 +426,7 @@ private fun ExternalProfile(
     }
 
     val hazeState = remember { HazeState() }
+    val formHazeState = remember { HazeState() }
     val hazeStyle = HazeStyle(
         backgroundColor = DarkBlue,
         tints = listOf(HazeTint(Color.White.copy(alpha = .10f))),
@@ -881,17 +882,9 @@ private fun ExternalProfile(
     }
 
     Screen(
+        modifier = Modifier.fillMaxSize()
+            .haze(state = hazeState),
         topBar = ToolbarState.Shown(
-            navigationIconState = NavigationIconState.Custom {
-                IconButton(onClick = {
-                    viewModel.onViewEvent(BackButtonClick)
-                }) {
-                    Image(
-                        painter = painterResource(R.drawable.ic_back_arrow),
-                        contentDescription = "hamburger menu icon",
-                    )
-                }
-            },
             titleState = ToolbarStateTitle.Custom(
                 content = {
                     when (viewState.mode) {
@@ -989,7 +982,6 @@ private fun ExternalProfile(
             HexagonalGrid(
                 modifier = Modifier
                     .alpha(if (viewState.mode is ExternalProfileMode.NewContact) 0f else 1f)
-                    .haze(state = hazeState)
                 ,
                 items = items,
                 rowSize = gridColumns,
@@ -1937,155 +1929,6 @@ private fun ExternalProfile(
                         )
                     }
                 }
-            } else if (viewState.mode is ExternalProfileMode.Normal) {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(bottom = 31.fdpv)
-                            .navigationBarsPadding()
-                            .fillMaxWidth()
-                            .height(48.fdpv)
-                    ) {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .width(46.fdph),
-                            colors = CardColors(Color.Transparent, Color.Transparent, Color.Transparent, Color.Transparent),
-                            shape = RoundedCornerShape(
-                                topStart = 0.dp,
-                                topEnd = 24.fdph,
-                                bottomEnd = 24.fdph,
-                                bottomStart = 0.dp
-                            )
-                        ) {
-                            Box(modifier = Modifier.fillMaxSize()
-                                .hazeChild(
-                                    state = hazeState,
-                                    style = hazeStyle
-                                )
-                            ) {
-                                IconButton(
-                                    modifier = Modifier
-                                        .align(Alignment.Center),
-                                    onClick = {}
-                                ) {
-                                    Image(
-                                        modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
-                                        painter = painterResource(R.drawable.ic_arrow_left),
-                                        contentDescription = "back button",
-                                    )
-                                }
-                            }
-                        }
-
-                        Card(
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .align(Alignment.Center),
-                            colors = CardColors(Color.Transparent, Color.Transparent, Color.Transparent, Color.Transparent),
-                            shape = RoundedCornerShape(
-                                topStart = 24.fdph,
-                                topEnd = 24.fdph,
-                                bottomEnd = 24.fdph,
-                                bottomStart = 24.fdph
-                            )
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .hazeChild(
-                                        state = hazeState,
-                                        style = hazeStyle
-                                    )
-                                    .padding(horizontal = 9.fdph),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                IconButton(
-                                    modifier = Modifier,
-                                    onClick = {}
-                                ) {
-                                    Image(
-                                        modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
-                                        painter = painterResource(R.drawable.ic_rounded_plus_2),
-                                        contentDescription = "back button",
-                                    )
-                                }
-
-                                VerticalLine()
-
-                                IconButton(
-                                    modifier = Modifier,
-                                    onClick = {}
-                                ) {
-                                    Image(
-                                        modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
-                                        painter = painterResource(R.drawable.ic_other_profile_trailing_2),
-                                        contentDescription = "back button",
-                                    )
-                                }
-
-                                VerticalLine()
-
-                                IconButton(
-                                    modifier = Modifier,
-                                    onClick = {}
-                                ) {
-                                    Image(
-                                        modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
-                                        painter = painterResource(R.drawable.ic_star),
-                                        contentDescription = "back button",
-                                    )
-                                }
-
-                                VerticalLine()
-
-                                IconButton(
-                                    modifier = Modifier,
-                                    onClick = {}
-                                ) {
-                                    Image(
-                                        modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
-                                        painter = painterResource(R.drawable.ic_search_2),
-                                        contentDescription = "back button",
-                                    )
-                                }
-                            }
-                        }
-
-                        Card(
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .width(46.fdph)
-                                .align(Alignment.CenterEnd),
-                            colors = CardColors(Color.Transparent, Color.Transparent, Color.Transparent, Color.Transparent),
-                            shape = RoundedCornerShape(
-                                topStart = 24.fdph,
-                                topEnd = 0.dp,
-                                bottomEnd = 0.dp,
-                                bottomStart = 24.fdph
-                            )
-                        ) {
-                            Box(modifier = Modifier.fillMaxSize()
-                                .hazeChild(
-                                    state = hazeState,
-                                    style = hazeStyle
-                                )
-                            ) {
-                                IconButton(
-                                    modifier = Modifier
-                                        .align(Alignment.Center),
-                                    onClick = {}
-                                ) {
-                                    Image(
-                                        modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
-                                        painter = painterResource(R.drawable.ic_rounded_plus_2),
-                                        contentDescription = "back button",
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
             }
 
             if (viewState.mode is ExternalProfileMode.RequestNetwork && (viewState.mode as ExternalProfileMode.RequestNetwork).isSearching) {
@@ -2125,6 +1968,174 @@ private fun ExternalProfile(
             menuData = fieldsDialogOptions,
             onDismiss = { showAddFieldDialog = false }
         )
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 31.fdpv)
+                .navigationBarsPadding()
+                .fillMaxWidth()
+                .height(48.fdpv)
+        ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(46.fdph),
+                colors = CardColors(Color.Transparent, Color.Transparent, Color.Transparent, Color.Transparent),
+                shape = RoundedCornerShape(
+                    topStart = 0.dp,
+                    topEnd = 24.fdph,
+                    bottomEnd = 24.fdph,
+                    bottomStart = 0.dp
+                )
+            ) {
+                Box(modifier = Modifier.fillMaxSize()
+                    .hazeChild(
+                        state = hazeState,
+                        style = hazeStyle
+                    )
+                ) {
+                    IconButton(
+                        modifier = Modifier
+                            .align(Alignment.Center),
+                        onClick = {
+                            viewModel.onViewEvent(BackButtonClick)
+                        }
+                    ) {
+                        Image(
+                            modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
+                            painter = painterResource(R.drawable.ic_arrow_left),
+                            contentDescription = "back button",
+                        )
+                    }
+                }
+            }
+
+            Card(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .align(Alignment.Center),
+                colors = CardColors(Color.Transparent, Color.Transparent, Color.Transparent, Color.Transparent),
+                shape = RoundedCornerShape(
+                    topStart = 24.fdph,
+                    topEnd = 24.fdph,
+                    bottomEnd = 24.fdph,
+                    bottomStart = 24.fdph
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .hazeChild(
+                            state = hazeState,
+                            style = hazeStyle
+                        )
+                        .padding(horizontal = 9.fdph),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        modifier = Modifier,
+                        onClick = {}
+                    ) {
+                        Image(
+                            modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
+                            painter = painterResource(R.drawable.ic_rounded_plus_2),
+                            contentDescription = "back button",
+                        )
+                    }
+
+                    VerticalLine()
+
+                    IconButton(
+                        modifier = Modifier,
+                        onClick = {}
+                    ) {
+                        Image(
+                            modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
+                            painter = painterResource(R.drawable.ic_other_profile_trailing_2),
+                            contentDescription = "back button",
+                        )
+                    }
+
+                    VerticalLine()
+
+                    IconButton(
+                        modifier = Modifier,
+                        onClick = {
+                            viewModel.onViewEvent(FavoriteButtonClick)
+                        }
+                    ) {
+                        val favoriteButtonAlpha by animateFloatAsState(
+                            targetValue = if (viewState.isFavorite) 0f else 1f,
+                            animationSpec = tween(300)
+                        )
+
+                        Image(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(vertical = 10.fdpv)
+                                .alpha(favoriteButtonAlpha),
+                            painter = painterResource(R.drawable.ic_star),
+                            contentDescription = "back button",
+                        )
+                        Image(
+                            modifier = Modifier.fillMaxSize()
+                                .padding(vertical = 10.fdpv)
+                                .alpha(1 - favoriteButtonAlpha),
+                            painter = painterResource(R.drawable.ic_star_filled),
+                            contentDescription = "back button",
+                        )
+                    }
+
+                    VerticalLine()
+
+                    IconButton(
+                        modifier = Modifier,
+                        onClick = {}
+                    ) {
+                        Image(
+                            modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
+                            painter = painterResource(R.drawable.ic_search_2),
+                            contentDescription = "back button",
+                        )
+                    }
+                }
+            }
+
+            Card(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(46.fdph)
+                    .align(Alignment.CenterEnd),
+                colors = CardColors(Color.Transparent, Color.Transparent, Color.Transparent, Color.Transparent),
+                shape = RoundedCornerShape(
+                    topStart = 24.fdph,
+                    topEnd = 0.dp,
+                    bottomEnd = 0.dp,
+                    bottomStart = 24.fdph
+                )
+            ) {
+                Box(modifier = Modifier.fillMaxSize()
+                    .hazeChild(
+                        state = hazeState,
+                        style = hazeStyle
+                    )
+                ) {
+                    IconButton(
+                        modifier = Modifier
+                            .align(Alignment.Center),
+                        onClick = {}
+                    ) {
+                        Image(
+                            modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
+                            painter = painterResource(R.drawable.ic_rounded_plus_2),
+                            contentDescription = "back button",
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
