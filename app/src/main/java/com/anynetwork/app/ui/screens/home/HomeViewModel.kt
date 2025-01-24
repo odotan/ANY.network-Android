@@ -108,7 +108,7 @@ class HomeViewModel @Inject constructor(
                 .collect { query ->
                     withContext(Dispatchers.Default) {
                         if (!viewState.value.mode.isSearching) return@withContext
-                        log { "searching contacts" }
+                        searchQuery.value.log { "searching contacts" }
                         val filteredContacts = contacts.value
                             .filter {
                                 it.matchesQuery(searchQuery.value.log { "filteredContacts with search query" })
@@ -141,7 +141,13 @@ class HomeViewModel @Inject constructor(
                 _contactsFetched = true
                 updateContacts(emittedContacts)
 
-                updateDependentStates(emittedContacts, latestInteractions)
+                if (viewState.value.mode.isSearching) {
+                    updateDependentStates(emittedContacts.filter {
+                        it.matchesQuery(searchQuery.value.log { "filteredContacts with search query" })
+                    }.sortedWith(compareBy({ it.name.firstOrNull()?.isLetter() == true }, { it.name })), emptyList())
+                } else {
+                    updateDependentStates(emittedContacts, latestInteractions)
+                }
             }
         } catch (e: Exception) {
             Timber.e(e, "Error reloading data")
@@ -391,7 +397,7 @@ class HomeViewModel @Inject constructor(
         )
 
         viewModelScope.launch {
-            val newGridItems = processContactsForGrid(contacts.value, interactions.value)
+            val newGridItems = processContactsForGrid(if (screenMode.isSearching) searchContacts.value else contacts.value, interactions.value)
             updateHexGridItems(newGridItems)
             if (_hexGridItems.value != newGridItems) {
                 Timber.d("Hex grid updated with new items.")

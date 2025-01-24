@@ -458,7 +458,7 @@ private fun Home(
                 when {
                     sharedPreferences.contains(SP_HOME_GRID_ZOOM_OFFSET_X) && sharedPreferences.contains(
                         SP_HOME_GRID_ZOOM_OFFSET_Y
-                    ) -> Offset(
+                    ) && !viewState.mode.isSearching -> Offset(
                         x = sharedPreferences.getFloat(SP_HOME_GRID_ZOOM_OFFSET_X, 0f),
                         y = sharedPreferences.getFloat(SP_HOME_GRID_ZOOM_OFFSET_Y, 0f)
                     )
@@ -468,9 +468,9 @@ private fun Home(
             }
             val initialScale = remember {
                 when {
+                    viewState.mode.isSearching -> 1f
                     sharedPreferences.contains(SP_HOME_GRID_ZOOM) ->
                         sharedPreferences.getFloat(SP_HOME_GRID_ZOOM, defaultZoomScale)
-
                     else -> defaultZoomScale
                 }
             }
@@ -976,7 +976,6 @@ private fun Home(
                         .fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp, 24.dp, 0.dp, 0.dp)
                 ) {
-                    var searchTextValue by remember { mutableStateOf(searchText) }
                     SearchTextField(
                         modifier = Modifier
                             .hazeChild(
@@ -990,8 +989,8 @@ private fun Home(
                             )
                             .padding(horizontal = 16.fdpv, vertical = 16.fdph)
                             .height(56.xdpv),
+                        value = searchText,
                         onValueChange = {
-                            searchTextValue = it
                             viewModel.updateSearchText(it)
                         },
                         trailingIcon = {

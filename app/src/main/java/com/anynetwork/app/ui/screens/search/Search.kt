@@ -277,6 +277,7 @@ private fun Search(
                         onValueChange = {
                             value = it
                         },
+                        value = value,
                         trailingIcon = {
                             if (value.isNotEmpty()) {
                                 Row(

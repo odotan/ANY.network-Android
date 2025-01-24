@@ -2107,6 +2107,7 @@ private fun ExternalProfile(
                                 .padding(horizontal = 16.fdpv, vertical = 16.fdph)
                                 .padding(bottom = 16.fdpv)
                                 .height(56.xdpv),
+                            value = value,
                             onValueChange = {
                                 value = it
                             },

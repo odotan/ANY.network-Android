@@ -40,6 +40,7 @@ import com.anynetwork.app.ui.utils.xdph
 @Composable
 fun SearchTextField(
     modifier: Modifier = Modifier,
+    value: String,
     onValueChange: (String) -> Unit,
     trailingIcon: @Composable (() -> Unit)? = null
 ) {
@@ -48,7 +49,6 @@ fun SearchTextField(
 
     // Tracks if the keyboard request has already been made
     var keyboardShown by remember { mutableStateOf(false) }
-    var value by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         focusRequester.requestFocus() // Request focus when the Composable appears
@@ -82,7 +82,6 @@ fun SearchTextField(
                 value = value,
                 onValueChange = {
                     onValueChange.invoke(it)
-                    value = it
                 },
                 colors = TextFieldDefaults.colors(
                     unfocusedContainerColor = Color.Black.copy(alpha = .23f),
@@ -124,7 +123,6 @@ fun SearchTextField(
                                 .clip(CircleShape)
                                 .clickable {
                                     onValueChange.invoke("")
-                                    value = ""
                                 },
                             contentAlignment = Alignment.Center
                         ) {
