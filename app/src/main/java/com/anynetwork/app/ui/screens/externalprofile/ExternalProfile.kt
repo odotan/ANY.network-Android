@@ -430,7 +430,6 @@ private fun ExternalProfile(
     }
 
     val hazeState = remember { HazeState() }
-    val formHazeState = remember { HazeState() }
     val hazeStyle = HazeStyle(
         backgroundColor = DarkBlue,
         tints = listOf(HazeTint(Color.White.copy(alpha = .10f))),

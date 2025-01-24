@@ -157,7 +157,6 @@ class HomeViewModel @Inject constructor(
     private suspend fun updateContacts(emittedContacts: List<Contact>) = withContext(Dispatchers.IO) {
         val distinctContacts = emittedContacts
             .distinctBy { it.id }
-            .distinctBy { it.phone?.normalize() }
             .sortedBy { it.name }
 
         Timber.i("current contacts list size: ${_contacts.value.size}")
@@ -165,7 +164,7 @@ class HomeViewModel @Inject constructor(
             Timber.i("updateContacts")
             _contacts.value = distinctContacts
 
-            viewModelScope.launch {
+            viewModelScope.launch() {
                 distinctContacts
                     .filter { it.isFavorite }
                     .forEach { contact ->

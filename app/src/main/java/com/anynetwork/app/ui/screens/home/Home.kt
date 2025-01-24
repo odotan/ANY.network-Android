@@ -34,10 +34,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -47,8 +49,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.BottomSheetDefaults.DragHandle
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardColors
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -65,7 +70,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -76,7 +80,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
@@ -123,7 +129,6 @@ import com.anynetwork.app.ui.components.hexagon.EmptyHexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.HexagonalGrid
 import com.anynetwork.app.ui.components.hexagon.IconHexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.ImageHexagonContentStyle
-import com.anynetwork.app.ui.components.hexagon.NontransparentHexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.NontransparentHexagonContentStyle.Background
 import com.anynetwork.app.ui.components.hexagon.RemovableStrategy
 import com.anynetwork.app.ui.components.hexagon.RoundedHexagon
@@ -136,6 +141,12 @@ import com.anynetwork.app.ui.components.hexagon.generateHexagonColors
 import com.anynetwork.app.ui.components.hexagon.hexCellsBackgroundColorsGrid
 import com.anynetwork.app.ui.components.text.AutoSizeText
 import com.anynetwork.app.ui.navigation.Route
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileMode
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.BackButtonClick
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.EditButtonClick
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.FavoriteButtonClick
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.SaveButtonClick
+import com.anynetwork.app.ui.screens.externalprofile.VerticalLine
 import com.anynetwork.app.ui.screens.home.HomeViewEvent.CarouselContactInteractionClick
 import com.anynetwork.app.ui.screens.home.HomeViewEvent.ClearViewEffect
 import com.anynetwork.app.ui.screens.home.HomeViewEvent.GridItemButtonRemove
@@ -165,7 +176,6 @@ import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import kotlin.math.absoluteValue
@@ -272,6 +282,13 @@ private fun Home(
     var showBottomSheet by rememberSaveable { mutableStateOf(false) }
     var showAllowContactsPermissionsDialog by remember { mutableStateOf(false) }
 
+    val pillHazeState = remember { HazeState() }
+    val pillHazeStyle = HazeStyle(
+        backgroundColor = DarkBlue,
+        tints = listOf(HazeTint(Color.White.copy(alpha = .10f))),
+        blurRadius = 8.dp,
+    )
+
     val sharedPreferences = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
     val anchoredDraggableState = remember {
         AnchoredDraggableState(
@@ -297,12 +314,6 @@ private fun Home(
         )}
 
     val viewState by viewModel.viewState.collectAsState()
-    LaunchedEffect(Unit) {
-        snapshotFlow { viewState }
-            .collectLatest { newValue ->
-                viewState.log { "viewState new value" }
-            }
-    }
 
     val screenMode by remember {
         derivedStateOf {
@@ -313,13 +324,6 @@ private fun Home(
 
     var isGridCentered by remember {
         mutableStateOf(false)
-    }
-
-    LaunchedEffect(Unit) {
-        snapshotFlow { screenMode }
-            .collectLatest { newValue ->
-                screenMode.log { "screenMode new value" }
-            }
     }
 
     val centerMessageAlphaAnimationDuration = 1500
@@ -434,7 +438,8 @@ private fun Home(
 
     Screen(
         modifier = Modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .haze(state = pillHazeState),
         topBar = HomeToolbar(
             screenMode = screenMode,
             onBackPress = {
@@ -1026,6 +1031,92 @@ private fun Home(
         }
     )
 
+    val showPill = remember(screenMode) { screenMode is HomeScreenMode.Normal }
+    if (showPill) Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 31.fdpv)
+                .navigationBarsPadding()
+                .fillMaxWidth()
+                .height(48.fdpv)
+        ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .align(Alignment.Center),
+                colors = CardColors(Color.Transparent, Color.Transparent, Color.Transparent, Color.Transparent),
+                shape = RoundedCornerShape(
+                    topStart = 24.fdph,
+                    topEnd = 24.fdph,
+                    bottomEnd = 24.fdph,
+                    bottomStart = 24.fdph
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .hazeChild(
+                            state = pillHazeState,
+                            style = pillHazeStyle
+                        )
+                        .padding(horizontal = 9.fdph),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        modifier = Modifier,
+                        onClick = {
+                            val newAnchors = DraggableAnchors {
+                                with(density) {
+                                    SheetValue.Collapsed at collapsedOffset
+                                    SheetValue.PartiallyExpanded at partiallyExpandedOffset
+                                    SheetValue.Expanded at expandedOffset
+                                    SheetValue.Full at fullOffset
+                                }
+                            }
+                            anchoredDraggableState.updateAnchors(
+                                newAnchors,
+                                anchoredDraggableState.currentValue
+                            )
+                            coroutineScope.launch {
+                                anchoredDraggableState.animateTo(SheetValue.Full)
+                                anchoredDraggableState.updateAnchors(
+                                    newAnchors,
+                                    SheetValue.Full
+                                )
+                                viewModel.updateScreenMode(HomeScreenMode.SearchingList)
+                            }
+                        }
+                    ) {
+                        Image(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(vertical = 10.fdpv),
+                            painter = painterResource(R.drawable.ic_search),
+                            contentDescription = "back button",
+                        )
+                    }
+
+                    VerticalLine()
+
+                    IconButton(
+                        modifier = Modifier,
+                        onClick = {
+                            isGridCentered = true
+                        }
+                    ) {
+                        Image(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(vertical = 10.fdpv),
+                            painter = painterResource(R.drawable.ic_locate),
+                            contentDescription = "back button",
+                        )
+                    }
+                }
+            }
+        }
+    }
+
     val permissionsLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -1137,54 +1228,10 @@ fun BottomSheet(
                 ) {
                     DragHandle()
                 }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.fdpv,)
-                        .align(Alignment.BottomCenter)
-                ) {
-                    IconButton(
-                        modifier = Modifier
-                            .size(48.fdpv)
-                            .clip(CircleShape)
-                            .background(Color(0xFFD9D9D9).copy(alpha = 0.1f)),
-                        onClick = {
-                            searchButtonClick.invoke()
-                        }
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_search),
-                            contentDescription = "Start Button"
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    IconButton(
-                        modifier = Modifier
-                            .size(48.fdpv)
-                            .clip(CircleShape)
-                            .background(Color(0xFFD9D9D9).copy(alpha = 0.1f)),
-                        onClick = {
-                            centerGridClick.invoke()
-                        }
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_locate),
-                            contentDescription = "Center",
-                        )
-                    }
-                }
             }
 
             val contacts by viewModel.contacts.collectAsState()
-            LaunchedEffect(contacts) {
-                snapshotFlow { contacts }
-                    .collectLatest { newValue ->
-                        newValue.size.log { "contacts new value size" }
-                    }
-            }
+
             if (readContactsPermissionGranted == false) {
                 if (showSyncContactsMessage) {
                     SwipeUpToContinue(
@@ -1256,12 +1303,6 @@ fun BottomSheet(
                 }
             }
 
-            LaunchedEffect(searchResultContacts) {
-                snapshotFlow { searchResultContacts }
-                    .collectLatest { newValue ->
-                        newValue.size.log { "searchResultContacts new value size" }
-                    }
-            }
             val listState = rememberLazyListState()
             LazyColumn(
                 modifier = Modifier
@@ -1331,34 +1372,32 @@ fun BottomSheet(
                 }
                 items(
                     searchResultContacts.size,
-                    { index -> searchResultContacts[index].id }
+                    key = { index -> searchResultContacts[index].id }
                 ) {
                     val contact = searchResultContacts[it]
-                    key(contact) {
-                        ContactsRow(
-                            modifier = Modifier
-                                .padding(vertical = 8.9.fdpv)
-                                .animateItem(),
-                            contact = contact,
-                            onClick = {
-                                viewModel.onViewAction(
-                                    GridItemClick(
-                                        contact = contact,
-                                        offsetX = 0f,
-                                        offsetY = 0f,
-                                    )
+                    ContactsRow(
+                        modifier = Modifier
+                            .padding(vertical = 8.9.fdpv)
+                            .animateItem(),
+                        contact = contact,
+                        onClick = {
+                            viewModel.onViewAction(
+                                GridItemClick(
+                                    contact = contact,
+                                    offsetX = 0f,
+                                    offsetY = 0f,
                                 )
-                            },
-                            onInteractionClick = { contact, interactionType ->
-                                viewModel.onViewAction(
-                                    CarouselContactInteractionClick(
-                                        contact = contact,
-                                        interactionType = interactionType
-                                    )
+                            )
+                        },
+                        onInteractionClick = { contact, interactionType ->
+                            viewModel.onViewAction(
+                                CarouselContactInteractionClick(
+                                    contact = contact,
+                                    interactionType = interactionType
                                 )
-                            }
-                        )
-                    }
+                            )
+                        }
+                    )
                 }
                 item {
                     Spacer(modifier = Modifier.height(if (!screenMode.isSearching) 300.fdpv else 160.xdpv))
