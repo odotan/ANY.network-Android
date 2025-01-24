@@ -391,6 +391,9 @@ class ExternalProfileViewModel @Inject constructor(
             ExternalProfileViewEvent.ClearViewEffect -> {
                 _viewEffectFlow.value = null
             }
+            ExternalProfileViewEvent.ClearNavigationEffect -> {
+                _navigationEventFlow.value = null
+            }
         }
     }
 }
@@ -487,6 +490,7 @@ sealed class ExternalProfileViewEvent {
     data object PhoneButtonClick: ExternalProfileViewEvent()
     data object EmailButtonClick: ExternalProfileViewEvent()
     data object ClearViewEffect: ExternalProfileViewEvent()
+    data object ClearNavigationEffect: ExternalProfileViewEvent()
 }
 
 sealed class ExternalProfileViewEffect: ViewEffect() {

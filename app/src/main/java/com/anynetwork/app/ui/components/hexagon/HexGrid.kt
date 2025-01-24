@@ -247,158 +247,157 @@ fun HexagonalGrid(
                             )
                 }
 
-                key(contentStyle.id) {
-                    val applyOffset = remember(rowIndex, offsetEvenRows) {
-                        offsetEvenRows && rowIndex % 2 == 1 || !offsetEvenRows && rowIndex % 2 == 0
+
+                val applyOffset = remember(rowIndex, offsetEvenRows) {
+                    offsetEvenRows && rowIndex % 2 == 1 || !offsetEvenRows && rowIndex % 2 == 0
+                }
+                StatelessRoundedHexagon(
+                    modifier = when {
+                        applyOffset -> cellModifierWithOffset
+                        else -> cellModifier
                     }
-                    StatelessRoundedHexagon(
-                        modifier = when {
-                            applyOffset -> cellModifierWithOffset
-                            else -> cellModifier
+                        .then(if (cellPositions[index] == null)
+                            Modifier.onGloballyPositioned { coordinates ->
+
+                                val height = coordinates.size.height
+                                val width = coordinates.size.width
+
+                                onCellPositionCalculated?.invoke(
+                                    index,
+                                    coordinates.positionInRoot(),
+                                    width,
+                                    height
+                                )
+
+                                val center = coordinates.boundsInParent().center
+                                if (cellPositions[index]?.boundsInParent()?.center != center) {
+                                    cellPositions[index] = coordinates
+                                }
+                            } else if (isRotating) {
+                            Modifier.rotate(rotation.value)
+                        } else Modifier
+                    ),
+                    hexModifier = hexModifier,
+                    shape = if (contentStyle is NontransparentHexagonContentStyle) roundedPolygonShape else null,
+                    contentStyle = contentStyle,
+                    hovered = hoveredItem == index && (contentStyle is NontransparentHexagonContentStyle && contentStyle.isHoverable),
+                    showContent = showContent,
+                    isDraggable = contentStyle is NontransparentHexagonContentStyle && contentStyle.isDraggable,
+                    onClick = {
+                        val cellPosition = cellPositions[index]!!
+                        when (contentStyle) {
+                            is ImageHexagonContentStyle -> contentStyle.onClick.invoke(
+                                cellPositions[index]!!.positionOnScreen()
+                            )
+
+                            is CustomHexagonContentStyle -> contentStyle.onClick.invoke(
+                                cellPosition.boundsInRoot().center
+                            )
+
+                            is ContactContentStyle -> contentStyle.onClick.invoke(cellPosition.boundsInRoot().center)
+
+                            is IconHexagonContentStyle -> contentStyle.onClick.invoke(
+                                cellPositions[index]!!.positionOnScreen()
+                            )
+
+                            else -> {}
                         }
-                            .then(if (cellPositions[index] == null)
-                                Modifier.onGloballyPositioned { coordinates ->
+                    },
+                    pointerInput = {
+                        detectDragGesturesAfterLongPress(
+                            onDragStart = {
+                                Timber.i("onDragStart")
+                                draggedItem = index
+                            },
+                            onDragEnd = {
+                                Timber.i("onDragEnd")
+                                draggedItem?.let { draggedIndex ->
+                                    val draggedPosition = Offset(
+                                        cellPositions[draggedIndex]?.boundsInParent()?.center?.x
+                                            ?: 0f,
+                                        cellPositions[draggedIndex]?.boundsInParent()?.center?.y
+                                            ?: 0f
+                                    ) + Offset(draggedOffset.x.toPx(), draggedOffset.y.toPx())
+                                    //
+                                    val closestCell =
+                                        cellPositions.minByOrNull { (_, position) ->
+                                            draggedPosition.getDistanceTo(position.boundsInParent().center)
+                                        }
 
-                                    val height = coordinates.size.height
-                                    val width = coordinates.size.width
-
-                                    onCellPositionCalculated?.invoke(
-                                        index,
-                                        coordinates.positionInRoot(),
-                                        width,
-                                        height
-                                    )
-
-                                    val center = coordinates.boundsInParent().center
-                                    if (cellPositions[index]?.boundsInParent()?.center != center) {
-                                        cellPositions[index] = coordinates
+                                    if (closestCell != null) {
+                                        val (targetIndex, _) = closestCell
+                                        Timber.i("Dragged item dropped on cell $targetIndex")
+                                        // Handle drop logic here
+                                        if (gridCellsItems.get(targetIndex) is TrashCanHexagonContentStyle) {
+                                            (gridCellsItems.get(draggedIndex) as? NontransparentHexagonContentStyle)
+                                                ?.removableStrategy
+                                                ?.onRemove
+                                                ?.invoke()
+                                        } else if (gridCellsItems[targetIndex] is NontransparentHexagonContentStyle) {
+                                            if (draggedIndex != targetIndex) {
+                                                onPlacesSwap?.invoke(draggedIndex, targetIndex)
+                                            }
+                                        }
                                     }
-                                } else if (isRotating) {
-                                Modifier.rotate(rotation.value)
-                            } else Modifier
-                        ),
-                        hexModifier = hexModifier,
-                        shape = if (contentStyle is NontransparentHexagonContentStyle) roundedPolygonShape else null,
-                        contentStyle = contentStyle,
-                        hovered = hoveredItem == index && (contentStyle is NontransparentHexagonContentStyle && contentStyle.isHoverable),
-                        showContent = showContent,
-                        isDraggable = contentStyle is NontransparentHexagonContentStyle && contentStyle.isDraggable,
-                        onClick = {
-                            val cellPosition = cellPositions[index]!!
-                            when (contentStyle) {
-                                is ImageHexagonContentStyle -> contentStyle.onClick.invoke(
-                                    cellPositions[index]!!.positionOnScreen()
+                                }
+
+                                draggedItem = null // Reset drag state
+                                draggedOffset = DpOffset.Zero
+                                draggedPosition = Offset.Zero
+                                hoveredItem = null
+                                currentTargetIndex = null
+                            },
+                            onDragCancel = {
+                                Timber.i("onDragCancel")
+                                draggedItem = null // Reset drag state
+                                draggedOffset = DpOffset.Zero
+                                hoveredItem = null
+                            },
+                            onDrag = { change, dragAmount ->
+                                Timber.i("onDrag isDragging")
+                                draggedOffset = DpOffset(
+                                    draggedOffset.x + dragAmount.x.toDp(),
+                                    draggedOffset.y + dragAmount.y.toDp()
                                 )
-
-                                is CustomHexagonContentStyle -> contentStyle.onClick.invoke(
-                                    cellPosition.boundsInRoot().center
-                                )
-
-                                is ContactContentStyle -> contentStyle.onClick.invoke(cellPosition.boundsInRoot().center)
-
-                                is IconHexagonContentStyle -> contentStyle.onClick.invoke(
-                                    cellPositions[index]!!.positionOnScreen()
-                                )
-
-                                else -> {}
-                            }
-                        },
-                        pointerInput = {
-                            detectDragGesturesAfterLongPress(
-                                onDragStart = {
-                                    Timber.i("onDragStart")
-                                    draggedItem = index
-                                },
-                                onDragEnd = {
-                                    Timber.i("onDragEnd")
-                                    draggedItem?.let { draggedIndex ->
-                                        val draggedPosition = Offset(
-                                            cellPositions[draggedIndex]?.boundsInParent()?.center?.x
-                                                ?: 0f,
-                                            cellPositions[draggedIndex]?.boundsInParent()?.center?.y
-                                                ?: 0f
-                                        ) + Offset(draggedOffset.x.toPx(), draggedOffset.y.toPx())
+                                draggedItem?.let { draggedIndex ->
+                                    cellPositions[draggedIndex]?.let { draggedItemCoordinates ->
+                                        val _draggedPosition = Offset(
+                                            draggedItemCoordinates.boundsInParent().center.x,
+                                            draggedItemCoordinates.boundsInParent().center.y
+                                        ) + Offset(
+                                            draggedOffset.x.toPx(),
+                                            draggedOffset.y.toPx()
+                                        )
                                         //
                                         val closestCell =
                                             cellPositions.minByOrNull { (_, position) ->
-                                                draggedPosition.getDistanceTo(position.boundsInParent().center)
+                                                _draggedPosition.getDistanceTo(position.boundsInParent().center)
                                             }
 
                                         if (closestCell != null) {
                                             val (targetIndex, _) = closestCell
                                             Timber.i("Dragged item dropped on cell $targetIndex")
+                                            if (targetIndex != currentTargetIndex && targetIndex != draggedIndex) {
+                                                currentTargetIndex = targetIndex
+                                                vibrate(context)
+                                            }
+                                            hoveredItem = targetIndex
                                             // Handle drop logic here
-                                            if (gridCellsItems.get(targetIndex) is TrashCanHexagonContentStyle) {
-                                                (gridCellsItems.get(draggedIndex) as? NontransparentHexagonContentStyle)
-                                                    ?.removableStrategy
-                                                    ?.onRemove
-                                                    ?.invoke()
-                                            } else if (gridCellsItems[targetIndex] is NontransparentHexagonContentStyle) {
-                                                if (draggedIndex != targetIndex) {
-                                                    onPlacesSwap?.invoke(draggedIndex, targetIndex)
-                                                }
-                                            }
                                         }
-                                    }
+                                        val x =
+                                            draggedItemCoordinates.positionInRoot().x
+                                        val y =
+                                            draggedItemCoordinates.positionInRoot().y
 
-                                    draggedItem = null // Reset drag state
-                                    draggedOffset = DpOffset.Zero
-                                    draggedPosition = Offset.Zero
-                                    hoveredItem = null
-                                    currentTargetIndex = null
-                                },
-                                onDragCancel = {
-                                    Timber.i("onDragCancel")
-                                    draggedItem = null // Reset drag state
-                                    draggedOffset = DpOffset.Zero
-                                    hoveredItem = null
-                                },
-                                onDrag = { change, dragAmount ->
-                                    Timber.i("onDrag isDragging")
-                                    draggedOffset = DpOffset(
-                                        draggedOffset.x + dragAmount.x.toDp(),
-                                        draggedOffset.y + dragAmount.y.toDp()
-                                    )
-                                    draggedItem?.let { draggedIndex ->
-                                        cellPositions[draggedIndex]?.let { draggedItemCoordinates ->
-                                            val _draggedPosition = Offset(
-                                                draggedItemCoordinates.boundsInParent().center.x,
-                                                draggedItemCoordinates.boundsInParent().center.y
-                                            ) + Offset(
-                                                draggedOffset.x.toPx(),
-                                                draggedOffset.y.toPx()
-                                            )
-                                            //
-                                            val closestCell =
-                                                cellPositions.minByOrNull { (_, position) ->
-                                                    _draggedPosition.getDistanceTo(position.boundsInParent().center)
-                                                }
-
-                                            if (closestCell != null) {
-                                                val (targetIndex, _) = closestCell
-                                                Timber.i("Dragged item dropped on cell $targetIndex")
-                                                if (targetIndex != currentTargetIndex && targetIndex != draggedIndex) {
-                                                    currentTargetIndex = targetIndex
-                                                    vibrate(context)
-                                                }
-                                                hoveredItem = targetIndex
-                                                // Handle drop logic here
-                                            }
-                                            val x =
-                                                draggedItemCoordinates.positionInRoot().x
-                                            val y =
-                                                draggedItemCoordinates.positionInRoot().y
-
-                                            if (draggedItem == index) {
-                                                draggedPosition = Offset(x, y)
-                                            }
+                                        if (draggedItem == index) {
+                                            draggedPosition = Offset(x, y)
                                         }
                                     }
                                 }
-                            )
-                        }
-                    )
-                }
+                            }
+                        )
+                    }
+                )
             }
         }
     }
