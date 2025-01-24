@@ -167,6 +167,7 @@ import com.anynetwork.app.ui.utils.xdph
 import com.anynetwork.app.ui.utils.xdpv
 import com.google.accompanist.insets.ExperimentalAnimatedInsets
 import com.yalantis.ucrop.UCrop
+import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
@@ -426,9 +427,9 @@ private fun ExternalProfile(
 
     val hazeState = remember { HazeState() }
     val hazeStyle = HazeStyle(
-        backgroundColor = Color.White.copy(alpha = .1f),
-        blurRadius = 10.dp,
-        tint = HazeTint.Unspecified
+        backgroundColor = DarkBlue,
+        tints = listOf(HazeTint(Color.White.copy(alpha = .10f))),
+        blurRadius = 8.dp,
     )
 
     val targetBlur = if (viewState.mode is ExternalProfileMode.Edit || viewState.mode is ExternalProfileMode.NewContact) 20.dp else 0.dp
@@ -867,10 +868,10 @@ private fun ExternalProfile(
                         background = SingleColor(backgroundColor.copy(alpha = backgroundColor.alpha * alpha))
                     )
 //                    }
-
-                trailingCellPosition.isSame(column, row) -> TransparentHexagonContentStyle(
-                    id = cellIndex,
-                )
+//
+//                trailingCellPosition.isSame(column, row) -> TransparentHexagonContentStyle(
+//                    id = cellIndex,
+//                )
                 else -> EmptyHexagonContentStyle(
                     id = cellIndex,
                     background = SingleColor(backgroundColor.copy(alpha = backgroundColor.alpha * alpha))
