@@ -157,6 +157,7 @@ class HomeViewModel @Inject constructor(
     private suspend fun updateContacts(emittedContacts: List<Contact>) = withContext(Dispatchers.IO) {
         val distinctContacts = emittedContacts
             .distinctBy { it.id }
+            .distinctBy { it.phone?.normalize() }
             .sortedBy { it.name }
 
         Timber.i("current contacts list size: ${_contacts.value.size}")

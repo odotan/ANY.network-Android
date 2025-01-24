@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -49,6 +50,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -56,19 +58,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewModelScope
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
-import coil.size.Size
 import com.anynetwork.app.R
 import com.anynetwork.app.data.carouselInteraction.CarouselInteractionRepository
-import com.anynetwork.app.data.contacts.ContactsRepository
-import com.anynetwork.app.data.interaction.InteractionRepository
 import com.anynetwork.app.model.Contact
 import com.anynetwork.app.model.Interaction
 import com.anynetwork.app.ui.components.CircularCarousel
@@ -78,6 +75,7 @@ import com.anynetwork.app.ui.components.hexagon.NontransparentHexagonContentStyl
 import com.anynetwork.app.ui.components.hexagon.RoundedHexagon
 import com.anynetwork.app.ui.components.hexagon.RoundedPolygonShape
 import com.anynetwork.app.ui.components.hexagon.createPolygon
+import com.anynetwork.app.ui.components.text.AutoSizeText
 import com.anynetwork.app.ui.theme.EmailColor
 import com.anynetwork.app.ui.theme.PhoneColor
 import com.anynetwork.app.ui.theme.PopupColor
@@ -124,10 +122,11 @@ fun ContactsRow(
     var interactionType: Int? = remember { null }
     val polygon = remember { createPolygon() }
     val roundedPolygonShape = remember { RoundedPolygonShape(polygon) }
+    val roundedPolygon2Shape = remember { RoundedPolygonShape(polygon) }
     val context = LocalContext.current
     Row(
         modifier = modifier
-            .padding(start = 16.dp, end = 4.dp)
+            .padding(start = 16.dp, end = 16.dp)
             .fillMaxHeight()
             .clickable {
                 onClick.invoke()
@@ -142,6 +141,204 @@ fun ContactsRow(
                     this.shadowElevation = shadowElevation
                     clip = true
                     shape = roundedPolygonShape
+                }),
+            contentStyle = CustomHexagonContentStyle(
+                id = 0,
+                background = NontransparentHexagonContentStyle.Background.SingleColor(
+                    PopupColor
+                ),
+                onClick = { _ -> onClick.invoke() },
+                content = {
+                    AutoSizeText(
+                        modifier = Modifier.fillMaxSize(0.9f),
+                        text = contact.name,
+                        maxLines = if (contact.name.contains(" ")) 2 else 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = Color(0xFFAFAEB8),
+                        alignment = Alignment.Center,
+                        maxTextSize = 12.fsp,
+                        style = TextStyle(
+                            fontFamily = montserratFontFamily,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    )
+                }
+            )
+        )
+
+        var subtitle by remember {
+            mutableStateOf(contact.phone ?: "")
+        }
+
+        Column(
+            modifier = Modifier
+                .height(64.fdpv)
+                .weight(1f),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Row(
+                modifier = Modifier,
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                fun modifyList(inputList: List<PickerItem>): List<PickerItem> {
+                    return when (inputList.size) {
+                        1 -> inputList
+                        2 -> inputList + inputList + inputList // Repeat elements to make 6
+                        3 -> inputList + inputList // Repeat elements to make 6
+                        else -> inputList + inputList // Double the list if it has more than 3 elements
+                    }
+                }
+                fun reorderList(list: List<PickerItem>, value: Int?): List<PickerItem> {
+                    if (value == null) return list
+                    val index = list.map { it.interactionType }.indexOf(value)
+                    if (index == -1) return list // If the value is not in the list, return the original list
+                    return list.subList(index, list.size) + list.subList(0, index)
+                }
+
+                val interactionType by remember {
+                    derivedStateOf {
+                        viewState.interactionType
+                    }
+                }
+                LaunchedEffect(interactionType) {
+                    snapshotFlow { interactionType }
+                        .collect { Timber.i("Observed interactionType for ${contact.id} change: $it") }
+                }
+
+                val interactionPickerItems = remember(interactionType) {
+                    modifyList(
+                        reorderList(mutableListOf<PickerItem>().apply {
+                            if (!contact.mobilePhone().isNullOrEmpty()) {
+                                add(
+                                    PickerItem(
+                                        resId = R.drawable.ic_phone,
+                                        iconTint = PhoneColor,
+                                        value = contact.mobilePhone()!!,
+                                        interactionType = Interaction.Type.Phone
+                                    )
+                                )
+                            }
+                            if (!contact.homeEmail().isNullOrEmpty()) {
+                                add(
+                                    PickerItem(
+                                        resId = R.drawable.ic_email,
+                                        iconTint = EmailColor,
+                                        value = contact.homeEmail()!!,
+                                        interactionType = Interaction.Type.Email
+                                    )
+                                )
+                            }
+                        }, interactionType)
+                    )
+                }
+
+                if (interactionPickerItems.isNotEmpty()) {
+                    key(contact.id) {
+                        CircularCarousel(
+                            modifier = Modifier
+                                .width(67.11.fdph)
+                                .height(28.23.fdpv)
+                                .clipToBounds()
+                                .align(Alignment.CenterVertically),
+                            numItems = interactionPickerItems.size,
+                            onSnapToItem = {
+                                interactionPickerItems.getOrNull(it)
+                                    ?.let {
+                                        viewModel.onInteractionCarouselSpin(pickerItem = it)
+                                    }
+                            },
+                            onSpinned = {
+                                val newInteractionType =
+                                    interactionPickerItems.getOrNull(it)?.interactionType
+                                if (interactionType != newInteractionType) {
+                                    Timber.i("onSpinned to ${interactionPickerItems.getOrNull(it)?.value}")
+
+                                    val vibrator =
+                                        context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator?
+
+                                    // Check if the device supports vibration
+                                    if (vibrator != null && vibrator.hasVibrator()) {
+                                        // Subtle vibration using a short duration (e.g., 50 milliseconds)
+                                        vibrator.vibrate(
+                                            VibrationEffect.createOneShot(
+                                                15,
+                                                VibrationEffect.DEFAULT_AMPLITUDE
+                                            )
+                                        )
+                                    }
+                                }
+                                subtitle = interactionPickerItems.getOrNull(it)?.value ?: "phone"
+                            },
+                            onClick = {
+                                contact.id.log { "onClick" }
+                                onInteractionClick(
+                                    contact,
+                                    interactionPickerItems[it].interactionType
+                                )
+                            }
+                        ) { index ->
+                            val item = interactionPickerItems[index]
+                            Card(
+                                modifier = Modifier
+                                    .width(28.23.fdph)
+                                    .height(28.23.fdph),
+                                shape = RectangleShape,
+                                colors = CardDefaults.cardColors(containerColor = item.color),
+                            ) {
+                                Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    if (item.resId != null) {
+                                        AsyncImage(
+                                            modifier = Modifier
+                                                .align(Alignment.CenterHorizontally)
+                                                .size(28.23.fdpv),
+                                            model = item.resId,
+                                            contentDescription = item.iconContentDescription,
+                                            colorFilter = item.iconTint?.let { ColorFilter.tint(item.iconTint) }
+                                        )
+                                    } else {
+                                        Text(text = "${index}")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            AnimatedContent(
+                modifier = Modifier.padding(top = 6.fdpv),
+                targetState = subtitle,
+                transitionSpec = {
+                    addAnimation().using(
+                        SizeTransform(clip = false)
+                    )
+                }
+            ) { targetState ->
+                Text(
+                    text = targetState,
+                    color = Color(0xFFFFFFFF),
+                    style = TextStyle(
+                        fontFamily = montserratFontFamily,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.fsp,
+                    )
+                )
+            }
+        }
+
+        RoundedHexagon(
+            modifier = Modifier
+                .width(57.fdph)
+                .aspectRatio(79.93.xdph / 89.99.xdpv)
+                .then(Modifier.graphicsLayer {
+                    this.shadowElevation = shadowElevation
+                    clip = true
+                    shape = roundedPolygon2Shape
                 }),
             contentStyle = CustomHexagonContentStyle(
                 id = 0,
@@ -180,187 +377,6 @@ fun ContactsRow(
                 }
             )
         )
-
-        var subtitle by remember {
-            mutableStateOf(contact.phone ?: "")
-        }
-
-        Row(
-            modifier = Modifier
-                .height(64.fdpv)
-                .weight(1f)
-//                    .background(Color.Red)
-                ,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(
-                modifier = Modifier
-                    .padding(start = 15.6.fdph)
-            ) {
-                Text(
-                    text = contact.name,
-                    color = Color(0xFFFFFFFF),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = TextStyle(
-                        fontFamily = montserratFontFamily,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 18.fsp,
-                    )
-                )
-                AnimatedContent(
-                    targetState = subtitle,
-                    transitionSpec = {
-                        addAnimation().using(
-                            SizeTransform(clip = false)
-                        )
-                    }
-                ) { targetState ->
-                    Text(
-                        text = targetState,
-                        color = Color(0xFFFFFFFF),
-                        style = TextStyle(
-                            fontFamily = montserratFontFamily,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 14.fsp,
-                        )
-                    )
-                }
-            }
-        }
-
-        Row(
-            modifier = Modifier,
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            fun modifyList(inputList: List<PickerItem>): List<PickerItem> {
-                return when (inputList.size) {
-                    1 -> inputList
-                    2 -> inputList + inputList + inputList // Repeat elements to make 6
-                    3 -> inputList + inputList // Repeat elements to make 6
-                    else -> inputList + inputList // Double the list if it has more than 3 elements
-                }
-            }
-            fun reorderList(list: List<PickerItem>, value: Int?): List<PickerItem> {
-                if (value == null) return list
-                val index = list.map { it.interactionType }.indexOf(value)
-                if (index == -1) return list // If the value is not in the list, return the original list
-                return list.subList(index, list.size) + list.subList(0, index)
-            }
-
-            val interactionType by remember {
-                derivedStateOf {
-                    viewState.interactionType
-                }
-            }
-            LaunchedEffect(interactionType) {
-                snapshotFlow { interactionType }
-                    .collect { Timber.i("Observed interactionType for ${contact.id} change: $it") }
-            }
-
-            val interactionPickerItems = remember(interactionType) {
-                modifyList(
-                    reorderList(mutableListOf<PickerItem>().apply {
-                        if (!contact.mobilePhone().isNullOrEmpty()) {
-                            add(
-                                PickerItem(
-                                    resId = R.drawable.ic_phone,
-                                    iconTint = PhoneColor,
-                                    value = contact.mobilePhone()!!,
-                                    interactionType = Interaction.Type.Phone
-                                )
-                            )
-                        }
-                        if (!contact.homeEmail().isNullOrEmpty()) {
-                            add(
-                                PickerItem(
-                                    resId = R.drawable.ic_email,
-                                    iconTint = EmailColor,
-                                    value = contact.homeEmail()!!,
-                                    interactionType = Interaction.Type.Email
-                                )
-                            )
-                        }
-                    }, interactionType)
-                )
-            }
-
-            if (interactionPickerItems.isNotEmpty()) {
-                key(contact.id) {
-                    CircularCarousel(
-                        modifier = Modifier
-                            .width(67.11.fdph)
-                            .height(28.23.fdpv)
-                            .clipToBounds()
-                            .align(Alignment.CenterVertically),
-                        numItems = interactionPickerItems.size,
-                        onSnapToItem = {
-                            interactionPickerItems.getOrNull(it)
-                                ?.let {
-                                    viewModel.onInteractionCarouselSpin(pickerItem = it)
-                                }
-                        },
-                        onSpinned = {
-                            val newInteractionType =
-                                interactionPickerItems.getOrNull(it)?.interactionType
-                            if (interactionType != newInteractionType) {
-                                Timber.i("onSpinned to ${interactionPickerItems.getOrNull(it)?.value}")
-
-                                val vibrator =
-                                    context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator?
-
-                                // Check if the device supports vibration
-                                if (vibrator != null && vibrator.hasVibrator()) {
-                                    // Subtle vibration using a short duration (e.g., 50 milliseconds)
-                                    vibrator.vibrate(
-                                        VibrationEffect.createOneShot(
-                                            15,
-                                            VibrationEffect.DEFAULT_AMPLITUDE
-                                        )
-                                    )
-                                }
-                            }
-                            subtitle = interactionPickerItems.getOrNull(it)?.value ?: "phone"
-                        },
-                        onClick = {
-                            contact.id.log { "onClick" }
-                            onInteractionClick(
-                                contact,
-                                interactionPickerItems[it].interactionType
-                            )
-                        }
-                    ) { index ->
-                        val item = interactionPickerItems[index]
-                        Card(
-                            modifier = Modifier
-                                .width(28.23.fdph)
-                                .height(28.23.fdph),
-                            shape = RectangleShape,
-                            colors = CardDefaults.cardColors(containerColor = item.color),
-                        ) {
-                            Column(
-                                modifier = Modifier.fillMaxSize(),
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                if (item.resId != null) {
-                                    AsyncImage(
-                                        modifier = Modifier
-                                            .align(Alignment.CenterHorizontally)
-                                            .size(28.23.fdpv),
-                                        model = item.resId,
-                                        contentDescription = item.iconContentDescription,
-                                        colorFilter = item.iconTint?.let { ColorFilter.tint(item.iconTint) }
-                                    )
-                                } else {
-                                    Text(text = "${index}")
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 }
 
