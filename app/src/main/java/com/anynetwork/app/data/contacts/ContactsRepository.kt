@@ -52,8 +52,8 @@ class ContactsRepository @Inject constructor(
 
     suspend fun editContact(contactId: Long, contact: Contact): Boolean {
         return if (permissionsManager.isContactsPermissionGranted()) {
-            roomDataSource.editContact(contactId, contact)
             phoneDataSource.editContact(contactId, contact)
+            roomDataSource.editContact(contactId, contact)
         } else {
             roomDataSource.editContact(contactId, contact)
         }

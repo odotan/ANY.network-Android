@@ -144,8 +144,9 @@ class MyProfileViewModel @Inject constructor(
                 _viewState.value =
                     _viewState.value.copy(photoUri = event.photoUri)
             }
-            is UpdatePhotoUri -> _viewState.value =
-                _viewState.value.copy(photoUri = event.photoUri)
+            is RemoveProfilePicture -> {
+                _viewState.value = _viewState.value.copy(photoUri = null)
+            }
         }
     }
 }
@@ -223,6 +224,7 @@ sealed class MyProfileViewEvent {
         val shouldRequestFocus: Boolean = false
     ): MyProfileViewEvent()
     data class UpdatePhotoUri(val photoUri: String): MyProfileViewEvent()
+    data object RemoveProfilePicture: MyProfileViewEvent()
 }
 
 sealed class MyProfileViewEffect {

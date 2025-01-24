@@ -9,27 +9,7 @@ import com.anynetwork.app.model.Interaction
 import com.anynetwork.app.ui.base.NavigateBack
 import com.anynetwork.app.ui.base.NavigationEvent
 import com.anynetwork.app.ui.base.ViewEffect
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.BackButtonClick
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.EditButtonClick
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.FavoriteButtonClick
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.RequestNetworkButtonClick
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.SaveButtonClick
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateAddress
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateCompany
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateEmail
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateFirstName
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateHomeFax
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateHomePhone
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateLastName
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateMainPhone
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateMobilePhone
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateOtherEmail
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateOtherPhone
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdatePager
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdatePhotoUri
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateWorkEmail
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateWorkFax
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateWorkPhone
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.*
 import com.anynetwork.app.ui.utils.log
 import com.anynetwork.app.utils.isValidEmail
 import com.anynetwork.app.utils.isValidPhone
@@ -352,6 +332,10 @@ class ExternalProfileViewModel @Inject constructor(
                 _viewState.value =
                     _viewState.value.copy(photoUri = event.photoUri)
             }
+            RemoveProfilePicture -> {
+                _viewState.value =
+                    _viewState.value.copy(photoUri = null)
+            }
             is FavoriteButtonClick -> viewModelScope.launch {
                 val id = _contact.value!!.id
                 val newValue = !_contact.value!!.isFavorite
@@ -360,7 +344,7 @@ class ExternalProfileViewModel @Inject constructor(
                 contactsRepository.favoriteContact(id, newValue)
             }
 
-            ExternalProfileViewEvent.EmailButtonClick -> viewModelScope.launch {
+            EmailButtonClick -> viewModelScope.launch {
                 val interaction = interactionRepository.getAllInteractions().firstOrNull { it.type == Interaction.Type.Email && it.contactId == contact.value!!.id }
                 if (interaction == null) {
                     interactionRepository.insertInteraction(
@@ -374,7 +358,7 @@ class ExternalProfileViewModel @Inject constructor(
                 }
                 _viewEffectFlow.value = ExternalProfileViewEffect.WriteEmail(contact.value!!.email!!)
             }
-            ExternalProfileViewEvent.PhoneButtonClick -> viewModelScope.launch {
+            PhoneButtonClick -> viewModelScope.launch {
                 val interaction = interactionRepository.getAllInteractions().firstOrNull { it.type == Interaction.Type.Phone && it.contactId == contact.value!!.id }
                 if (interaction == null) {
                     interactionRepository.insertInteraction(
@@ -388,7 +372,7 @@ class ExternalProfileViewModel @Inject constructor(
                 }
                 _viewEffectFlow.value = ExternalProfileViewEffect.CallPhoneNumber(contact.value!!.phone!!)
             }
-            ExternalProfileViewEvent.ClearViewEffect -> {
+            ClearViewEffect -> {
                 _viewEffectFlow.value = null
             }
         }
@@ -483,6 +467,7 @@ sealed class ExternalProfileViewEvent {
         val shouldRequestFocus: Boolean = false
     ): ExternalProfileViewEvent()
     data class UpdatePhotoUri(val photoUri: String): ExternalProfileViewEvent()
+    data object RemoveProfilePicture: ExternalProfileViewEvent()
     data object FavoriteButtonClick: ExternalProfileViewEvent()
     data object PhoneButtonClick: ExternalProfileViewEvent()
     data object EmailButtonClick: ExternalProfileViewEvent()

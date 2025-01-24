@@ -141,27 +141,7 @@ import com.anynetwork.app.ui.components.hexagon.createPolygon
 import com.anynetwork.app.ui.components.hexagon.hexCellsBackgroundColors
 import com.anynetwork.app.ui.components.textfield.ProfileTextFieldLeading
 import com.anynetwork.app.ui.navigation.Route
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.BackButtonClick
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.EditButtonClick
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.FavoriteButtonClick
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.RequestNetworkButtonClick
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.SaveButtonClick
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateAddress
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateCompany
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateEmail
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateFirstName
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateHomeFax
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateHomePhone
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateLastName
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateMainPhone
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateMobilePhone
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateOtherEmail
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateOtherPhone
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdatePager
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdatePhotoUri
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateWorkEmail
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateWorkFax
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateWorkPhone
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.*
 import com.anynetwork.app.ui.screens.home.HomeViewModel
 import com.anynetwork.app.ui.screens.myprofile.offsetToAvoidKeyboard
 import com.anynetwork.app.ui.theme.DarkBlue
@@ -230,19 +210,19 @@ fun ExternalProfileRoot(
                 intent.data = Uri.parse("mailto:$email")
 
                 context.startActivity(Intent.createChooser(intent, "Send Email"))
-                onViewEvent(ExternalProfileViewEvent.ClearViewEffect)
+                onViewEvent(ClearViewEffect)
             }
             is ExternalProfileViewEffect.CallPhoneNumber -> {
                 val context = LocalContext.current
                 val number = Uri.parse("tel:${(viewEffect as ExternalProfileViewEffect.CallPhoneNumber).phoneNumber}")
                 val callIntent = Intent(Intent.ACTION_DIAL, number)
                 context.startActivity(callIntent)
-                onViewEvent(ExternalProfileViewEvent.ClearViewEffect)
+                onViewEvent(ClearViewEffect)
             }
             is ExternalProfileViewEffect.ContactUpdated -> {
                 val homeViewModel = hiltViewModel<HomeViewModel>()
                 homeViewModel.reloadData()
-                onViewEvent(ExternalProfileViewEvent.ClearViewEffect)
+                onViewEvent(ClearViewEffect)
             }
             else -> {}
         }
@@ -719,6 +699,7 @@ private fun ExternalProfile(
                                 }
                             }
                         },
+                        isShakable = true,
                         overlay = {
                             if (viewState.mode is ExternalProfileMode.Edit) {
                                 cellWidth?.let {
@@ -744,6 +725,16 @@ private fun ExternalProfile(
                                         )
                                     }
                                 }
+                                if (photoUri != null) DeleteButton(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(top = 17.31.fdpv, end = 1.fdpv)
+                                        .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
+                                        .alpha(alpha),
+                                    onClick = {
+                                        viewModel.onViewEvent(RemoveProfilePicture)
+                                    }
+                                )
                             }
                         },
                         onClick = { _ ->
@@ -786,7 +777,7 @@ private fun ExternalProfile(
                         contentDescription = "Email",
                         image = VectorResource(id = R.drawable.ic_email),
                         onClick = {
-                            viewModel.onViewEvent(ExternalProfileViewEvent.EmailButtonClick)
+                            viewModel.onViewEvent(EmailButtonClick)
                         },
                         isShakable = true,
                         overlay = if (viewState.mode is ExternalProfileMode.Edit) {
@@ -817,7 +808,7 @@ private fun ExternalProfile(
                         contentDescription = "Phone",
                         image = VectorResource(id = R.drawable.ic_phone),
                         onClick = {
-                            viewModel.onViewEvent(ExternalProfileViewEvent.PhoneButtonClick)
+                            viewModel.onViewEvent(PhoneButtonClick)
                         },
                         isShakable = true,
                         overlay = if (viewState.mode is ExternalProfileMode.Edit) {

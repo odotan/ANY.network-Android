@@ -20,6 +20,7 @@ import contacts.core.util.organizations
 import contacts.core.util.phoneList
 import contacts.core.util.removeAllEmails
 import contacts.core.util.removeAllPhones
+import contacts.core.util.removePhoto
 import contacts.core.util.setName
 import contacts.core.util.setOptions
 import contacts.core.util.setOrganization
@@ -204,6 +205,8 @@ class PhoneContactsDataSource(private val context: Context): ContactsDataSource 
                         getBytesFromImageUri(context, photoUri = Uri.parse(contact.avatarUri))?.let {
                             setPhoto(PhotoData.Companion.from(it))
                         }
+                    } ?: photoUri?.let {
+                        removePhoto()
                     }
                 })
             .commit()

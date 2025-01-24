@@ -778,6 +778,7 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
                                     contentDescription = "Any network",
                                     alpha = alpha,
                                     image = VectorResource(id = R.drawable.ic_any_network),
+                                    isShakable = true,
                                 )
                             }
                         profilePictureCellPosition.isSame(column, row) -> remember(mode) {
@@ -840,8 +841,19 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
                                                 )
                                             }
                                         }
+                                        if (photoUri != null) DeleteButton(
+                                            modifier = Modifier
+                                                .align(Alignment.TopEnd)
+                                                .padding(top = 17.31.fdpv, end = 1.fdpv)
+                                                .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
+                                                .alpha(alpha),
+                                            onClick = {
+                                                viewModel.onViewEvent(MyProfileViewEvent.RemoveProfilePicture)
+                                            }
+                                        )
                                     }
                                 },
+                                isShakable = true,
                                 onClick = { _ ->
                                     if (mode is MyProfileMode.Edit) {
                                         isChooseMethodEditProfilePictureDialog = true
@@ -855,6 +867,7 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
                                 background = SingleColor(FacebookColor.copy(alpha = itemAlpha * alpha)),
                                 alpha = itemAlpha * alpha,
                                 contentDescription = "Facebook",
+                                isShakable = true,
                                 image = VectorResource(id = R.drawable.ic_facebook),
                                 overlay =
                                     if (mode is MyProfileMode.Edit) {
@@ -880,6 +893,7 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
                                 alpha = itemAlpha * alpha,
                                 contentDescription = "Messenger",
                                 image = VectorResource(id = R.drawable.ic_messenger),
+                                isShakable = true,
                                 overlay = if (mode is MyProfileMode.Edit) {
                                     {
                                         DeleteButton(
@@ -903,6 +917,7 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
                                 alpha = itemAlpha * alpha,
                                 contentDescription = "Instagram",
                                 image = VectorResource(id = R.drawable.ic_instagram),
+                                isShakable = true,
                                 overlay = if (mode is MyProfileMode.Edit) {
                                     {
                                         DeleteButton(
@@ -926,6 +941,7 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
                                 alpha = itemAlpha * alpha,
                                 contentDescription = "Email",
                                 image = VectorResource(id = R.drawable.ic_email),
+                                isShakable = true,
                                 overlay = if (mode is MyProfileMode.Edit) {
                                     {
                                         DeleteButton(
@@ -949,6 +965,7 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
                                 alpha = itemAlpha * alpha,
                                 contentDescription = "Phone",
                                 image = VectorResource(id = R.drawable.ic_phone),
+                                isShakable = true,
                                 overlay = if (mode is MyProfileMode.Edit) {
                                     {
                                         DeleteButton(
@@ -972,6 +989,7 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
                                 alpha = itemAlpha * alpha,
                                 contentDescription = "Twitter",
                                 image = VectorResource(id = R.drawable.ic_twitter),
+                                isShakable = true,
                                 overlay = if (mode is MyProfileMode.Edit) {
                                     {
                                         DeleteButton(
@@ -995,6 +1013,7 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
                                 alpha = itemAlpha * alpha,
                                 contentDescription = "Whatsapp",
                                 image = VectorResource(id = R.drawable.ic_whatsapp),
+                                isShakable = true,
                                 overlay = if (mode is MyProfileMode.Edit) {
                                     {
                                         DeleteButton(
@@ -1018,6 +1037,7 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
                                 alpha = itemAlpha * alpha,
                                 contentDescription = "Telegram",
                                 image = VectorResource(id = R.drawable.ic_telegram),
+                                isShakable = true,
                                 overlay = if (mode is MyProfileMode.Edit) {
                                     {
                                         DeleteButton(
@@ -1064,6 +1084,7 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
                     }
                 },
                 isScrollEnabled = false,
+                isEditModeActivating = mode is MyProfileMode.Edit,
                 offsetY = when {
                     profilePictureCellOffset == null -> 0f
                     else -> - (profilePictureCellOffset!!.y - with(LocalDensity.current) {
