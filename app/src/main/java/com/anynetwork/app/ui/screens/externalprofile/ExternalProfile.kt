@@ -190,12 +190,15 @@ fun ExternalProfileRoot(
     input: String? = null,
     isEnterAnimationFinished: Boolean = true,
 ) {
-
+    LaunchedEffect(Unit) {
+        Timber.i("load ExternalProfile for id: $id")
+    }
     val viewModel: ExternalProfileViewModel = hiltViewModel<ExternalProfileViewModel>().apply {
         val navigateEvent by navigationEvents.collectAsState()
-        navigateEvent.log { "navigationEvent" }
         if (navigateEvent == NavigateBack) {
+            navigateEvent.log { "navigationEvent" }
             navController.popBackStack(Route.Home, inclusive = false)
+            onViewEvent(ExternalProfileViewEvent.ClearNavigationEffect)
         }
 
         val viewEffect by viewEffectFlow.collectAsState()

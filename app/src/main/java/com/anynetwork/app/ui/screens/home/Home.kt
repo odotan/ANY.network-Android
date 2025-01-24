@@ -62,6 +62,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -218,6 +219,17 @@ fun HomeRoot(navController: NavHostController, viewModel: HomeViewModel = hiltVi
             viewModel.onViewAction(ClearViewEffect)
         }
     }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val currentLifecycleOwner = rememberUpdatedState(lifecycleOwner)
+
+    LaunchedEffect(Unit) {
+        currentLifecycleOwner.value.lifecycle.repeatOnLifecycle(Lifecycle.State.CREATED) {
+            Timber.i("home start animation created")
+            viewModel.reloadData()
+            viewModel.loadProfile()
+        }
+    }
 }
 
 var showHomeCover = true
@@ -239,18 +251,9 @@ private fun Home(
     onMyProfileClick: () -> Unit,
     onCreateNewContactClick: (String?) -> Unit,
 ) {
-    val lifecycleOwner = LocalLifecycleOwner.current
     val density = LocalDensity.current
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
-
-    LaunchedEffect(lifecycleOwner) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.CREATED) {
-            Timber.i("home start animation start")
-            viewModel.reloadData()
-            viewModel.loadProfile()
-        }
-    }
 
     val systemBarsPadding = WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
     val toolbarHeight = TopAppBarDefaults.LargeAppBarCollapsedHeight
@@ -531,7 +534,9 @@ private fun Home(
                 }
             }
             val optimizedPhotoUri by remember {
-                derivedStateOf { viewState.photoUri }
+                derivedStateOf {
+                    viewState.photoUri.log { "optimizedPhotoUri" }
+                }
             }
 
             // Find the central element

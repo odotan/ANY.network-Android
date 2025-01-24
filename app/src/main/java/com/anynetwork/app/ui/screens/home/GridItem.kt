@@ -21,6 +21,10 @@ sealed class GridItem(val contact: Contact?, val badge: Badge? = null) {
 
             return identicalInteractionIds
         }
+
+        override fun hashCode(): Int {
+            return 31 * super.hashCode() + interactionId.hashCode()
+        }
     }
     class SearchGridItem(contact: Contact): GridItem(contact, null)
     class EmptyGridItem: GridItem(null, null)
@@ -41,6 +45,13 @@ sealed class GridItem(val contact: Contact?, val badge: Badge? = null) {
             color = GreenColor,
             iconResId = R.drawable.ic_phone,
         )
+
+        override fun hashCode(): Int {
+            var result = color.hashCode()
+            result = 31 * result + iconResId
+            result = 31 * result + (iconColorFilter?.hashCode() ?: 0)
+            return result
+        }
     }
 
     override fun equals(other: Any?): Boolean {
@@ -50,5 +61,11 @@ sealed class GridItem(val contact: Contact?, val badge: Badge? = null) {
         val identicalBadges = badge == other.badge
 
         return identicalContacts && identicalBadges
+    }
+
+    override fun hashCode(): Int {
+        var result = contact?.hashCode() ?: 0
+        result = 31 * result + (badge?.hashCode() ?: 0)
+        return result
     }
 }

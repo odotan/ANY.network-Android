@@ -2,7 +2,6 @@ package com.anynetwork.app.ui.screens.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.anynetwork.app.BuildConfig
 import com.anynetwork.app.data.contacts.ContactsRepository
 import com.anynetwork.app.data.interaction.InteractionRepository
 import com.anynetwork.app.data.order.OrderRepository
@@ -24,7 +23,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okhttp3.internal.toImmutableList
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -109,6 +107,8 @@ class HomeViewModel @Inject constructor(
                 .debounce(50)
                 .collect { query ->
                     withContext(Dispatchers.Default) {
+                        if (!viewState.value.mode.isSearching) return@withContext
+                        log { "searching contacts" }
                         val filteredContacts = contacts.value
                             .filter {
                                 it.matchesQuery(searchQuery.value.log { "filteredContacts with search query" })
@@ -129,7 +129,7 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun reloadData() = viewModelScope.launch {
+    fun reloadData() = viewModelScope.launch(Dispatchers.Default) {
         try {
             Timber.i("reloadData")
             val latestInteractionsDeferred = async { interactionRepository.getAllInteractions() }
@@ -148,7 +148,7 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun updateContacts(emittedContacts: List<Contact>) {
+    private suspend fun updateContacts(emittedContacts: List<Contact>) = withContext(Dispatchers.IO) {
         val distinctContacts = emittedContacts
             .distinctBy { it.id }
             .distinctBy { it.phone?.normalize() }
@@ -178,16 +178,18 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun updateDependentStates(contacts: List<Contact>, interactions: List<Interaction>) {
+    private suspend fun updateDependentStates(contacts: List<Contact>, interactions: List<Interaction>) = withContext(Dispatchers.IO) {
         // Update search contacts
         updateSearchContacts(_searchQuery.value)
 
-        val newGridItems = processContactsForGrid(contacts, interactions)
-        updateHexGridItems(newGridItems)
-        if (_hexGridItems.value != newGridItems) {
-            Timber.d("Hex grid updated with new items.")
-        } else {
-            Timber.d("Hex grid update skipped; items are identical.")
+        viewModelScope.launch {
+            val newGridItems = processContactsForGrid(contacts, interactions)
+            updateHexGridItems(newGridItems)
+            if (_hexGridItems.value != newGridItems) {
+                Timber.d("Hex grid updated with new items.")
+            } else {
+                Timber.d("Hex grid update skipped; items are identical.")
+            }
         }
     }
 
@@ -202,13 +204,11 @@ class HomeViewModel @Inject constructor(
 
     // Extension function to compare lists deeply
     private fun List<GridItem>.isIdenticalTo(other: List<GridItem>): Boolean {
-        if (this.size != other.size) return false
-        return this.zip(other).all { (a, b) -> a == b }
+        return (this.hashCode() == other.hashCode()).log { "gridItem list isIdenticalTo" }
     }
 
     private fun List<Contact>.isContactListIdenticalTo(other: List<Contact>): Boolean {
-        if (this.size != other.size) return false
-        return this.zip(other).all { (a, b) -> a == b }
+        return (this.hashCode() == other.hashCode()).log { "contact list isIdenticalTo" }
     }
 
     private fun updateSearchContacts(query: String) {
@@ -223,8 +223,8 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun processContactsForGrid(contacts: List<Contact>, interactions: List<Interaction>): List<GridItem> {
-        return when (viewState.value.mode) {
+    private suspend fun processContactsForGrid(contacts: List<Contact>, interactions: List<Interaction>): List<GridItem> = withContext(Dispatchers.IO) {
+        when (viewState.value.mode) {
             is HomeScreenMode.SearchingGrid, HomeScreenMode.SearchingList -> {
                 contacts.map { GridItem.SearchGridItem(it) }
             }
@@ -336,7 +336,7 @@ class HomeViewModel @Inject constructor(
         _readContactsPermissionGranted.value = isGranted
     }
 
-    private suspend fun fetchRandomGridPlace(): HexGridCellPosition {
+    private suspend fun fetchRandomGridPlace(): HexGridCellPosition = withContext(Dispatchers.IO) {
         orderRepository.latestOrder().forEach {
             val randomItemAroundLatestOrder = randomItemAround(
                 latestGridPosition = getElementPosition(it.order),
@@ -350,9 +350,9 @@ class HomeViewModel @Inject constructor(
                     },
                 createCellPosition = ::HexGridCellPosition
             )
-            if (randomItemAroundLatestOrder != null) return randomItemAroundLatestOrder
+            if (randomItemAroundLatestOrder != null) return@withContext randomItemAroundLatestOrder
         }
-        return randomItemAround(
+        return@withContext randomItemAround(
             latestGridPosition = centralGridPosition,
             occupiedPositions = gridOrder.filter { it.itemType != Order.Type.EMPTY }
                 .map {
@@ -390,12 +390,14 @@ class HomeViewModel @Inject constructor(
             mode = screenMode,
         )
 
-        val newGridItems = processContactsForGrid(contacts.value, interactions.value)
-        updateHexGridItems(newGridItems)
-        if (_hexGridItems.value != newGridItems) {
-            Timber.d("Hex grid updated with new items.")
-        } else {
-            Timber.d("Hex grid update skipped; items are identical.")
+        viewModelScope.launch {
+            val newGridItems = processContactsForGrid(contacts.value, interactions.value)
+            updateHexGridItems(newGridItems)
+            if (_hexGridItems.value != newGridItems) {
+                Timber.d("Hex grid updated with new items.")
+            } else {
+                Timber.d("Hex grid update skipped; items are identical.")
+            }
         }
     }
 
@@ -575,9 +577,6 @@ class HomeViewModel @Inject constructor(
             HomeViewEvent.ClearViewEffect -> _viewEffectFlow.value = null
         }
     }
-
-    private fun <T> StateFlow<T>.toStateFlowWithLogging(tag: String): StateFlow<T> =
-        this.onEach { it.log { "$tag emitted" } }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), value)
 }
 
 private fun Contact.matchesQuery(query: String) = (name.contains(query, ignoreCase = true)
