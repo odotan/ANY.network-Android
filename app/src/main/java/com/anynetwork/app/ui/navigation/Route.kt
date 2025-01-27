@@ -34,8 +34,8 @@ object Route {
     @Serializable
     data class ExternalProfile(
         val id: Long,
-        val offsetX: Float,
-        val offsetY: Float,
+        val offsetX: Float?,
+        val offsetY: Float?,
     )
 
     @Serializable

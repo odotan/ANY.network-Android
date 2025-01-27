@@ -621,13 +621,29 @@ private fun Home(
                                     }
                                 },
                                 onClick = { offset ->
-                                    viewModel.onViewAction(
-                                        GridItemClick(
-                                            contact = gridItem.contact!!,
-                                            offsetX = offset.x,
-                                            offsetY = offset.y,
+                                    if (gridItem.contact == null) return@CustomHexagonContentStyle
+                                    when (gridItem.badge) {
+                                        is GridItem.Badge.PhoneBadge ->
+                                            viewModel.onViewAction(HomeViewEvent.BadgeInteractionClick(
+                                                contact = gridItem.contact,
+                                                interactionType = Interaction.Type.Phone
+                                            ))
+
+                                        is GridItem.Badge.EmailBadge ->
+                                            viewModel.onViewAction(HomeViewEvent.BadgeInteractionClick(
+                                                contact = gridItem.contact,
+                                                interactionType = Interaction.Type.Email
+                                            ))
+
+                                        is GridItem.Badge.FavoriteBadge -> viewModel.onViewAction(
+                                            GridItemClick(
+                                                contact = gridItem.contact,
+                                                offsetX = offset.x,
+                                                offsetY = offset.y,
+                                            )
                                         )
-                                    )
+                                        else -> {}
+                                    }
                                 },
                                 onLongClick = { viewModel.onViewAction(HexagonalGridCellLongClick) },
                                 isShakable = true,
@@ -682,6 +698,11 @@ private fun Home(
                                                         ))
                                                     }
 
+                                                    is GridItem.Badge.FavoriteBadge -> {
+                                                        GridItemClick(
+                                                            contact = gridItem.contact,
+                                                        )
+                                                    }
                                                     else -> {}
                                                 }
                                             }
@@ -832,6 +853,7 @@ private fun Home(
                     .drawBehind {
                         drawRect(background)
                     }
+                    .navigationBarsPadding()
                     .offset {
                         val sheetOffsetY = anchoredDraggableState
                             .offset
@@ -851,7 +873,7 @@ private fun Home(
                                 with(density) {
                                     expandedOffset = 275.fdpv.toPx()
                                     partiallyExpandedOffset = 399.fdpv.toPx()
-                                    collapsedOffset = (layoutHeight - 120.fdpv.toPx())
+                                    collapsedOffset = (layoutHeight - 135.fdpv.toPx())
                                     fullOffset =
                                         systemBarsPadding.toPx() + TopAppBarDefaults.LargeAppBarCollapsedHeight.toPx()
 

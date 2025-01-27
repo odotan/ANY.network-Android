@@ -119,7 +119,7 @@ fun ContactsRow(
             .collect { Timber.i("Observed interactionType change for ${contact.id}: $it") }
     }
 
-    var interactionType: Int? = remember { null }
+    var currentInteractionType: Int? = remember { null }
     val polygon = remember { createPolygon() }
     val roundedPolygonShape = remember { RoundedPolygonShape(polygon) }
     val roundedPolygon2Shape = remember { RoundedPolygonShape(polygon) }
@@ -206,6 +206,9 @@ fun ContactsRow(
                     snapshotFlow { interactionType }
                         .collect { Timber.i("Observed interactionType for ${contact.id} change: $it") }
                 }
+                LaunchedEffect(Unit) {
+                    currentInteractionType = interactionType
+                }
 
                 val interactionPickerItems = remember(interactionType) {
                     modifyList(
@@ -252,7 +255,8 @@ fun ContactsRow(
                             onSpinned = {
                                 val newInteractionType =
                                     interactionPickerItems.getOrNull(it)?.interactionType
-                                if (interactionType != newInteractionType) {
+                                if (currentInteractionType != newInteractionType) {
+                                    currentInteractionType = newInteractionType
                                     Timber.i("onSpinned to ${interactionPickerItems.getOrNull(it)?.value}")
 
                                     val vibrator =

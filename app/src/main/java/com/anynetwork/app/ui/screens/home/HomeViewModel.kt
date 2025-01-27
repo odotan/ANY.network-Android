@@ -610,7 +610,7 @@ data class HomeViewState(
 )
 
 sealed class HomeViewEvent {
-    data class GridItemClick(val contact: Contact, val offsetX: Float, val offsetY: Float): HomeViewEvent()
+    data class GridItemClick(val contact: Contact, val offsetX: Float? = null, val offsetY: Float? = null): HomeViewEvent()
     data object HexagonalGridCellLongClick: HomeViewEvent()
     data class GridItemButtonRemove(val gridItem: GridItem): HomeViewEvent()
     data class SwapGridItems(val target: GridItem, val targetNewIndex: Int, val destination: GridItem, val destinationNewIndex: Int): HomeViewEvent()
@@ -622,7 +622,7 @@ sealed class HomeViewEvent {
 sealed class HomeViewEffect {
     data class CallPhoneNumber(val phoneNumber: String): HomeViewEffect()
     data class WriteEmail(val emailAddress: String): HomeViewEffect()
-    data class NavigateToExternalProfile(val contactId: Long, val offsetX: Float, val offsetY: Float): HomeViewEffect()
+    data class NavigateToExternalProfile(val contactId: Long, val offsetX: Float? = null, val offsetY: Float? = null): HomeViewEffect()
 }
 
 fun HomeViewModel.createCellPosition(row: Int, column: Int) = HexGridCellPosition(

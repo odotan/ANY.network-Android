@@ -209,8 +209,6 @@ fun HexagonalGrid(
             maxItemsInEachRow = rowSize
         ) {
             repeat(itemsList.size) { index ->
-                if (index == 0) Timber.i("home start animation start item placement")
-                else if (index == itemsList.lastIndex) Timber.i("home start animation last item placement")
 
                 val contentStyle = itemsList[index]
                 val rowIndex = index / rowSize
