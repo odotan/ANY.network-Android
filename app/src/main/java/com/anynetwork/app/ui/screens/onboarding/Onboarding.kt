@@ -3,7 +3,6 @@
 package com.anynetwork.app.ui.screens.onboarding
 
 import android.content.Context
-import android.os.Build
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -37,7 +36,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
@@ -45,10 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.NavHostController
-import com.anynetwork.app.BuildConfig
 import com.anynetwork.app.R
 import com.anynetwork.app.ui.components.Screen
 import com.anynetwork.app.ui.components.hexagon.CoverBox
@@ -326,172 +321,158 @@ private fun Onboarding(navController: NavHostController) {
             )
 
             // Find the central element
-            val items =
-                List(gridRows) { row ->
-                    List(gridColumns) { column ->
-//                        val initialOverlay = @Composable {
-//                            var isCoverVisible by remember { mutableStateOf(true) }
-//                            val alpha by animateFloatAsState(
-//                                targetValue = if (isCoverVisible) 1f else 0f,
-//                                animationSpec = tween(coverAnimationDuration),
-//                            )
-//
-//                            LaunchedEffect(Unit) {
-//                                // Defer the animation start to improve performance
-//                                isCoverVisible = false
-//                            }
-//
-//                            CoverBox(alpha)
-//                        }
-                        val initialOverlay = @Composable {
+            val items = List(gridRows * gridColumns) { index ->
+                val row = index / gridColumns
+                val column = index % gridColumns
 
-                        }
+                val initialOverlay = @Composable {
 
-                        val cellIndex = createOnboardingCellPosition(
-                            column = column,
-                            row = row,
-                        ).getIndex()
+                }
 
-                        val backgroundColor = hexCellsBackgroundColors[cellIndex]
+                val cellIndex = createOnboardingCellPosition(
+                    column = column,
+                    row = row,
+                ).getIndex()
 
-                        if (firstGroup.keys.contains(cellIndex)) {
-                            val alpha by animateFloatAsState(
-                                targetValue = if (showFirstGroupOfContacts) 1f else 0f,
-                                animationSpec = tween(showFirstGroupOfContactsAnimationDuration),
-                            )
-                            remember(showFirstGroupOfContacts) {
-                                CustomHexagonContentStyle(
-                                    id = cellIndex,
-                                    background = Background.SingleColor(backgroundColor),
-                                    content = {
-                                        initialOverlay.invoke()
-                                        firstGroup[cellIndex]?.let {
-                                            Box(modifier = Modifier
-                                                .fillMaxSize()
-                                                .background(it.background.copy(alpha = alpha))
-                                                .alpha(alpha)
-                                            ) {
-                                                Image(
-                                                    modifier = Modifier
-                                                        .align(Alignment.BottomCenter)
-                                                        .fillMaxSize()
-                                                        .padding(top = 10.fdpv),
-                                                    painter = painterResource(
-                                                        id = firstGroup[cellIndex]?.resource ?: -1
-                                                    ),
-                                                    contentDescription = null,
-                                                )
-                                            }
-                                        }
-                                    }
-                                )
-                            }
-                        } else if (secondGroup.keys.contains(cellIndex)) {
-                            val alpha by animateFloatAsState(
-                                targetValue = if (showSecondGroupOfContacts) 1f else 0f,
-                                animationSpec = tween(showSecondGroupOfContactsAnimationDuration),
-                            )
-                            remember(showSecondGroupOfContacts) {
-                                CustomHexagonContentStyle(
-                                    id = cellIndex,
-                                    background = Background.SingleColor(backgroundColor),
-                                    content = {
-                                        initialOverlay.invoke()
-                                        secondGroup[cellIndex]?.let {
-                                            Box(modifier = Modifier
-                                                .fillMaxSize()
-                                                .background(it.background.copy(alpha = alpha))
-                                                .alpha(alpha)
-                                            ) {
-                                                Image(
-                                                    modifier = Modifier
-                                                        .align(Alignment.BottomCenter)
-                                                        .fillMaxSize()
-                                                        .padding(top = 10.fdpv),
-                                                    painter = painterResource(
-                                                        id = secondGroup[cellIndex]?.resource ?: -1
-                                                    ),
-                                                    contentDescription = null,
-                                                )
-                                            }
-                                        }
-                                    }
-                                )
-                            }
-                        } else if (thirdGroup.keys.contains(cellIndex)) {
-                            val alpha by animateFloatAsState(
-                                targetValue = if (showThirdGroupOfContacts) 1f else 0f,
-                                animationSpec = tween(showThirdGroupOfContactsAnimationDuration),
-                            )
-                            remember(showThirdGroupOfContacts) {
-                                CustomHexagonContentStyle(
-                                    id = cellIndex,
-                                    background = Background.SingleColor(backgroundColor),
-                                    content = {
-                                        initialOverlay.invoke()
-                                        thirdGroup[cellIndex]?.let {
-                                            Box(modifier = Modifier
-                                                .fillMaxSize()
-                                                .background(it.background.copy(alpha = alpha))
-                                                .alpha(alpha)
-                                            ) {
-                                                Image(
-                                                    modifier = Modifier
-                                                        .align(Alignment.BottomCenter)
-                                                        .fillMaxSize()
-                                                        .padding(top = 10.fdpv),
-                                                    contentScale = ContentScale.FillWidth,
-                                                    painter = painterResource(
-                                                        id = thirdGroup[cellIndex]?.resource ?: -1
-                                                    ),
-                                                    contentDescription = null,
-                                                )
-                                            }
-                                        }
-                                    }
-                                )
-                            }
-                        } else if (cellIndex == centralIndex) {
-                            val defaultAvatarItemAlpha by animateFloatAsState(
-                                targetValue = if (showDefaultAvatarItemAtCenter) 1f else 0f,
-                                animationSpec = tween(showDefaultAvatarItemAtCenterAnimationDuration)
-                            )
-                            remember (showDefaultAvatarItemAtCenter, blurContacts) {
-                                CustomHexagonContentStyle(
-                                    id = cellIndex,
-                                    background = Background.SingleColor(backgroundColor),
-                                    content = {
-                                        initialOverlay.invoke()
-                                        Box(
+                val backgroundColor = hexCellsBackgroundColors[cellIndex]
+
+                if (firstGroup.keys.contains(cellIndex)) {
+                    val alpha by animateFloatAsState(
+                        targetValue = if (showFirstGroupOfContacts) 1f else 0f,
+                        animationSpec = tween(showFirstGroupOfContactsAnimationDuration),
+                    )
+                    remember(showFirstGroupOfContacts) {
+                        CustomHexagonContentStyle(
+                            id = cellIndex,
+                            background = Background.SingleColor(backgroundColor),
+                            content = {
+                                initialOverlay.invoke()
+                                firstGroup[cellIndex]?.let {
+                                    Box(modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(it.background.copy(alpha = alpha))
+                                        .alpha(alpha)
+                                    ) {
+                                        Image(
                                             modifier = Modifier
+                                                .align(Alignment.BottomCenter)
                                                 .fillMaxSize()
-                                                .background(Color(0xFF6E4CD4).copy(alpha = defaultAvatarItemAlpha))
-                                        ) {
-                                            Image(
-                                                modifier = Modifier
-                                                    .align(Alignment.BottomCenter)
-                                                    .fillMaxSize()
-                                                    .padding(top = 10.fdpv),
-                                                alpha = defaultAvatarItemAlpha,
-                                                imageVector = ImageVector.vectorResource(id = R.drawable.default_avatar),
-                                                contentDescription = null,
-                                            )
-                                        }
+                                                .padding(top = 10.fdpv),
+                                            painter = painterResource(
+                                                id = firstGroup[cellIndex]?.resource ?: -1
+                                            ),
+                                            contentDescription = null,
+                                        )
                                     }
-                                )
-                            }
-                        }
-                        else {
-                            CustomHexagonContentStyle(
-                                id = cellIndex,
-                                background = Background.SingleColor(backgroundColor),
-                                content = {
-                                    initialOverlay.invoke()
                                 }
-                            )
-                        }
+                            }
+                        )
+                    }
+                } else if (secondGroup.keys.contains(cellIndex)) {
+                    val alpha by animateFloatAsState(
+                        targetValue = if (showSecondGroupOfContacts) 1f else 0f,
+                        animationSpec = tween(showSecondGroupOfContactsAnimationDuration),
+                    )
+                    remember(showSecondGroupOfContacts) {
+                        CustomHexagonContentStyle(
+                            id = cellIndex,
+                            background = Background.SingleColor(backgroundColor),
+                            content = {
+                                initialOverlay.invoke()
+                                secondGroup[cellIndex]?.let {
+                                    Box(modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(it.background.copy(alpha = alpha))
+                                        .alpha(alpha)
+                                    ) {
+                                        Image(
+                                            modifier = Modifier
+                                                .align(Alignment.BottomCenter)
+                                                .fillMaxSize()
+                                                .padding(top = 10.fdpv),
+                                            painter = painterResource(
+                                                id = secondGroup[cellIndex]?.resource ?: -1
+                                            ),
+                                            contentDescription = null,
+                                        )
+                                    }
+                                }
+                            }
+                        )
+                    }
+                } else if (thirdGroup.keys.contains(cellIndex)) {
+                    val alpha by animateFloatAsState(
+                        targetValue = if (showThirdGroupOfContacts) 1f else 0f,
+                        animationSpec = tween(showThirdGroupOfContactsAnimationDuration),
+                    )
+                    remember(showThirdGroupOfContacts) {
+                        CustomHexagonContentStyle(
+                            id = cellIndex,
+                            background = Background.SingleColor(backgroundColor),
+                            content = {
+                                initialOverlay.invoke()
+                                thirdGroup[cellIndex]?.let {
+                                    Box(modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(it.background.copy(alpha = alpha))
+                                        .alpha(alpha)
+                                    ) {
+                                        Image(
+                                            modifier = Modifier
+                                                .align(Alignment.BottomCenter)
+                                                .fillMaxSize()
+                                                .padding(top = 10.fdpv),
+                                            contentScale = ContentScale.FillWidth,
+                                            painter = painterResource(
+                                                id = thirdGroup[cellIndex]?.resource ?: -1
+                                            ),
+                                            contentDescription = null,
+                                        )
+                                    }
+                                }
+                            }
+                        )
+                    }
+                } else if (cellIndex == centralIndex) {
+                    val defaultAvatarItemAlpha by animateFloatAsState(
+                        targetValue = if (showDefaultAvatarItemAtCenter) 1f else 0f,
+                        animationSpec = tween(showDefaultAvatarItemAtCenterAnimationDuration)
+                    )
+                    remember (showDefaultAvatarItemAtCenter, blurContacts) {
+                        CustomHexagonContentStyle(
+                            id = cellIndex,
+                            background = Background.SingleColor(backgroundColor),
+                            content = {
+                                initialOverlay.invoke()
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(Color(0xFF6E4CD4).copy(alpha = defaultAvatarItemAlpha))
+                                ) {
+                                    Image(
+                                        modifier = Modifier
+                                            .align(Alignment.BottomCenter)
+                                            .fillMaxSize()
+                                            .padding(top = 10.fdpv),
+                                        alpha = defaultAvatarItemAlpha,
+                                        imageVector = ImageVector.vectorResource(id = R.drawable.default_avatar),
+                                        contentDescription = null,
+                                    )
+                                }
+                            }
+                        )
                     }
                 }
+                else {
+                    CustomHexagonContentStyle(
+                        id = cellIndex,
+                        background = Background.SingleColor(backgroundColor),
+                        content = {
+                            initialOverlay.invoke()
+                        }
+                    )
+                }
+            }
 
             val centralCellPosition = HexGridCellPosition(
                 column = (gridColumns / 2) - 1,
@@ -512,217 +493,217 @@ private fun Onboarding(navController: NavHostController) {
             val twitterCellPosition = profilePictureCellPosition.getNeighborPosition(Left)
             val whatsappCellPosition = centralCellPosition.getNeighborPosition(BottomRight)
             val telegramCellPosition = centralCellPosition.getNeighborPosition(BottomLeft)
-            val markHamlinHexGridItems = List(gridRows) { row ->
-                List(gridColumns) { column ->
-                    val cellIndex = createOnboardingCellPosition(
-                        column = column,
-                        row = row,
-                    ).getIndex()
-                    val backgroundColor = hexCellsBackgroundColors[cellIndex]
-                    val itemAlpha by animateFloatAsState(
-                        targetValue = if (showContactFlower) 1f else 0f,
-                        animationSpec = tween(showContactFlowerAnimationDuration)
-                    )
+            val markHamlinHexGridItems = List(gridRows * gridColumns) { index ->
+                val row = index / gridColumns
+                val column = index % gridColumns
+                val cellIndex = createOnboardingCellPosition(
+                    column = column,
+                    row = row,
+                ).getIndex()
+                val backgroundColor = hexCellsBackgroundColors[cellIndex]
+                val itemAlpha by animateFloatAsState(
+                    targetValue = if (showContactFlower) 1f else 0f,
+                    animationSpec = tween(showContactFlowerAnimationDuration)
+                )
 
-                    when {
-                        cellIndex == centralCellPosition.getIndex() -> remember (showContactFlower) {
-                            CustomHexagonContentStyle(
-                                id = cellIndex,
-                                background = Background.SingleColor(backgroundColor),
-                                content = {
-                                    Box(
+                when {
+                    cellIndex == centralCellPosition.getIndex() -> remember (showContactFlower) {
+                        CustomHexagonContentStyle(
+                            id = cellIndex,
+                            background = Background.SingleColor(backgroundColor),
+                            content = {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .align(Alignment.Center)
+                                        .background(Color(0xFF393939).copy(alpha = itemAlpha)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Image(
                                         modifier = Modifier
-                                            .fillMaxSize()
-                                            .align(Alignment.Center)
-                                            .background(Color(0xFF393939).copy(alpha = itemAlpha)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Image(
-                                            modifier = Modifier
-                                                .fillMaxWidth(1 / 2f)
-                                                .fillMaxSize(43f / 80)
-                                                .alpha(itemAlpha),
-                                            painter = painterResource(id = R.drawable.ic_any_network),
-                                            contentDescription = null,
-                                        )
-                                    }
+                                            .fillMaxWidth(1 / 2f)
+                                            .fillMaxSize(43f / 80)
+                                            .alpha(itemAlpha),
+                                        painter = painterResource(id = R.drawable.ic_any_network),
+                                        contentDescription = null,
+                                    )
                                 }
-                            )
-                        }
-                        facebookCellPosition.isSame(column, row) -> remember (showContactFlower) {
-                            CustomHexagonContentStyle(
-                                id = cellIndex,
-                                background = Background.SingleColor(backgroundColor),
-                                content = {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .align(Alignment.Center)
-                                            .background(FacebookColor.copy(alpha = itemAlpha)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Image(
-                                            modifier = Modifier.alpha(itemAlpha),
-                                            painter = painterResource(id = R.drawable.ic_facebook),
-                                            contentDescription = null,
-                                        )
-                                    }
+                            }
+                        )
+                    }
+                    facebookCellPosition.isSame(column, row) -> remember (showContactFlower) {
+                        CustomHexagonContentStyle(
+                            id = cellIndex,
+                            background = Background.SingleColor(backgroundColor),
+                            content = {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .align(Alignment.Center)
+                                        .background(FacebookColor.copy(alpha = itemAlpha)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Image(
+                                        modifier = Modifier.alpha(itemAlpha),
+                                        painter = painterResource(id = R.drawable.ic_facebook),
+                                        contentDescription = null,
+                                    )
                                 }
-                            )
-                        }
-                        messengerCellPosition.isSame(column, row) -> remember (showContactFlower) {
-                            CustomHexagonContentStyle(
-                                id = cellIndex,
-                                background = Background.SingleColor(backgroundColor),
-                                content = {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .align(Alignment.Center)
-                                            .background(MessengerColor.copy(alpha = itemAlpha)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Image(
-                                            modifier = Modifier.alpha(itemAlpha),
-                                            painter = painterResource(id = R.drawable.ic_messenger),
-                                            contentDescription = null,
-                                        )
-                                    }
+                            }
+                        )
+                    }
+                    messengerCellPosition.isSame(column, row) -> remember (showContactFlower) {
+                        CustomHexagonContentStyle(
+                            id = cellIndex,
+                            background = Background.SingleColor(backgroundColor),
+                            content = {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .align(Alignment.Center)
+                                        .background(MessengerColor.copy(alpha = itemAlpha)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Image(
+                                        modifier = Modifier.alpha(itemAlpha),
+                                        painter = painterResource(id = R.drawable.ic_messenger),
+                                        contentDescription = null,
+                                    )
                                 }
-                            )
-                        }
-                        instagramCellPosition.isSame(column, row) -> remember (showContactFlower) {
-                            CustomHexagonContentStyle(
-                                id = cellIndex,
-                                background = Background.SingleColor(backgroundColor),
-                                content = {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .align(Alignment.Center)
-                                            .background(InstagramColor.copy(alpha = itemAlpha)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Image(
-                                            modifier = Modifier.alpha(itemAlpha),
-                                            painter = painterResource(id = R.drawable.ic_instagram),
-                                            contentDescription = null,
-                                        )
-                                    }
+                            }
+                        )
+                    }
+                    instagramCellPosition.isSame(column, row) -> remember (showContactFlower) {
+                        CustomHexagonContentStyle(
+                            id = cellIndex,
+                            background = Background.SingleColor(backgroundColor),
+                            content = {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .align(Alignment.Center)
+                                        .background(InstagramColor.copy(alpha = itemAlpha)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Image(
+                                        modifier = Modifier.alpha(itemAlpha),
+                                        painter = painterResource(id = R.drawable.ic_instagram),
+                                        contentDescription = null,
+                                    )
                                 }
-                            )
-                        }
-                        emailCellPosition.isSame(column, row) -> remember (showContactFlower) {
-                            CustomHexagonContentStyle(
-                                id = cellIndex,
-                                background = Background.SingleColor(backgroundColor),
-                                content = {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .align(Alignment.Center)
-                                            .background(EmailColor.copy(alpha = itemAlpha)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Image(
-                                            modifier = Modifier.alpha(itemAlpha),
-                                            painter = painterResource(id = R.drawable.ic_email),
-                                            contentDescription = null,
-                                        )
-                                    }
+                            }
+                        )
+                    }
+                    emailCellPosition.isSame(column, row) -> remember (showContactFlower) {
+                        CustomHexagonContentStyle(
+                            id = cellIndex,
+                            background = Background.SingleColor(backgroundColor),
+                            content = {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .align(Alignment.Center)
+                                        .background(EmailColor.copy(alpha = itemAlpha)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Image(
+                                        modifier = Modifier.alpha(itemAlpha),
+                                        painter = painterResource(id = R.drawable.ic_email),
+                                        contentDescription = null,
+                                    )
                                 }
-                            )
-                        }
-                        phoneCellPosition.isSame(column, row) -> remember (showContactFlower) {
-                            CustomHexagonContentStyle(
-                                id = cellIndex,
-                                background = Background.SingleColor(backgroundColor),
-                                content = {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .align(Alignment.Center)
-                                            .background(PhoneColor.copy(alpha = itemAlpha)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Image(
-                                            modifier = Modifier.alpha(itemAlpha),
-                                            painter = painterResource(id = R.drawable.ic_phone),
-                                            contentDescription = null,
-                                        )
-                                    }
+                            }
+                        )
+                    }
+                    phoneCellPosition.isSame(column, row) -> remember (showContactFlower) {
+                        CustomHexagonContentStyle(
+                            id = cellIndex,
+                            background = Background.SingleColor(backgroundColor),
+                            content = {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .align(Alignment.Center)
+                                        .background(PhoneColor.copy(alpha = itemAlpha)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Image(
+                                        modifier = Modifier.alpha(itemAlpha),
+                                        painter = painterResource(id = R.drawable.ic_phone),
+                                        contentDescription = null,
+                                    )
                                 }
-                            )
-                        }
-                        twitterCellPosition.isSame(column, row) -> remember (showContactFlower) {
-                            CustomHexagonContentStyle(
-                                id = cellIndex,
-                                background = Background.SingleColor(backgroundColor),
-                                content = {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .align(Alignment.Center)
-                                            .background(TwitterColor.copy(alpha = itemAlpha)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Image(
-                                            modifier = Modifier.alpha(itemAlpha),
-                                            painter = painterResource(id = R.drawable.ic_twitter),
-                                            contentDescription = null,
-                                        )
-                                    }
+                            }
+                        )
+                    }
+                    twitterCellPosition.isSame(column, row) -> remember (showContactFlower) {
+                        CustomHexagonContentStyle(
+                            id = cellIndex,
+                            background = Background.SingleColor(backgroundColor),
+                            content = {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .align(Alignment.Center)
+                                        .background(TwitterColor.copy(alpha = itemAlpha)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Image(
+                                        modifier = Modifier.alpha(itemAlpha),
+                                        painter = painterResource(id = R.drawable.ic_twitter),
+                                        contentDescription = null,
+                                    )
                                 }
-                            )
-                        }
-                        whatsappCellPosition.isSame(column, row) -> remember (showContactFlower) {
-                            CustomHexagonContentStyle(
-                                id = cellIndex,
-                                background = Background.SingleColor(backgroundColor),
-                                content = {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .align(Alignment.Center)
-                                            .background(WhatsappColor.copy(alpha = itemAlpha)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Image(
-                                            modifier = Modifier.alpha(itemAlpha),
-                                            painter = painterResource(id = R.drawable.ic_whatsapp),
-                                            contentDescription = null,
-                                        )
-                                    }
+                            }
+                        )
+                    }
+                    whatsappCellPosition.isSame(column, row) -> remember (showContactFlower) {
+                        CustomHexagonContentStyle(
+                            id = cellIndex,
+                            background = Background.SingleColor(backgroundColor),
+                            content = {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .align(Alignment.Center)
+                                        .background(WhatsappColor.copy(alpha = itemAlpha)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Image(
+                                        modifier = Modifier.alpha(itemAlpha),
+                                        painter = painterResource(id = R.drawable.ic_whatsapp),
+                                        contentDescription = null,
+                                    )
                                 }
-                            )
-                        }
-                        telegramCellPosition.isSame(column, row) -> remember (showContactFlower) {
-                            CustomHexagonContentStyle(
-                                id = cellIndex,
-                                background = Background.SingleColor(backgroundColor),
-                                content = {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .align(Alignment.Center)
-                                            .background(TelegramColor.copy(alpha = itemAlpha)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Image(
-                                            modifier = Modifier.alpha(itemAlpha),
-                                            painter = painterResource(id = R.drawable.ic_telegram),
-                                            contentDescription = null,
-                                        )
-                                    }
+                            }
+                        )
+                    }
+                    telegramCellPosition.isSame(column, row) -> remember (showContactFlower) {
+                        CustomHexagonContentStyle(
+                            id = cellIndex,
+                            background = Background.SingleColor(backgroundColor),
+                            content = {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .align(Alignment.Center)
+                                        .background(TelegramColor.copy(alpha = itemAlpha)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Image(
+                                        modifier = Modifier.alpha(itemAlpha),
+                                        painter = painterResource(id = R.drawable.ic_telegram),
+                                        contentDescription = null,
+                                    )
                                 }
-                            )
-                        }
+                            }
+                        )
+                    }
 
-                        else -> remember {
-                            EmptyHexagonContentStyle(
-                                id = cellIndex,
-                                background = Background.SingleColor(backgroundColor))
-                        }
+                    else -> remember {
+                        EmptyHexagonContentStyle(
+                            id = cellIndex,
+                            background = Background.SingleColor(backgroundColor))
                     }
                 }
             }
@@ -735,7 +716,7 @@ private fun Onboarding(navController: NavHostController) {
 
             HexagonalGrid(
                 modifier = Modifier.blur(animatedBlur),
-                items = if (showMarkHamlinItems) markHamlinHexGridItems else items,
+                itemsList = if (showMarkHamlinItems) markHamlinHexGridItems else items,
                 rowSize = gridColumns,
                 columnSize = gridRows,
                 minScale = scale,

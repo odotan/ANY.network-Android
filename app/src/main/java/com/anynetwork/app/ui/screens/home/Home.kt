@@ -28,7 +28,6 @@ import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.animateTo
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -47,10 +46,7 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.BottomSheetDefaults.DragHandle
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
@@ -63,7 +59,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -73,16 +68,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
@@ -141,11 +133,6 @@ import com.anynetwork.app.ui.components.hexagon.generateHexagonColors
 import com.anynetwork.app.ui.components.hexagon.hexCellsBackgroundColorsGrid
 import com.anynetwork.app.ui.components.text.AutoSizeText
 import com.anynetwork.app.ui.navigation.Route
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileMode
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.BackButtonClick
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.EditButtonClick
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.FavoriteButtonClick
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.SaveButtonClick
 import com.anynetwork.app.ui.screens.externalprofile.VerticalLine
 import com.anynetwork.app.ui.screens.home.HomeViewEvent.CarouselContactInteractionClick
 import com.anynetwork.app.ui.screens.home.HomeViewEvent.ClearViewEffect
@@ -547,228 +534,185 @@ private fun Home(
             // Find the central element
             val items = remember(optimizedPhotoUri, optimizedHexGridContacts) {
                 Timber.i("home start animation reload items")
-                val list = List(gridRows) { row -> // Create a list with `gridRows` elements
-                    List(gridColumns) { column ->  // Each element is a list with `gridColumns` elements
-                        val cellIndex = viewModel.createCellPosition(
-                            column = column,
-                            row = row,
-                        ).getIndex()
+                val list = (0 until gridRows * gridColumns).map { index ->
+                    val row = index / gridColumns
+                    val column = index % gridColumns
+                    val cellIndex = viewModel.createCellPosition(column = column, row = row).getIndex()
+                    val backgroundColor = backgroundColorsGrid[row][column]
 
-                        val backgroundColor = backgroundColorsGrid[row][column]
+                    if (cellIndex == centralIndex && !screenMode.isSearching) {
+                        optimizedPhotoUri.log { "" }
+                        if (optimizedPhotoUri != null) {
+                            ImageHexagonContentStyle(
+                                id = cellIndex,
+                                isHoverable = false,
+                                image = ImageHexagonContentStyle.Image.FromUri(optimizedPhotoUri!!),
+                                onClick = { onMyProfileClick.invoke() },
+                                onLongClick = { viewModel.onViewAction(HexagonalGridCellLongClick) },
+                            )
+                        } else {
+                            CustomHexagonContentStyle(
+                                id = cellIndex,
+                                background = Background.SingleColor(PrimaryColor),
+                                isHoverable = false,
+                                content = {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize()
+                                            .align(Alignment.Center)
+                                    ) {
+                                        Image(
+                                            modifier = Modifier
+                                                .align(Alignment.Center)
+                                                .fillMaxSize(0.33f),
+                                            painter = rememberAsyncImagePainter(
+                                                model = ImageRequest.Builder(LocalContext.current)
+                                                    .data(R.drawable.ic_profile)
+                                                    .size(Size(580, 660))
+                                                    .build()
+                                            ),
+                                            contentScale = ContentScale.FillWidth,
+                                            contentDescription = null,
+                                        )
+                                    }
+                                },
+                                onClick = { onMyProfileClick.invoke() },
+                                onLongClick = { viewModel.onViewAction(HexagonalGridCellLongClick) },
+                            )
+                        }
+                    } else {
+                        val contactForCell = viewModel.cellPositions.take(optimizedHexGridContacts.size)
+                            .find { it.getIndex() == cellIndex }
 
-                        if (cellIndex == centralIndex && !screenMode.isSearching) {
-                            optimizedPhotoUri.log { "" }
-                            if (optimizedPhotoUri != null) {
-                                ImageHexagonContentStyle(
+                        if (contactForCell != null && optimizedHexGridContacts[viewModel.cellPositions.indexOf(contactForCell)] !is GridItem.EmptyGridItem) {
+                            val gridItem = optimizedHexGridContacts[viewModel.cellPositions.indexOf(contactForCell)]
+                            CustomHexagonContentStyle(
+                                id = cellIndex,
+                                background = Background.SingleColor(backgroundColor),
+                                isDraggable = gridItem !is GridItem.SearchGridItem,
+                                content = { scale ->
+                                    if (gridItem.contact?.avatarUri != null) {
+                                        Image(
+                                            modifier = Modifier.fillMaxSize(),
+                                            painter = rememberAsyncImagePainter(
+                                                model = ImageRequest.Builder(LocalContext.current)
+                                                    .data(gridItem.contact.avatarUri)
+                                                    .size(Size.ORIGINAL)
+                                                    .scale(scale = Scale.FILL)
+                                                    .build()
+                                            ),
+                                            contentScale = ContentScale.Crop,
+                                            contentDescription = null,
+                                        )
+                                    } else {
+                                        val fullname = gridItem.contact!!.name.uppercase()
+                                        AutoSizeText(
+                                            modifier = Modifier.fillMaxSize(0.9f),
+                                            text = fullname,
+                                            maxLines = if (fullname.contains(" ")) 2 else 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            color = Color(0xFFAFAEB8),
+                                            alignment = Alignment.Center,
+                                            maxTextSize = 11.csp * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv) * scale * gridScaling,
+                                            style = TextStyle(
+                                                fontFamily = montserratFontFamily,
+                                                fontWeight = FontWeight.SemiBold,
+                                            )
+                                        )
+                                    }
+                                },
+                                onClick = { offset ->
+                                    viewModel.onViewAction(
+                                        GridItemClick(
+                                            contact = gridItem.contact!!,
+                                            offsetX = offset.x,
+                                            offsetY = offset.y,
+                                        )
+                                    )
+                                },
+                                onLongClick = { viewModel.onViewAction(HexagonalGridCellLongClick) },
+                                isShakable = true,
+                                removableStrategy = RemovableStrategy {
+                                    viewModel.onViewAction(
+                                        GridItemButtonRemove(gridItem = gridItem)
+                                    )
+                                },
+                                overlay = gridItem.badge?.let {
+                                    {
+                                        if (screenMode is HomeScreenMode.Edit) DeleteButton(
+                                            modifier = Modifier
+                                                .align(Alignment.TopEnd)
+                                                .padding(
+                                                    top = 10.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv * gridScaling),
+                                                    end = 11.fdph * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv * gridScaling)
+                                                )
+                                                .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv * gridScaling)),
+                                            onClick = {
+                                                viewModel.onViewAction(
+                                                    GridItemButtonRemove(gridItem)
+                                                )
+                                            }
+                                        )
+
+                                        Badge(
+                                            Modifier
+                                                .align(Alignment.BottomEnd)
+                                                .padding(
+                                                    bottom = 10.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv * gridScaling),
+                                                    end = 11.fdph * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv * gridScaling)
+                                                )
+                                                .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv * gridScaling))
+                                                .zIndex(2f),
+                                            color = it.color,
+                                            iconResourceId = it.iconResId,
+                                            iconColorFilter = it.iconColorFilter,
+                                            onClick = {
+                                                if (gridItem.contact == null) return@Badge
+                                                when (it) {
+                                                    is GridItem.Badge.PhoneBadge -> {
+                                                        viewModel.onViewAction(HomeViewEvent.BadgeInteractionClick(
+                                                            contact = gridItem.contact!!,
+                                                            interactionType = Interaction.Type.Phone
+                                                        ))
+                                                    }
+
+                                                    is GridItem.Badge.EmailBadge -> {
+                                                        viewModel.onViewAction(HomeViewEvent.BadgeInteractionClick(
+                                                            contact = gridItem.contact!!,
+                                                            interactionType = Interaction.Type.Email
+                                                        ))
+                                                    }
+
+                                                    else -> {}
+                                                }
+                                            }
+                                        )
+                                    }
+                                } ?: {}
+                            )
+                        } else {
+                            val cellPosition = viewModel.cellPositions.find { it.row == row && it.column == column }
+                            val cellLayer = calculateLayersForElements(viewModel.cellPositions.indexOf(cellPosition))
+                            val isOutsideHexGridHexagon = cellLayer > gridColumns / 2 || viewModel.cellPositions.indexOf(cellPosition) == -1
+                            if (isOutsideHexGridHexagon) {
+                                TransparentHexagonContentStyle(id = cellIndex)
+                            } else if (viewModel.cellPositions.indexOf(cellPosition) % 11 == 0) {
+                                TrashCanHexagonContentStyle(
                                     id = cellIndex,
-                                    isHoverable = false,
-                                    image = ImageHexagonContentStyle.Image.FromUri(optimizedPhotoUri!!),
-                                    onClick = {
-                                        onMyProfileClick.invoke()
-                                    },
-                                    onLongClick = {
-                                        viewModel.onViewAction(HexagonalGridCellLongClick)
-                                    },
+                                    background = Background.SingleColor(backgroundColor)
                                 )
                             } else {
-                                CustomHexagonContentStyle(
-                                    id = cellIndex,
-                                    background = Background.SingleColor(PrimaryColor),
-                                    isHoverable = false,
-                                    content = {
-                                        Box(
-                                            modifier = Modifier.fillMaxSize()
-                                                .align(Alignment.Center),) {
-                                            Image(
-                                                modifier = Modifier
-                                                    .align(Alignment.Center)
-                                                    .fillMaxSize(0.33f),
-                                                painter = rememberAsyncImagePainter(
-                                                    model = ImageRequest.Builder(LocalContext.current)
-                                                        .data(R.drawable.ic_profile)
-                                                        .size(Size(580, 660))
-                                                        .build()
-                                                ),
-                                                contentScale = ContentScale.FillWidth,
-                                                contentDescription = null,
-                                            )
-                                        }
-                                    },
-                                    onClick = { offset ->
-                                        onMyProfileClick.invoke()
-                                    },
-                                    onLongClick = {
-                                        viewModel.onViewAction(HexagonalGridCellLongClick)
-                                    },
-                                )
-                            }
-                        } else {
-                            val contactForCell = viewModel.cellPositions.take(optimizedHexGridContacts.size)
-                                .find {
-                                    it.getIndex() == cellIndex
-                                }
-
-                            if (contactForCell != null && optimizedHexGridContacts[viewModel.cellPositions.indexOf(
-                                    contactForCell
-                                )] !is GridItem.EmptyGridItem) {
-                                val gridItem = optimizedHexGridContacts[viewModel.cellPositions.indexOf(
-                                    contactForCell
-                                )]
-                                CustomHexagonContentStyle(
+                                EmptyHexagonContentStyle(
                                     id = cellIndex,
                                     background = Background.SingleColor(backgroundColor),
-                                    isDraggable = gridItem !is GridItem.SearchGridItem,
-                                    content = { scale ->
-                                        if (gridItem.contact?.avatarUri != null) {
-                                            Image(
-                                                modifier = Modifier
-                                                    .fillMaxSize(),
-                                                painter = rememberAsyncImagePainter(
-                                                    model = ImageRequest.Builder(LocalContext.current)
-                                                        .data(gridItem.contact.avatarUri)
-                                                        .size(Size.ORIGINAL)
-                                                        .scale(scale = Scale.FILL)
-                                                        .build()
-                                                ),
-                                                contentScale = ContentScale.Crop,
-                                                contentDescription = null,
-                                            )
-                                        } else {
-                                            val fullname = gridItem.contact!!
-                                                .name
-                                                .uppercase()
-                                            AutoSizeText(
-                                                modifier = Modifier.fillMaxSize(0.9f),
-                                                text = fullname,
-                                                maxLines = if (fullname.contains(" ")) 2 else 1,
-                                                overflow = TextOverflow.Ellipsis,
-                                                color = Color(0xFFAFAEB8),
-                                                alignment = Alignment.Center,
-                                                maxTextSize = 11.csp * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv) * scale * gridScaling,
-                                                style = TextStyle(
-                                                    fontFamily = montserratFontFamily,
-                                                    fontWeight = FontWeight.SemiBold,
-                                                )
-                                            )
-                                        }
-//                                        Text(
-//                                            modifier = Modifier.align(Alignment.Center),
-//                                            text = "${cellsPositions.indexOf(contactForCell)}\n$cellIndex",
-//                                            textAlign = TextAlign.Center,
-//                                            color = Color(0xFFAFAEB8),
-//                                            style = TextStyle(
-//                                                fontFamily = montserratFontFamily,
-//                                                fontWeight = FontWeight.SemiBold,
-//                                                fontSize = 18.csp * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv) * scale * gridScaling,
-//                                            )
-//                                        )
-                                    },
-                                    onClick = { offset ->
-                                        viewModel.onViewAction(
-                                            GridItemClick(
-                                                contact = gridItem.contact!!,
-                                                offsetX = offset.x,
-                                                offsetY = offset.y,
-                                            )
-                                        )
-//                                        onContactClick.invoke(gridItem.contact, it)
-                                    },
-                                    onLongClick = {
-                                        viewModel.onViewAction(HexagonalGridCellLongClick)
-                                    },
-                                    isShakable = true,
-                                    removableStrategy = RemovableStrategy {
-                                        viewModel.onViewAction(
-                                            GridItemButtonRemove(
-                                                gridItem = gridItem
-                                            )
-                                        )
-                                    },
-                                    overlay = gridItem.badge?.let {
-                                        {
-                                            if (screenMode is HomeScreenMode.Edit) DeleteButton(
-                                                modifier = Modifier
-                                                    .align(Alignment.TopEnd)
-                                                    .padding(
-                                                        top = 10.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv * gridScaling),
-                                                        end = 11.fdph * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv * gridScaling)
-                                                    )
-                                                    .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv * gridScaling)),
-                                                onClick = {
-                                                    viewModel.onViewAction(
-                                                        GridItemButtonRemove(
-                                                            gridItem
-                                                        )
-                                                    )
-                                                }
-                                            )
-
-                                            Badge(
-                                                Modifier
-                                                    .align(Alignment.BottomEnd)
-                                                    .padding(
-                                                        bottom = 10.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv * gridScaling),
-                                                        end = 11.fdph * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv * gridScaling)
-                                                    )
-                                                    .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv * gridScaling))
-                                                    .zIndex(2f),
-                                                color = it.color,
-                                                iconResourceId = it.iconResId,
-                                                iconColorFilter = it.iconColorFilter,
-                                                onClick = {
-                                                    if (gridItem.contact == null) return@Badge
-                                                    when (it) {
-                                                        is GridItem.Badge.PhoneBadge -> {
-                                                            viewModel.onViewAction(HomeViewEvent.BadgeInteractionClick(
-                                                                contact = gridItem.contact!!,
-                                                                interactionType = Interaction.Type.Phone
-                                                            ))
-                                                        }
-
-                                                        is GridItem.Badge.EmailBadge -> {
-                                                            viewModel.onViewAction(HomeViewEvent.BadgeInteractionClick(
-                                                                contact = gridItem.contact!!,
-                                                                interactionType = Interaction.Type.Email
-                                                            ))
-                                                        }
-
-                                                        else -> {}
-                                                    }
-                                                }
-                                            )
-                                        }
-                                    } ?: {}
                                 )
-                            } else {
-                                val cellPosition = viewModel.cellPositions.find {
-                                    it.row == row && it.column == column
-                                }
-                                val cellLayer = calculateLayersForElements(viewModel.cellPositions.indexOf(cellPosition))
-                                val isOutsideHexGridHexagon = cellLayer > gridColumns / 2 || viewModel.cellPositions.indexOf(cellPosition) == -1
-                                if (isOutsideHexGridHexagon) {
-                                    TransparentHexagonContentStyle(id = cellIndex)
-                                } else if (viewModel.cellPositions.indexOf(cellPosition) % 11 == 0) {
-                                    TrashCanHexagonContentStyle(
-                                        id = cellIndex,
-                                        background = Background.SingleColor(backgroundColor)
-                                    )
-                                } else {
-                                    EmptyHexagonContentStyle(
-                                        id = cellIndex,
-                                        background = Background.SingleColor(
-                                            backgroundColor
-                                        ),
-                                    )
-                                }
                             }
-
                         }
                     }
                 }
-
                 Timber.i("home start animation reload items completed")
                 list
             }
+
 
 //            LaunchedEffect(items) {
 //                items.flatten().filterIsInstance<NontransparentHexagonContentStyle>().size.log { "items size" }
@@ -777,7 +721,7 @@ private fun Home(
             HexagonalGrid(
                 modifier = Modifier
                     .haze(state = bottomSheetHazeState),
-                items = items,
+                itemsList = items,
                 rowSize = gridColumns,
                 minScale = 2f,
 //                maxScale = initialScale,
@@ -882,91 +826,61 @@ private fun Home(
                 enter = fadeIn(animationSpec = tween(durationMillis = 300)),
                 exit = fadeOut(animationSpec = tween(durationMillis = 300))
             ) {
-                BoxWithConstraints(
-                    modifier = Modifier
-                        .alpha(showBottomSheetAnimationAlpha)
-                        .drawBehind {
-                            drawRect(background)
-                        }
-                ) {
-                    layoutHeight = constraints.maxHeight
-
-                    Box(modifier = Modifier
-                        .fillMaxSize()
-                        .offset {
-                            val sheetOffsetY = anchoredDraggableState
-                                .offset
-                                .toInt()
-                            //                            currentOffset = sheetOffsetY.toFloat()
-                            IntOffset(x = 0, y = sheetOffsetY)
-                        }
-                        .anchoredDraggable(
-                            anchoredDraggableState,
-                            orientation = Orientation.Vertical
-                        )
-                        .onSizeChanged { sheetSize ->
-                            if (expandedOffset == 0f) {
-                                Timber.i("onSizeChanged")
-                                val newAnchors = DraggableAnchors {
-                                    with(density) {
-                                        expandedOffset = 275.fdpv.toPx()
-                                        partiallyExpandedOffset = 399.fdpv.toPx()
-                                        collapsedOffset = (layoutHeight - 120.fdpv.toPx())
-                                        fullOffset =
-                                            systemBarsPadding.toPx() + TopAppBarDefaults.LargeAppBarCollapsedHeight.toPx()
-
-                                        SheetValue.Collapsed at collapsedOffset
-                                        SheetValue.PartiallyExpanded at partiallyExpandedOffset
-                                        SheetValue.Expanded at expandedOffset
-                                    }
-                                }
-                                anchoredDraggableState.updateAnchors(
-                                    newAnchors,
-                                    anchoredDraggableState.targetValue
-                                )
-                            }
-                        }
-                    ) {
-                        BottomSheet(
-                            viewModel = viewModel,
-                            screenMode = screenMode,
-                            hazeState = hazeState,
-                            bottomSheetHazeState = bottomSheetHazeState,
-                            searchButtonClick = {
-                                val newAnchors = DraggableAnchors {
-                                    with(density) {
-                                        SheetValue.Collapsed at collapsedOffset
-                                        SheetValue.PartiallyExpanded at partiallyExpandedOffset
-                                        SheetValue.Expanded at expandedOffset
-                                        SheetValue.Full at fullOffset
-                                    }
-                                }
-//                                                    anchoredDraggableState.updateAnchors(
-//                                                        newAnchors,
-//                                                        anchoredDraggableState.currentValue
-//                                                    )
-                                coroutineScope.launch {
-                                    anchoredDraggableState.animateTo(SheetValue.Full)
-                                    anchoredDraggableState.updateAnchors(
-                                        newAnchors,
-                                        SheetValue.Full
-                                    )
-                                    viewModel.updateScreenMode(HomeScreenMode.SearchingList)
-                                }
-                            },
-                            centerGridClick = {
-                                isGridCentered = true
-                            },
-                            syncButtonClick = {
-                                showAllowContactsPermissionsDialog = true
-                            },
-                            onCreateNewContactClick = {
-                                onCreateNewContactClick.invoke(it)
-                            },
-                            searchText = searchText,
-                            anchoredDraggableState = anchoredDraggableState
-                        )
+                Box(modifier = Modifier
+                    .fillMaxSize()
+                    .alpha(showBottomSheetAnimationAlpha)
+                    .drawBehind {
+                        drawRect(background)
                     }
+                    .offset {
+                        val sheetOffsetY = anchoredDraggableState
+                            .offset
+                            .toInt()
+                        //                            currentOffset = sheetOffsetY.toFloat()
+                        IntOffset(x = 0, y = sheetOffsetY)
+                    }
+                    .anchoredDraggable(
+                        anchoredDraggableState,
+                        orientation = Orientation.Vertical
+                    )
+                    .onSizeChanged { sheetSize ->
+                        layoutHeight = sheetSize.height
+                        if (expandedOffset == 0f) {
+                            Timber.i("onSizeChanged")
+                            val newAnchors = DraggableAnchors {
+                                with(density) {
+                                    expandedOffset = 275.fdpv.toPx()
+                                    partiallyExpandedOffset = 399.fdpv.toPx()
+                                    collapsedOffset = (layoutHeight - 120.fdpv.toPx())
+                                    fullOffset =
+                                        systemBarsPadding.toPx() + TopAppBarDefaults.LargeAppBarCollapsedHeight.toPx()
+
+                                    SheetValue.Collapsed at collapsedOffset
+                                    SheetValue.PartiallyExpanded at partiallyExpandedOffset
+                                    SheetValue.Expanded at expandedOffset
+                                }
+                            }
+                            anchoredDraggableState.updateAnchors(
+                                newAnchors,
+                                anchoredDraggableState.targetValue
+                            )
+                        }
+                    }
+                ) {
+                    BottomSheet(
+                        viewModel = viewModel,
+                        screenMode = screenMode,
+                        hazeState = hazeState,
+                        bottomSheetHazeState = bottomSheetHazeState,
+                        syncButtonClick = {
+                            showAllowContactsPermissionsDialog = true
+                        },
+                        onCreateNewContactClick = {
+                            onCreateNewContactClick.invoke(it)
+                        },
+                        searchText = searchText,
+                        anchoredDraggableState = anchoredDraggableState
+                    )
                 }
             }
 
@@ -1065,6 +979,7 @@ private fun Home(
                     IconButton(
                         modifier = Modifier,
                         onClick = {
+                            viewModel.updateScreenMode(HomeScreenMode.SearchingList)
                             val newAnchors = DraggableAnchors {
                                 with(density) {
                                     SheetValue.Collapsed at collapsedOffset
@@ -1083,7 +998,6 @@ private fun Home(
                                     newAnchors,
                                     SheetValue.Full
                                 )
-                                viewModel.updateScreenMode(HomeScreenMode.SearchingList)
                             }
                         }
                     ) {
@@ -1170,6 +1084,7 @@ fun AnimatedCover() {
         animationSpec = tween(coverAnimationDuration),
         finishedListener = {
             showHomeCover = false
+            Timber.i("home start animation cover revealed")
         }
     )
     CoverBox(alpha)
@@ -1185,8 +1100,6 @@ fun BottomSheet(
     screenMode: HomeScreenMode,
     hazeState: HazeState,
     bottomSheetHazeState: HazeState,
-    searchButtonClick: () -> Unit,
-    centerGridClick: () -> Unit,
     syncButtonClick: () -> Unit,
     onCreateNewContactClick: (String?) -> Unit,
     searchText: String,
@@ -1297,7 +1210,7 @@ fun BottomSheet(
             }
 
             val searchContacts by viewModel.searchContacts.collectAsState()
-            val searchResultContacts by remember(/*screenMode, */searchContacts, contacts) {
+            val searchResultContacts by remember(searchContacts, contacts) {
                 derivedStateOf {
                     if (screenMode.isSearching) searchContacts else contacts
                 }

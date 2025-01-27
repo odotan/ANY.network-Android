@@ -397,7 +397,7 @@ class HomeViewModel @Inject constructor(
         )
 
         viewModelScope.launch {
-            val newGridItems = processContactsForGrid(if (screenMode.isSearching) searchContacts.value else contacts.value, interactions.value)
+            val newGridItems = processContactsForGrid(if (screenMode is HomeScreenMode.SearchingGrid) searchContacts.value else contacts.value, interactions.value)
             updateHexGridItems(newGridItems)
             if (_hexGridItems.value != newGridItems) {
                 Timber.d("Hex grid updated with new items.")

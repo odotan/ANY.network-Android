@@ -27,7 +27,6 @@ import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.animateTo
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -35,10 +34,12 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -46,8 +47,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardColors
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -73,8 +79,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -87,7 +94,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -127,7 +133,6 @@ import com.anynetwork.app.ui.components.hexagon.HexGridCellPosition.Neighbor.Top
 import com.anynetwork.app.ui.components.hexagon.HexagonalGrid
 import com.anynetwork.app.ui.components.hexagon.IconHexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.IconHexagonContentStyle.Image.VectorResource
-import com.anynetwork.app.ui.components.hexagon.NontransparentHexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.NontransparentHexagonContentStyle.Background.SingleColor
 import com.anynetwork.app.ui.components.hexagon.PopupHexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.RoundedHexagon
@@ -139,6 +144,10 @@ import com.anynetwork.app.ui.components.textfield.ProfileTextFieldLeading
 import com.anynetwork.app.ui.navigation.Route
 import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileMode
 import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.BackButtonClick
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.EditButtonClick
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.FavoriteButtonClick
+import com.anynetwork.app.ui.screens.externalprofile.VerticalLine
 import com.anynetwork.app.ui.screens.myprofile.MyProfileViewEffect.*
 import com.anynetwork.app.ui.screens.myprofile.MyProfileViewEvent.SaveButtonClick
 import com.anynetwork.app.ui.screens.myprofile.MyProfileViewEvent.UpdateAddress
@@ -180,6 +189,11 @@ import com.anynetwork.app.ui.utils.xdph
 import com.anynetwork.app.ui.utils.xdpv
 import com.google.accompanist.insets.ExperimentalAnimatedInsets
 import com.yalantis.ucrop.UCrop
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.haze
+import dev.chrisbanes.haze.hazeChild
 import kotlinx.coroutines.launch
 import java.io.File
 import java.util.UUID
@@ -439,6 +453,13 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
         )
     }
 
+    val hazeState = remember { HazeState() }
+    val hazeStyle = HazeStyle(
+        backgroundColor = DarkBlue,
+        tints = listOf(HazeTint(Color.White.copy(alpha = .10f))),
+        blurRadius = 8.dp,
+    )
+
     val targetBlur = if (mode is MyProfileMode.Edit && (mode as MyProfileMode.Edit).isCanceling) 20.dp else 0.dp
 
     // Animate the blur value
@@ -622,22 +643,9 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
     }
 
     Screen(
-        modifier = Modifier.blur(animatedBlur),
+        modifier = Modifier.blur(animatedBlur)
+            .haze(state = hazeState),
         topBar = ToolbarState.Shown(
-            navigationIconState = NavigationIconState.Custom {
-                IconButton(onClick = {
-                    if (mode is MyProfileMode.Edit) {
-                        mode = MyProfileMode.Edit(isCanceling = true)
-                    } else {
-                        onBackButtonClick.invoke()
-                    }
-                }) {
-                    Image(
-                        painter = painterResource(R.drawable.ic_back_arrow),
-                        contentDescription = "hamburger menu icon",
-                    )
-                }
-            },
             titleState = ToolbarStateTitle.Custom(
                 content = {
                     Box(
@@ -669,53 +677,6 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
                     }
                 }
             ),
-            actions = {
-                val alphaAnimationDuration = 700
-                val saveButtonAlpha by animateFloatAsState(
-                    targetValue = if (mode is MyProfileMode.Edit) 1f else 0f,
-                    animationSpec = tween(alphaAnimationDuration)
-                )
-                Button(
-                    modifier = Modifier.alpha(saveButtonAlpha).zIndex(saveButtonAlpha),
-                    onClick = {
-                        if (mode is MyProfileMode.Edit) {
-                            if (!hasReadPhoneStatePermission) {
-                                viewModel.onViewEvent(SaveButtonClick)
-                                mode = MyProfileMode.Normal
-                            }
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors().copy(containerColor = Color.Transparent),
-                    contentPadding = PaddingValues(all = 0.dp)
-                ) {
-                    Text(
-                        modifier = Modifier,
-                        text = "Save",
-                        textAlign = TextAlign.Center,
-                        color = GreenColor,
-                        style = TextStyle(
-                            fontFamily = montserratFontFamily,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 16.csp,
-                        )
-                    )
-                }
-
-                val editButtonAlpha = 1 - saveButtonAlpha
-                IconButton(
-                    modifier = Modifier.alpha(editButtonAlpha).zIndex(editButtonAlpha),
-                    onClick = {
-                        if (mode !is MyProfileMode.Edit) {
-                            mode = MyProfileMode.Edit()
-                        }
-                    }
-                ) {
-                    Image(
-                        painter = painterResource(R.drawable.ic_edit),
-                        contentDescription = "notifications action icon",
-                    )
-                }
-            },
         ),
         hexagonGrid = {
             val gridColumns = 6
@@ -756,321 +717,321 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
             )
 
             // Find the central element
-            val items = List(gridRows) { row ->
-                List(gridColumns) { column ->
-                    val isCenter = row == centralCellPosition.row && column == centralCellPosition.column
-                    val cellIndex = createOnboardingCellPosition(
-                        column = column,
-                        row = row,
-                    ).getIndex()
+            val items = List(gridRows * gridColumns) { index ->
+                val row = index / gridColumns
+                val column = index % gridColumns
+                val isCenter = row == centralCellPosition.row && column == centralCellPosition.column
+                val cellIndex = createOnboardingCellPosition(
+                    column = column,
+                    row = row,
+                ).getIndex()
 
-                    val alpha = 1 - dragPercentage.value/100f
-                    val backgroundColor = hexCellsBackgroundColors[cellIndex]
+                val alpha = 1 - dragPercentage.value/100f
+                val backgroundColor = hexCellsBackgroundColors[cellIndex]
 
-                    when {
-                        isCenter -> remember(mode, alpha) {
-                                IconHexagonContentStyle(
-                                    id = cellIndex,
-                                    modifier = Modifier
-                                        .fillMaxWidth(1 / 2f)
-                                        .fillMaxSize(43f / 80),
-                                    background = SingleColor(Color(0xFF393939).copy(alpha)),
-                                    contentDescription = "Any network",
-                                    alpha = alpha,
-                                    image = VectorResource(id = R.drawable.ic_any_network),
-                                    isShakable = true,
-                                )
-                            }
-                        profilePictureCellPosition.isSame(column, row) -> remember(mode) {
+                when {
+                    isCenter -> remember(mode, alpha) {
+                        IconHexagonContentStyle(
+                            id = cellIndex,
+                            modifier = Modifier
+                                .fillMaxWidth(1 / 2f)
+                                .fillMaxSize(43f / 80),
+                            background = SingleColor(Color(0xFF393939).copy(alpha)),
+                            contentDescription = "Any network",
+                            alpha = alpha,
+                            image = VectorResource(id = R.drawable.ic_any_network),
+                            isShakable = true,
+                        )
+                    }
+                    profilePictureCellPosition.isSame(column, row) -> remember(mode) {
 //                            TransparentHexagonContentStyle(id = cellIndex,)
-                            CustomHexagonContentStyle(
-                                id = cellIndex,
-                                content = {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .align(Alignment.Center)
-                                            .background(Color(0xFF6E4CD4))
-                                    ) {
-                                        if (photoUri == null) {
-                                            Image(
-                                                modifier = Modifier
-                                                    .align(Alignment.Center)
-                                                    .fillMaxSize(0.335f),
-                                                painter = rememberAsyncImagePainter(
-                                                    model = ImageRequest.Builder(LocalContext.current)
-                                                        .data(R.drawable.ic_profile)
-                                                        .size(Size(580, 660))
-                                                        .build()
+                        CustomHexagonContentStyle(
+                            id = cellIndex,
+                            content = {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .align(Alignment.Center)
+                                        .background(Color(0xFF6E4CD4))
+                                ) {
+                                    if (photoUri == null) {
+                                        Image(
+                                            modifier = Modifier
+                                                .align(Alignment.Center)
+                                                .fillMaxSize(0.335f),
+                                            painter = rememberAsyncImagePainter(
+                                                model = ImageRequest.Builder(LocalContext.current)
+                                                    .data(R.drawable.ic_profile)
+                                                    .size(Size(580, 660))
+                                                    .build()
+                                            ),
+                                            contentDescription = null,
+                                        )
+                                    } else {
+                                        Image(
+                                            modifier = Modifier
+                                                .fillMaxSize(),
+                                            painter = rememberAsyncImagePainter(photoUri),
+                                            contentScale = ContentScale.Crop,
+                                            contentDescription = null,
+                                        )
+                                    }
+                                }
+                            },
+                            overlay = {
+                                if (mode is MyProfileMode.Edit) {
+                                    cellWidth?.let {
+                                        Box(
+                                            modifier = Modifier
+                                                .align(Alignment.BottomCenter)
+                                                .padding(bottom = 7.8.fdpv)
+                                                .size(24.fdpv * ((with(LocalDensity.current) { cellWidth!!.toDp() }) / 79.93f.fdpv))
+                                                .clip(CircleShape)
+                                                .background(PrimaryColor)
+                                                .border(
+                                                    width = 1.fdpv,
+                                                    color = Color.White,
+                                                    shape = CircleShape
                                                 ),
-                                                contentDescription = null,
-                                            )
-                                        } else {
+                                            contentAlignment = Alignment.Center
+                                        ) {
                                             Image(
                                                 modifier = Modifier
-                                                    .fillMaxSize(),
-                                                painter = rememberAsyncImagePainter(photoUri),
-                                                contentScale = ContentScale.Crop,
-                                                contentDescription = null,
+                                                    .fillMaxWidth(fraction = 10.18f / 24),
+                                                painter = painterResource(R.drawable.ic_edit_only_pen),
+                                                contentDescription = "edit profile",
                                             )
                                         }
                                     }
-                                },
-                                overlay = {
-                                    if (mode is MyProfileMode.Edit) {
-                                        cellWidth?.let {
-                                            Box(
-                                                modifier = Modifier
-                                                    .align(Alignment.BottomCenter)
-                                                    .padding(bottom = 7.8.fdpv)
-                                                    .size(24.fdpv * ((with(LocalDensity.current) { cellWidth!!.toDp() }) / 79.93f.fdpv))
-                                                    .clip(CircleShape)
-                                                    .background(PrimaryColor)
-                                                    .border(
-                                                        width = 1.fdpv,
-                                                        color = Color.White,
-                                                        shape = CircleShape
-                                                    ),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Image(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth(fraction = 10.18f / 24),
-                                                    painter = painterResource(R.drawable.ic_edit_only_pen),
-                                                    contentDescription = "edit profile",
-                                                )
-                                            }
+                                    if (photoUri != null) DeleteButton(
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(top = 17.31.fdpv, end = 1.fdpv)
+                                            .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
+                                            .alpha(alpha),
+                                        onClick = {
+                                            viewModel.onViewEvent(MyProfileViewEvent.RemoveProfilePicture)
                                         }
-                                        if (photoUri != null) DeleteButton(
-                                            modifier = Modifier
-                                                .align(Alignment.TopEnd)
-                                                .padding(top = 17.31.fdpv, end = 1.fdpv)
-                                                .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
-                                                .alpha(alpha),
-                                            onClick = {
-                                                viewModel.onViewEvent(MyProfileViewEvent.RemoveProfilePicture)
-                                            }
-                                        )
-                                    }
-                                },
-                                isShakable = true,
-                                onClick = { _ ->
-                                    if (mode is MyProfileMode.Edit) {
-                                        isChooseMethodEditProfilePictureDialog = true
-                                    }
-                                },
-                            )
-                        }
-                        facebookCellPosition.isSame(column, row) -> remember(mode, itemAlpha, alpha) {
-                            IconHexagonContentStyle(
-                                id = cellIndex,
-                                background = SingleColor(FacebookColor.copy(alpha = itemAlpha * alpha)),
-                                alpha = itemAlpha * alpha,
-                                contentDescription = "Facebook",
-                                isShakable = true,
-                                image = VectorResource(id = R.drawable.ic_facebook),
-                                overlay =
-                                    if (mode is MyProfileMode.Edit) {
-                                        {
-                                            DeleteButton(
-                                                modifier = Modifier
-                                                    .align(Alignment.TopEnd)
-                                                    .padding(top = 17.31.fdpv, end = 1.fdpv)
-                                                    .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
-                                                    .alpha(alpha),
-                                                onClick = {
+                                    )
+                                }
+                            },
+                            isShakable = true,
+                            onClick = { _ ->
+                                if (mode is MyProfileMode.Edit) {
+                                    isChooseMethodEditProfilePictureDialog = true
+                                }
+                            },
+                        )
+                    }
+                    facebookCellPosition.isSame(column, row) -> remember(mode, itemAlpha, alpha) {
+                        IconHexagonContentStyle(
+                            id = cellIndex,
+                            background = SingleColor(FacebookColor.copy(alpha = itemAlpha * alpha)),
+                            alpha = itemAlpha * alpha,
+                            contentDescription = "Facebook",
+                            isShakable = true,
+                            image = VectorResource(id = R.drawable.ic_facebook),
+                            overlay =
+                            if (mode is MyProfileMode.Edit) {
+                                {
+                                    DeleteButton(
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(top = 17.31.fdpv, end = 1.fdpv)
+                                            .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
+                                            .alpha(alpha),
+                                        onClick = {
 
-                                                }
-                                            )
                                         }
-                                    } else null
-                            )
-                        }
-                        messengerCellPosition.isSame(column, row) -> remember(mode, itemAlpha, alpha) {
-                            IconHexagonContentStyle(
-                                id = cellIndex,
-                                background = SingleColor(MessengerColor.copy(alpha = itemAlpha * alpha)),
-                                alpha = itemAlpha * alpha,
-                                contentDescription = "Messenger",
-                                image = VectorResource(id = R.drawable.ic_messenger),
-                                isShakable = true,
-                                overlay = if (mode is MyProfileMode.Edit) {
-                                    {
-                                        DeleteButton(
-                                            modifier = Modifier
-                                                .align(Alignment.TopEnd)
-                                                .padding(top = 17.31.fdpv, end = 1.fdpv)
-                                                .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
-                                                .alpha(alpha),
-                                            onClick = {
+                                    )
+                                }
+                            } else null
+                        )
+                    }
+                    messengerCellPosition.isSame(column, row) -> remember(mode, itemAlpha, alpha) {
+                        IconHexagonContentStyle(
+                            id = cellIndex,
+                            background = SingleColor(MessengerColor.copy(alpha = itemAlpha * alpha)),
+                            alpha = itemAlpha * alpha,
+                            contentDescription = "Messenger",
+                            image = VectorResource(id = R.drawable.ic_messenger),
+                            isShakable = true,
+                            overlay = if (mode is MyProfileMode.Edit) {
+                                {
+                                    DeleteButton(
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(top = 17.31.fdpv, end = 1.fdpv)
+                                            .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
+                                            .alpha(alpha),
+                                        onClick = {
 
-                                            }
-                                        )
-                                    }
-                                } else null
-                            )
-                        }
-                        instagramCellPosition.isSame(column, row) -> remember(mode, itemAlpha, alpha) {
-                            IconHexagonContentStyle(
-                                id = cellIndex,
-                                background = SingleColor(InstagramColor.copy(alpha = itemAlpha * alpha)),
-                                alpha = itemAlpha * alpha,
-                                contentDescription = "Instagram",
-                                image = VectorResource(id = R.drawable.ic_instagram),
-                                isShakable = true,
-                                overlay = if (mode is MyProfileMode.Edit) {
-                                    {
-                                        DeleteButton(
-                                            modifier = Modifier
-                                                .align(Alignment.TopEnd)
-                                                .padding(top = 17.31.fdpv, end = 1.fdpv)
-                                                .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
-                                                .alpha(alpha),
-                                            onClick = {
+                                        }
+                                    )
+                                }
+                            } else null
+                        )
+                    }
+                    instagramCellPosition.isSame(column, row) -> remember(mode, itemAlpha, alpha) {
+                        IconHexagonContentStyle(
+                            id = cellIndex,
+                            background = SingleColor(InstagramColor.copy(alpha = itemAlpha * alpha)),
+                            alpha = itemAlpha * alpha,
+                            contentDescription = "Instagram",
+                            image = VectorResource(id = R.drawable.ic_instagram),
+                            isShakable = true,
+                            overlay = if (mode is MyProfileMode.Edit) {
+                                {
+                                    DeleteButton(
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(top = 17.31.fdpv, end = 1.fdpv)
+                                            .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
+                                            .alpha(alpha),
+                                        onClick = {
 
-                                            }
-                                        )
-                                    }
-                                } else null
-                            )
-                        }
-                        emailCellPosition.isSame(column, row) -> remember(mode, itemAlpha, alpha) {
-                            IconHexagonContentStyle(
-                                id = cellIndex,
-                                background = SingleColor(EmailColor.copy(alpha = itemAlpha * alpha)),
-                                alpha = itemAlpha * alpha,
-                                contentDescription = "Email",
-                                image = VectorResource(id = R.drawable.ic_email),
-                                isShakable = true,
-                                overlay = if (mode is MyProfileMode.Edit) {
-                                    {
-                                        DeleteButton(
-                                            modifier = Modifier
-                                                .align(Alignment.TopEnd)
-                                                .padding(top = 17.31.fdpv, end = 1.fdpv)
-                                                .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
-                                                .alpha(alpha),
-                                            onClick = {
+                                        }
+                                    )
+                                }
+                            } else null
+                        )
+                    }
+                    emailCellPosition.isSame(column, row) -> remember(mode, itemAlpha, alpha) {
+                        IconHexagonContentStyle(
+                            id = cellIndex,
+                            background = SingleColor(EmailColor.copy(alpha = itemAlpha * alpha)),
+                            alpha = itemAlpha * alpha,
+                            contentDescription = "Email",
+                            image = VectorResource(id = R.drawable.ic_email),
+                            isShakable = true,
+                            overlay = if (mode is MyProfileMode.Edit) {
+                                {
+                                    DeleteButton(
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(top = 17.31.fdpv, end = 1.fdpv)
+                                            .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
+                                            .alpha(alpha),
+                                        onClick = {
 
-                                            }
-                                        )
-                                    }
-                                } else null
-                            )
-                        }
-                        phoneCellPosition.isSame(column, row) -> remember(mode, itemAlpha, alpha) {
-                            IconHexagonContentStyle(
-                                id = cellIndex,
-                                background = SingleColor(PhoneColor.copy(alpha = itemAlpha * alpha)),
-                                alpha = itemAlpha * alpha,
-                                contentDescription = "Phone",
-                                image = VectorResource(id = R.drawable.ic_phone),
-                                isShakable = true,
-                                overlay = if (mode is MyProfileMode.Edit) {
-                                    {
-                                        DeleteButton(
-                                            modifier = Modifier
-                                                .align(Alignment.TopEnd)
-                                                .padding(top = 17.31.fdpv, end = 1.fdpv)
-                                                .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
-                                                .alpha(alpha),
-                                            onClick = {
+                                        }
+                                    )
+                                }
+                            } else null
+                        )
+                    }
+                    phoneCellPosition.isSame(column, row) -> remember(mode, itemAlpha, alpha) {
+                        IconHexagonContentStyle(
+                            id = cellIndex,
+                            background = SingleColor(PhoneColor.copy(alpha = itemAlpha * alpha)),
+                            alpha = itemAlpha * alpha,
+                            contentDescription = "Phone",
+                            image = VectorResource(id = R.drawable.ic_phone),
+                            isShakable = true,
+                            overlay = if (mode is MyProfileMode.Edit) {
+                                {
+                                    DeleteButton(
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(top = 17.31.fdpv, end = 1.fdpv)
+                                            .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
+                                            .alpha(alpha),
+                                        onClick = {
 
-                                            }
-                                        )
-                                    }
-                                } else null
-                            )
-                        }
-                        twitterCellPosition.isSame(column, row) -> remember(mode, itemAlpha, alpha) {
-                            IconHexagonContentStyle(
-                                id = cellIndex,
-                                background = SingleColor(TwitterColor.copy(alpha = itemAlpha * alpha)),
-                                alpha = itemAlpha * alpha,
-                                contentDescription = "Twitter",
-                                image = VectorResource(id = R.drawable.ic_twitter),
-                                isShakable = true,
-                                overlay = if (mode is MyProfileMode.Edit) {
-                                    {
-                                        DeleteButton(
-                                            modifier = Modifier
-                                                .align(Alignment.TopEnd)
-                                                .padding(top = 17.31.fdpv, end = 1.fdpv)
-                                                .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
-                                                .alpha(alpha),
-                                            onClick = {
+                                        }
+                                    )
+                                }
+                            } else null
+                        )
+                    }
+                    twitterCellPosition.isSame(column, row) -> remember(mode, itemAlpha, alpha) {
+                        IconHexagonContentStyle(
+                            id = cellIndex,
+                            background = SingleColor(TwitterColor.copy(alpha = itemAlpha * alpha)),
+                            alpha = itemAlpha * alpha,
+                            contentDescription = "Twitter",
+                            image = VectorResource(id = R.drawable.ic_twitter),
+                            isShakable = true,
+                            overlay = if (mode is MyProfileMode.Edit) {
+                                {
+                                    DeleteButton(
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(top = 17.31.fdpv, end = 1.fdpv)
+                                            .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
+                                            .alpha(alpha),
+                                        onClick = {
 
-                                            }
-                                        )
-                                    }
-                                } else null
-                            )
-                        }
-                        whatsappCellPosition.isSame(column, row) -> remember(mode, itemAlpha, alpha) {
-                            IconHexagonContentStyle(
-                                id = cellIndex,
-                                background = SingleColor(WhatsappColor.copy(alpha = itemAlpha * alpha)),
-                                alpha = itemAlpha * alpha,
-                                contentDescription = "Whatsapp",
-                                image = VectorResource(id = R.drawable.ic_whatsapp),
-                                isShakable = true,
-                                overlay = if (mode is MyProfileMode.Edit) {
-                                    {
-                                        DeleteButton(
-                                            modifier = Modifier
-                                                .align(Alignment.TopEnd)
-                                                .padding(top = 17.31.fdpv, end = 1.fdpv)
-                                                .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
-                                                .alpha(alpha),
-                                            onClick = {
+                                        }
+                                    )
+                                }
+                            } else null
+                        )
+                    }
+                    whatsappCellPosition.isSame(column, row) -> remember(mode, itemAlpha, alpha) {
+                        IconHexagonContentStyle(
+                            id = cellIndex,
+                            background = SingleColor(WhatsappColor.copy(alpha = itemAlpha * alpha)),
+                            alpha = itemAlpha * alpha,
+                            contentDescription = "Whatsapp",
+                            image = VectorResource(id = R.drawable.ic_whatsapp),
+                            isShakable = true,
+                            overlay = if (mode is MyProfileMode.Edit) {
+                                {
+                                    DeleteButton(
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(top = 17.31.fdpv, end = 1.fdpv)
+                                            .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
+                                            .alpha(alpha),
+                                        onClick = {
 
-                                            }
-                                        )
-                                    }
-                                } else null
-                            )
-                        }
-                        telegramCellPosition.isSame(column, row) -> remember(mode, itemAlpha, alpha) {
-                            IconHexagonContentStyle(
-                                id = cellIndex,
-                                background = SingleColor(TelegramColor.copy(alpha = itemAlpha * alpha)),
-                                alpha = itemAlpha * alpha,
-                                contentDescription = "Telegram",
-                                image = VectorResource(id = R.drawable.ic_telegram),
-                                isShakable = true,
-                                overlay = if (mode is MyProfileMode.Edit) {
-                                    {
-                                        DeleteButton(
-                                            modifier = Modifier
-                                                .align(Alignment.TopEnd)
-                                                .padding(top = 17.31.fdpv, end = 1.fdpv)
-                                                .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
-                                                .alpha(alpha),
-                                            onClick = {
+                                        }
+                                    )
+                                }
+                            } else null
+                        )
+                    }
+                    telegramCellPosition.isSame(column, row) -> remember(mode, itemAlpha, alpha) {
+                        IconHexagonContentStyle(
+                            id = cellIndex,
+                            background = SingleColor(TelegramColor.copy(alpha = itemAlpha * alpha)),
+                            alpha = itemAlpha * alpha,
+                            contentDescription = "Telegram",
+                            image = VectorResource(id = R.drawable.ic_telegram),
+                            isShakable = true,
+                            overlay = if (mode is MyProfileMode.Edit) {
+                                {
+                                    DeleteButton(
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(top = 17.31.fdpv, end = 1.fdpv)
+                                            .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
+                                            .alpha(alpha),
+                                        onClick = {
 
-                                            }
-                                        )
-                                    }
-                                } else null
-                            )
-                        }
+                                        }
+                                    )
+                                }
+                            } else null
+                        )
+                    }
 
-                        trailingCellPosition.isSame(column, row) -> remember {
-                            TransparentHexagonContentStyle(id = cellIndex,)
-                        }
-                        else -> remember(alpha) {
-                            EmptyHexagonContentStyle(
-                                id = cellIndex,
-                                background = SingleColor(backgroundColor.copy(alpha = backgroundColor.alpha * alpha))
-                            )
-                        }
+                    trailingCellPosition.isSame(column, row) -> remember {
+                        TransparentHexagonContentStyle(id = cellIndex,)
+                    }
+                    else -> remember(alpha) {
+                        EmptyHexagonContentStyle(
+                            id = cellIndex,
+                            background = SingleColor(backgroundColor.copy(alpha = backgroundColor.alpha * alpha))
+                        )
                     }
                 }
             }
 
             HexagonalGrid(
                 modifier = Modifier,
-                items = items,
+                itemsList = items,
                 rowSize = gridColumns,
                 columnSize = gridRows,
                 minScale = scale,
@@ -1084,47 +1045,14 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
                     }
                 },
                 isScrollEnabled = false,
-                isEditModeActivating = mode is MyProfileMode.Edit,
                 offsetY = when {
                     profilePictureCellOffset == null -> 0f
                     else -> - (profilePictureCellOffset!!.y - with(LocalDensity.current) {
                         113f.fdpv.toPx()
                     }) * (dragPercentage.value/100).log { "hex grid offset" }
                 }.roundToInt(),
+                isEditModeActivating = mode is MyProfileMode.Edit,
             )
-
-            trailingCellOffset?.let {
-                val centralOffsetInDp = with(LocalDensity.current) {
-                    DpOffset(it.x.toDp(), it.y.toDp())
-                }
-                val polygon = remember { createPolygon() }
-                val roundedPolygonShape = remember { RoundedPolygonShape(polygon) }
-                val cellSize = LocalConfiguration.current.screenWidthDp.dp / gridColumns
-                val verticalBorder = (cellSize * 0.04403f).log { "verticalBorder" }
-                val horizontalBorder = (cellSize * 89.99f/79.93f * 0.0395f).log { "horizontalBorder" }
-
-                RoundedHexagon(
-                    modifier = Modifier
-                        .offset(centralOffsetInDp.x, centralOffsetInDp.y)
-                        .width(with(LocalDensity.current) { cellWidth!!.toDp() } * scale)
-                        .padding(
-                            vertical = verticalBorder,
-                            horizontal = horizontalBorder
-                        )
-                        .aspectRatio(79.93f / 89.99f)
-                        .then(Modifier.graphicsLayer {
-                            this.shadowElevation = shadowElevation
-                            clip = true
-                            shape = roundedPolygonShape
-                        }),
-                    contentStyle = IconHexagonContentStyle(
-                        id = 0,
-                        background = SingleColor(PrimaryColor),
-                        image = VectorResource(id = R.drawable.ic_plus),
-                        contentDescription = "Add"
-                    ),
-                )
-            }
         },
         applyInnerPaddingToContent = false,
         content = {
@@ -1782,6 +1710,129 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
             menuData = fieldsDialogOptions,
             onDismiss = { showAddFieldDialog = false }
         )
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 31.fdpv)
+                .navigationBarsPadding()
+                .fillMaxWidth()
+                .height(48.fdpv)
+        ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(46.fdph),
+                colors = CardColors(Color.Transparent, Color.Transparent, Color.Transparent, Color.Transparent),
+                shape = RoundedCornerShape(
+                    topStart = 0.dp,
+                    topEnd = 24.fdph,
+                    bottomEnd = 24.fdph,
+                    bottomStart = 0.dp
+                )
+            ) {
+                Box(modifier = Modifier.fillMaxSize()
+                    .hazeChild(
+                        state = hazeState,
+                        style = hazeStyle
+                    )
+                ) {
+                    IconButton(
+                        modifier = Modifier
+                            .align(Alignment.Center),
+                        onClick = {
+                            if (mode is MyProfileMode.Edit) {
+                                mode = MyProfileMode.Edit(isCanceling = true)
+                            } else {
+                                onBackButtonClick.invoke()
+                            }
+                        }
+                    ) {
+                        Image(
+                            modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
+                            painter = painterResource(R.drawable.ic_arrow_left),
+                            contentDescription = "back button",
+                        )
+                    }
+                }
+            }
+
+            Card(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .align(Alignment.Center),
+                colors = CardColors(Color.Transparent, Color.Transparent, Color.Transparent, Color.Transparent),
+                shape = RoundedCornerShape(
+                    topStart = 24.fdph,
+                    topEnd = 24.fdph,
+                    bottomEnd = 24.fdph,
+                    bottomStart = 24.fdph
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .hazeChild(
+                            state = hazeState,
+                            style = hazeStyle
+                        )
+                        .padding(horizontal = 9.fdph),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        modifier = Modifier,
+                        onClick = {}
+                    ) {
+                        Image(
+                            modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
+                            painter = painterResource(R.drawable.ic_rounded_plus_2),
+                            contentDescription = "back button",
+                        )
+                    }
+
+                    VerticalLine()
+
+                    IconButton(
+                        modifier = Modifier,
+                        onClick = {
+                            if (mode !is MyProfileMode.Edit) {
+                                mode = MyProfileMode.Edit()
+                            } else if (mode is MyProfileMode.Edit) {
+                                if (!hasReadPhoneStatePermission) {
+                                    viewModel.onViewEvent(SaveButtonClick)
+                                    mode = MyProfileMode.Normal
+                                }
+                            }
+                        }
+                    ) {
+                        val alphaAnimationDuration = 300
+                        val editButtonAlpha by animateFloatAsState(
+                            targetValue = if (mode is MyProfileMode.Edit) 0f else 1f,
+                            animationSpec = tween(alphaAnimationDuration)
+                        )
+                        Image(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(vertical = 10.fdpv)
+                                .alpha(editButtonAlpha),
+                            painter = painterResource(R.drawable.ic_edit),
+                            contentDescription = "back button",
+                        )
+
+                        Image(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(vertical = 10.fdpv)
+                                .alpha(1- editButtonAlpha),
+                            painter = rememberVectorPainter(Icons.Outlined.Check),
+                            colorFilter = ColorFilter.tint(Color.White),
+                            contentDescription = "back button",
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

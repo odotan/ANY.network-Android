@@ -29,11 +29,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -95,7 +93,6 @@ data class ChangeScale(
 @Composable
 fun HexagonalGrid(
     modifier: Modifier = Modifier,
-    items: List<List<HexagonContentStyle>>,
     rowSize: Int = 6,
     columnSize: Int = 14,
     minScale: Float = 1f,
@@ -111,16 +108,12 @@ fun HexagonalGrid(
     offsetEvenRows: Boolean = true,
     showIndexes: Boolean = false,
     isEditModeActivating: Boolean = false,
-    gridScaling: Float = 1f
+    gridScaling: Float = 1f,
+    itemsList: List<HexagonContentStyle> = emptyList()
 ) {
-    var gridCellsItems: List<HexagonContentStyle> = remember(items) {
-        listOf()
+    LaunchedEffect(itemsList) {
+        Timber.i("home start animation hexagonalgrid for ${itemsList.size} items")
     }
-
-    LaunchedEffect(items) {
-        Timber.i("home start animation hexagonalgrid for ${gridCellsItems.size} items")
-    }
-    gridCellsItems = items.flatten()
 
     val currentConfig = LocalConfiguration.current
     val gridWidth = remember { currentConfig.screenWidthDp.dp * gridScaling }
@@ -215,11 +208,11 @@ fun HexagonalGrid(
             verticalArrangement = Arrangement.spacedBy(verticalSpacing),
             maxItemsInEachRow = rowSize
         ) {
-            repeat(gridCellsItems.size) { index ->
+            repeat(itemsList.size) { index ->
                 if (index == 0) Timber.i("home start animation start item placement")
-                else if (index == gridCellsItems.lastIndex) Timber.i("home start animation last item placement")
+                else if (index == itemsList.lastIndex) Timber.i("home start animation last item placement")
 
-                val contentStyle = gridCellsItems[index]
+                val contentStyle = itemsList[index]
                 val rowIndex = index / rowSize
 
                 val roundedPolygonShape = remember { RoundedPolygonShape(polygon) }
@@ -243,7 +236,7 @@ fun HexagonalGrid(
                 val showContent = remember(contentStyle, draggedItem) {
                     (contentStyle is TrashCanHexagonContentStyle &&
                             draggedItem != null
-                            && (gridCellsItems[draggedItem!!] as? NontransparentHexagonContentStyle)?.removableStrategy != null
+                            && (itemsList[draggedItem!!] as? NontransparentHexagonContentStyle)?.removableStrategy != null
                             )
                 }
 
@@ -328,12 +321,12 @@ fun HexagonalGrid(
                                         val (targetIndex, _) = closestCell
                                         Timber.i("Dragged item dropped on cell $targetIndex")
                                         // Handle drop logic here
-                                        if (gridCellsItems.get(targetIndex) is TrashCanHexagonContentStyle) {
-                                            (gridCellsItems.get(draggedIndex) as? NontransparentHexagonContentStyle)
+                                        if (itemsList.get(targetIndex) is TrashCanHexagonContentStyle) {
+                                            (itemsList.get(draggedIndex) as? NontransparentHexagonContentStyle)
                                                 ?.removableStrategy
                                                 ?.onRemove
                                                 ?.invoke()
-                                        } else if (gridCellsItems[targetIndex] is NontransparentHexagonContentStyle) {
+                                        } else if (itemsList[targetIndex] is NontransparentHexagonContentStyle) {
                                             if (draggedIndex != targetIndex) {
                                                 onPlacesSwap?.invoke(draggedIndex, targetIndex)
                                             }
@@ -438,7 +431,7 @@ fun HexagonalGrid(
                         .aspectRatio(79.93f / 89.99f),
                     shape = roundedPolygonShape,
                     shadowStyle = ShadowStyle.Shown(),
-                    contentStyle = gridCellsItems[index],
+                    contentStyle = itemsList[index],
                     drawOverlay = false,
                     scale = zoomState.scale * 1f / gridScaling
 
