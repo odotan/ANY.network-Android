@@ -312,6 +312,9 @@ private fun Home(
     var isGridCentered by remember {
         mutableStateOf(false)
     }
+    var isGridZoomDefault by remember {
+        mutableStateOf(false)
+    }
 
     val centerMessageAlphaAnimationDuration = 1500
     val showBottomSheetAnimationDuration = 1500
@@ -490,9 +493,22 @@ private fun Home(
             }
             LaunchedEffect(isGridCentered) {
                 changeScale = if (isGridCentered) {
-                    sharedPreferences.edit().putFloat(SP_HOME_GRID_ZOOM, defaultZoomScale).apply()
                     sharedPreferences.edit().putFloat(SP_HOME_GRID_ZOOM_OFFSET_X, 0f).apply()
                     sharedPreferences.edit().putFloat(SP_HOME_GRID_ZOOM_OFFSET_Y, 0f).apply()
+                    val scale = if (sharedPreferences.contains(SP_HOME_GRID_ZOOM)) {
+                        sharedPreferences.getFloat(SP_HOME_GRID_ZOOM, defaultZoomScale)
+                    } else defaultZoomScale
+                    ChangeScale(
+                        scale = scale,
+                        position = Offset.Zero
+                    )
+                } else {
+                    null
+                }
+            }
+            LaunchedEffect(isGridZoomDefault) {
+                changeScale = if (isGridCentered) {
+                    sharedPreferences.edit().putFloat(SP_HOME_GRID_ZOOM, defaultZoomScale).apply()
                     ChangeScale(
                         scale = defaultZoomScale,
                         position = Offset.Zero
@@ -760,6 +776,7 @@ private fun Home(
                     Timber.i("onZoom: zoom - $zoom, offset - $offset")
                     if (!screenMode.isSearching) {
                         isGridCentered = false
+                        isGridZoomDefault = false
                         sharedPreferences.edit().putFloat(SP_HOME_GRID_ZOOM, zoom).apply()
                         sharedPreferences.edit().putFloat(SP_HOME_GRID_ZOOM_OFFSET_X, offset.x)
                             .apply()
@@ -1037,7 +1054,10 @@ private fun Home(
                     IconButton(
                         modifier = Modifier,
                         onClick = {
-                            isGridCentered = true
+                            when {
+                                !isGridCentered -> isGridCentered = true
+                                else -> isGridZoomDefault = true
+                            }
                         }
                     ) {
                         Image(
