@@ -166,8 +166,16 @@ fun ContactsRow(
             )
         )
 
+        var comesFromRight by remember {
+            mutableStateOf(true)
+        }
+
         var subtitle by remember {
             mutableStateOf(contact.phone ?: "")
+        }
+
+        var snappedItem by remember {
+            mutableStateOf(-1)
         }
 
         Column(
@@ -202,13 +210,6 @@ fun ContactsRow(
                         viewState.interactionType
                     }
                 }
-                LaunchedEffect(interactionType) {
-                    snapshotFlow { interactionType }
-                        .collect { Timber.i("Observed interactionType for ${contact.id} change: $it") }
-                }
-                LaunchedEffect(Unit) {
-                    currentInteractionType = interactionType
-                }
 
                 val interactionPickerItems = remember(interactionType) {
                     modifyList(
@@ -237,6 +238,19 @@ fun ContactsRow(
                     )
                 }
 
+                LaunchedEffect(interactionType) {
+                    if (contact.name.contains("vfhhvfd")) {
+                        interactionPickerItems.map { it.interactionType }.indexOf(interactionType).log { "value of this" }
+                    }
+                    subtitle = interactionPickerItems.getOrNull(interactionPickerItems.map { it.interactionType }.indexOf(interactionType))?.value
+                        ?: interactionPickerItems[0].value
+                    snapshotFlow { interactionType }
+                        .collect { Timber.i("Observed interactionType for ${contact.id} change: $it") }
+                }
+                LaunchedEffect(Unit) {
+                    currentInteractionType = interactionType
+                }
+
                 if (interactionPickerItems.isNotEmpty()) {
                     key(contact.id) {
                         CircularCarousel(
@@ -247,17 +261,19 @@ fun ContactsRow(
                                 .align(Alignment.CenterVertically),
                             numItems = interactionPickerItems.size,
                             onSnapToItem = {
+                                Timber.i("onSnapToItem: $it")
                                 interactionPickerItems.getOrNull(it)
                                     ?.let {
                                         viewModel.onInteractionCarouselSpin(pickerItem = it)
                                     }
+
                             },
-                            onSpinned = {
+                            onSpinned = { index, fromRight ->
                                 val newInteractionType =
-                                    interactionPickerItems.getOrNull(it)?.interactionType
+                                    interactionPickerItems.getOrNull(index)?.interactionType
                                 if (currentInteractionType != newInteractionType) {
                                     currentInteractionType = newInteractionType
-                                    Timber.i("onSpinned to ${interactionPickerItems.getOrNull(it)?.value}")
+                                    Timber.i("onSpinned to ${interactionPickerItems.getOrNull(index)?.value}")
 
                                     val vibrator =
                                         context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator?
@@ -273,7 +289,15 @@ fun ContactsRow(
                                         )
                                     }
                                 }
-                                subtitle = interactionPickerItems.getOrNull(it)?.value ?: "phone"
+                                subtitle = interactionPickerItems.getOrNull(index)?.value ?: "phone"
+
+                                if (snappedItem != index && snappedItem > -1) {
+                                    comesFromRight = fromRight
+                                    snappedItem = index
+                                } else if (snappedItem == -1) {
+                                    snappedItem = index
+                                }
+
                             },
                             onClick = {
                                 contact.id.log { "onClick" }
@@ -315,12 +339,21 @@ fun ContactsRow(
             }
 
             AnimatedContent(
-                modifier = Modifier.padding(top = 6.fdpv),
+                modifier = Modifier.padding(top = 6.dp),
                 targetState = subtitle,
                 transitionSpec = {
-                    addAnimation().using(
-                        SizeTransform(clip = false)
-                    )
+                    val animationDuration = 200
+                    if (comesFromRight) {
+                        slideInHorizontally(animationSpec = tween(durationMillis = animationDuration)) { -it } +
+                                fadeIn(animationSpec = tween(durationMillis = animationDuration)) with
+                                slideOutHorizontally(animationSpec = tween(durationMillis = animationDuration)) { it } +
+                                fadeOut(animationSpec = tween(durationMillis = animationDuration))
+                    } else {
+                        slideInHorizontally(animationSpec = tween(durationMillis = animationDuration)) { it } +
+                                fadeIn(animationSpec = tween(durationMillis = animationDuration)) with
+                                slideOutHorizontally(animationSpec = tween(durationMillis = animationDuration)) { -it } +
+                                fadeOut(animationSpec = tween(durationMillis = animationDuration))
+                    }.using(SizeTransform(clip = false))
                 }
             ) { targetState ->
                 Text(

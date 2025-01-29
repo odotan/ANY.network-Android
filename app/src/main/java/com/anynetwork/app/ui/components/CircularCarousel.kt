@@ -58,7 +58,7 @@ interface CircularCarouselState {
     fun getClosestItem(numItems: Int): Int
     fun setNumItems(numItems: Int)
     fun setOnSnapToItem(onSnapToItem: (Int) -> Unit)
-    fun setOnSpinned(onSpinned: (Int) -> Unit)
+    fun setOnSpinned(onSpinned: (Int, Boolean) -> Unit)
     fun setMinorAxisFactor(factor: Float)
 }
 
@@ -67,7 +67,7 @@ class CircularCarouselStateImpl : CircularCarouselState {
     private val _eccentricity = mutableStateOf(1f)
     private var onSnapToItem: ((Int) -> Unit)? = null
     private var numItems: Int = 0
-    private var onSpinned: ((Int) -> Unit)? = null
+    private var onSpinned: ((Int, Boolean) -> Unit)? = null
 
     override val angle: Float
         get() = _angle.value
@@ -89,13 +89,15 @@ class CircularCarouselStateImpl : CircularCarouselState {
         this.onSnapToItem = onSnapToItem
     }
 
-    override fun setOnSpinned(onSpinned: (Int) -> Unit) {
+    override fun setOnSpinned(onSpinned: (Int, Boolean) -> Unit) {
         this.onSpinned = onSpinned
     }
 
     override suspend fun snapTo(angle: Float) {
+        val fromRight = _angle.value < angle
+        angle.log { "snapTo - _angle: ${_angle.value}, angle: $angle" }
         _angle.snapTo(angle)
-        onSpinned?.invoke(getClosestItem(numItems))
+        onSpinned?.invoke(getClosestItem(numItems), fromRight)
     }
 
     override suspend fun decayTo(angle: Float, velocity: Float) {
@@ -140,6 +142,7 @@ class CircularCarouselStateImpl : CircularCarouselState {
 
         val closestItemIndex = ((targetAngle / angleStep).roundToInt().absoluteValue.log { "snapToClosestItem absoluteValue" } % numItems)
             .log { "snapToClosestItem closestItemIndex" }
+
         return closestItemIndex
     }
 
@@ -179,14 +182,14 @@ fun CircularCarousel(
     numItems: Int,
     state: CircularCarouselState = rememberCircularCarouselState(),
     onSnapToItem: ((Int) -> Unit)? = null,
-    onSpinned:((Int) -> Unit)? = null,
+    onSpinned:((Int, Boolean) -> Unit)? = null,
     onClick: (Int) -> Unit,
     contentFactory: @Composable (Int) -> Unit,
 ) {
     require(numItems > 0) { "The number of items must be greater than 0" }
     state.setNumItems(numItems)
     state.setOnSnapToItem { onSnapToItem?.invoke(it) }
-    state.setOnSpinned { onSpinned?.invoke(it) }
+    state.setOnSpinned { index, fromRight -> onSpinned?.invoke(index, fromRight) }
     Box(modifier = modifier
         .graphicsLayer { alpha = 0.99f }
         .drawWithContent {
