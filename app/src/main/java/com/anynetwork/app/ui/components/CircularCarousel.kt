@@ -35,8 +35,6 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.anynetwork.app.ui.theme.ANYnetworkTheme
-import com.anynetwork.app.ui.theme.DarkBlue
-import com.anynetwork.app.ui.utils.log
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.PI
@@ -95,7 +93,6 @@ class CircularCarouselStateImpl : CircularCarouselState {
 
     override suspend fun snapTo(angle: Float) {
         val fromRight = _angle.value < angle
-        angle.log { "snapTo - _angle: ${_angle.value}, angle: $angle" }
         _angle.snapTo(angle)
         onSpinned?.invoke(getClosestItem(numItems), fromRight)
     }
@@ -123,8 +120,8 @@ class CircularCarouselStateImpl : CircularCarouselState {
             else -> (currentAngle / angleStep).roundToInt() * angleStep
         }
 
-        val closestItemIndex = ((targetAngle / angleStep).roundToInt().absoluteValue.log { "snapToClosestItem absoluteValue" } % numItems)
-            .log { "snapToClosestItem closestItemIndex" }
+        val closestItemIndex = ((targetAngle / angleStep).roundToInt().absoluteValue % numItems)
+
         onSnapToItem?.invoke(closestItemIndex)
         _angle.animateTo(targetAngle)
     }
@@ -140,8 +137,7 @@ class CircularCarouselStateImpl : CircularCarouselState {
             else -> (currentAngle / angleStep).roundToInt() * angleStep
         }
 
-        val closestItemIndex = ((targetAngle / angleStep).roundToInt().absoluteValue.log { "snapToClosestItem absoluteValue" } % numItems)
-            .log { "snapToClosestItem closestItemIndex" }
+        val closestItemIndex = ((targetAngle / angleStep).roundToInt().absoluteValue % numItems)
 
         return closestItemIndex
     }

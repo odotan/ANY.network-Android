@@ -18,10 +18,8 @@ import androidx.compose.animation.with
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -50,7 +48,6 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -84,7 +81,6 @@ import com.anynetwork.app.ui.utils.csp
 import com.anynetwork.app.ui.utils.fdph
 import com.anynetwork.app.ui.utils.fdpv
 import com.anynetwork.app.ui.utils.fsp
-import com.anynetwork.app.ui.utils.log
 import com.anynetwork.app.ui.utils.xdph
 import com.anynetwork.app.ui.utils.xdpv
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -127,10 +123,7 @@ fun ContactsRow(
     Row(
         modifier = modifier
             .padding(start = 16.dp, end = 16.dp)
-            .fillMaxHeight()
-            .clickable {
-                onClick.invoke()
-            },
+            .fillMaxHeight(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         RoundedHexagon(
@@ -239,13 +232,8 @@ fun ContactsRow(
                 }
 
                 LaunchedEffect(interactionType) {
-                    if (contact.name.contains("vfhhvfd")) {
-                        interactionPickerItems.map { it.interactionType }.indexOf(interactionType).log { "value of this" }
-                    }
                     subtitle = interactionPickerItems.getOrNull(interactionPickerItems.map { it.interactionType }.indexOf(interactionType))?.value
                         ?: interactionPickerItems[0].value
-                    snapshotFlow { interactionType }
-                        .collect { Timber.i("Observed interactionType for ${contact.id} change: $it") }
                 }
                 LaunchedEffect(Unit) {
                     currentInteractionType = interactionType
@@ -300,7 +288,7 @@ fun ContactsRow(
 
                             },
                             onClick = {
-                                contact.id.log { "onClick" }
+                                contact.id
                                 onInteractionClick(
                                     contact,
                                     interactionPickerItems[it].interactionType

@@ -1171,7 +1171,6 @@ fun BottomSheet(
                         tint = HazeTint(Color(0xFF1C1A23).copy(alpha = 0.8f))
                     )
                 )
-                .padding(horizontal = 16.fdph)
                 .align(Alignment.CenterHorizontally)
         ) {
             if (!screenMode.isSearching) Box(
@@ -1192,12 +1191,14 @@ fun BottomSheet(
                     SwipeUpToContinue(
                         modifier = Modifier
                             .align(Alignment.CenterHorizontally)
+                            .padding(horizontal = 16.fdph)
                             .padding(top = 6.fdpv)
                     )
 
                     Message(
                         modifier = Modifier
                             .padding(vertical = 16.dp)
+                            .padding(horizontal = 16.fdph)
                             .fillMaxWidth()
                             .height(185.fdpv),
                         icon = {
@@ -1242,6 +1243,7 @@ fun BottomSheet(
                     Image(
                         modifier = Modifier
                             .padding(vertical = 8.9.fdpv)
+                            .padding(horizontal = 16.fdph)
                             .width(263.fdph)
                             .height(67.18.fdpv)
                             .padding(start = 16.fdph),
@@ -1301,6 +1303,7 @@ fun BottomSheet(
                 if (showCreateYourContactCardMessage && readContactsPermissionGranted == true) item {
                     Message(
                         modifier = Modifier
+                            .padding(horizontal = 16.fdph)
                             .padding(vertical = 16.dp)
                             .fillMaxWidth()
                             .height(132.fdpv),
@@ -1332,6 +1335,16 @@ fun BottomSheet(
                     val contact = searchResultContacts[it]
                     ContactsRow(
                         modifier = Modifier
+                            .clickable {
+                                viewModel.onViewAction(
+                                    GridItemClick(
+                                        contact = contact,
+                                        offsetX = 0f,
+                                        offsetY = 0f,
+                                    )
+                                )
+                            }
+                            .padding(horizontal = 16.fdph)
                             .padding(vertical = 8.9.fdpv)
                             .animateItem(),
                         contact = contact,
