@@ -15,6 +15,10 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideIn
+import androidx.compose.animation.slideOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -28,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
@@ -48,6 +53,8 @@ import com.anynetwork.app.ui.screens.testing.GridPlaygroundScreen
 import com.anynetwork.app.ui.theme.ANYnetworkTheme
 import com.anynetwork.app.ui.utils.log
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
+import kotlin.math.roundToInt
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -71,6 +78,8 @@ class MainActivity : ComponentActivity() {
         // Set window flags for fullscreen mode
         setContent {
             ANYnetworkTheme {
+                var route: Any? by remember { mutableStateOf(null) }
+
                 val navController = rememberNavController()
                 NavHost(
                     navController = navController,
@@ -147,9 +156,9 @@ class MainActivity : ComponentActivity() {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .graphicsLayer(
-                                    scaleX = animatedScaleX.value,
-                                    scaleY = animatedScaleY.value,
+                                    .graphicsLayer(
+                                        scaleX = animatedScaleX.value,
+                                        scaleY = animatedScaleY.value,
                                     translationX = animatedTranslateX.value,
                                     translationY = animatedTranslateY.value,
                                     alpha = animatedOpacity.value
@@ -177,10 +186,28 @@ class MainActivity : ComponentActivity() {
                             fadeOut()
                         }
                     ) {
-                        HomeRoot(navController)
+                        HomeRoot(
+                            navController,
+                            onRouteChange = { route ->
+
+                            }
+                        )
                     }
 
-                    composable<Route.ExternalProfile> {
+                    composable<Route.ExternalProfile>(
+                        enterTransition = {
+                            val offsetX = this.targetState.toRoute<Route.ExternalProfile>().offsetX.roundToInt()
+                            val offsetY = this.targetState.toRoute<Route.ExternalProfile>().offsetY.roundToInt()
+
+                            slideIn { IntOffset(offsetX, offsetY) } + fadeIn() + scaleIn()
+                        },
+                        exitTransition = {
+                            val offsetX = this.targetState.toRoute<Route.ExternalProfile>().offsetX.roundToInt()
+                            val offsetY = this.targetState.toRoute<Route.ExternalProfile>().offsetY.roundToInt()
+
+                            slideOut { IntOffset(offsetX, offsetY) } + fadeOut() + scaleOut()
+                        }
+                    ) {
                         val transitionDuration = 600 // Duration of the explosion animation
                         val x = it.toRoute<Route.ExternalProfile>().offsetX
                         val y = it.toRoute<Route.ExternalProfile>().offsetY
@@ -200,10 +227,10 @@ class MainActivity : ComponentActivity() {
 
                         // Trigger the animation when the screen is displayed
                         LaunchedEffect(Unit) {
-                            scaleX = 0.1f // Explode slightly larger than the screen
-                            scaleY = 0.1f
-//                            translateX = 0f // Move to center
-//                            translateY = 0f
+                            scaleX = 1f // Explode slightly larger than the screen
+                            scaleY = 1f
+                            translateX = 0f // Move to center
+                            translateY = 0f
                             opacity = 1f
                         }
 
@@ -231,6 +258,93 @@ class MainActivity : ComponentActivity() {
                                 id = it.toRoute<Route.ExternalProfile>().id,
                                 navController = navController,
                             )
+                        }
+                    }
+                }
+
+                when (route.log { "route" }) {
+                    is Route.ExternalProfile -> {
+                        (route as Route.ExternalProfile).let {
+                            val transitionDuration = 600 // Duration of the explosion animation
+                            val x = it.offsetX
+                            val y = it.offsetY
+                            val currentConfig = LocalConfiguration.current
+                            val width = currentConfig.screenWidthDp.toFloat()
+                            val height = currentConfig.screenHeightDp.toFloat()
+
+                            val toolbarHeight =
+                                TopAppBarDefaults.LargeAppBarCollapsedHeight.toFloatPx()
+                            val statusBarHeight = 20.dp.toFloatPx()
+
+                            // Define animation states
+                            var scaleX by remember { mutableStateOf(0.1f) } // Start scaled based on initial width
+                            var scaleY by remember { mutableStateOf(0.1f) } // Start scaled based on initial height
+                            var translateX by remember { mutableStateOf((x - width).log { "cellPosition.boundsInRoot().center.x" }) }
+                            var translateY by remember { mutableStateOf((y - height - toolbarHeight - statusBarHeight).log { "cellPosition.boundsInRoot().center.y" }) }
+                            var opacity by remember { mutableStateOf(0f) }
+
+                            // Trigger the animation when the screen is displayed
+                            LaunchedEffect(it.id) {
+                                scaleX = 1f // Explode slightly larger than the screen
+                                scaleY = 1f
+                                translateX = 0f // Move to center
+                                translateY = 0f
+                                opacity = 1f
+                            }
+
+                            // Animate values
+
+                            val animatedScaleX = animateFloatAsState(
+                                targetValue = scaleX,
+                                animationSpec = tween(durationMillis = transitionDuration)
+                            )
+                            val animatedScaleY = animateFloatAsState(
+                                targetValue = scaleY,
+                                animationSpec = tween(durationMillis = transitionDuration)
+                            )
+                            val animatedTranslateX = animateFloatAsState(
+                                targetValue = translateX,
+                                animationSpec = tween(durationMillis = transitionDuration)
+                            )
+                            val animatedTranslateY = animateFloatAsState(
+                                targetValue = translateY,
+                                animationSpec = tween(durationMillis = transitionDuration)
+                            )
+                            val animatedOpacity = animateFloatAsState(
+                                targetValue = opacity,
+                                animationSpec = tween(durationMillis = transitionDuration)
+                            )
+
+                            // Apply animations to the DetailScreen
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .graphicsLayer(
+                                        scaleX = animatedScaleX.value,
+                                        scaleY = animatedScaleY.value,
+                                        translationX = animatedTranslateX.value,
+                                        translationY = animatedTranslateY.value,
+                                        alpha = animatedOpacity.value
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                ExternalProfileRoot(
+                                    id = it.id,
+                                    navController = navController,
+                                    onRouteChange = {
+                                        scaleX = .1f // Explode slightly larger than the screen
+                                        scaleY = .1f
+                                        translateX = x - width // Move to center
+                                        translateY = y - height - toolbarHeight - statusBarHeight
+                                        opacity = 0f
+
+                                        LaunchedEffect(Unit) {
+                                            delay(transitionDuration.toLong()) // Wait for animation to complete
+                                            route = null // Only change the route after animation finishes
+                                        }
+                                    }
+                                )
+                            }
                         }
                     }
                 }
