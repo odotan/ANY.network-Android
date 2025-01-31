@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -46,6 +47,7 @@ import com.anynetwork.app.ui.screens.connect.ConnectRoot
 import com.anynetwork.app.ui.screens.contactspermissions.ContactsPermissionsRoot
 import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileRoot
 import com.anynetwork.app.ui.screens.home.HomeRoot
+import com.anynetwork.app.ui.screens.home.HomeViewModel
 import com.anynetwork.app.ui.screens.myprofile.MyProfileRoot
 import com.anynetwork.app.ui.screens.onboarding.OnboardingRoot
 import com.anynetwork.app.ui.screens.splash.SplashRoot
@@ -79,6 +81,8 @@ class MainActivity : ComponentActivity() {
             ANYnetworkTheme {
                 val navController = rememberNavController()
                 val homeNavController = rememberNavController()
+
+                val homeViewModel = hiltViewModel<HomeViewModel>()
 
                 NavHost(
                     navController = navController,
@@ -117,6 +121,7 @@ class MainActivity : ComponentActivity() {
                         }
                     ) {
                         HomeRoot(
+                            viewModel = homeViewModel,
                             homeNavController = homeNavController
                         )
                     }
@@ -142,6 +147,9 @@ class MainActivity : ComponentActivity() {
                         ExternalProfileRoot(
                             id = it.toRoute<Route.ExternalProfileNotExploding>().id,
                             navController = homeNavController,
+                            onContactUpdated = {
+                                homeViewModel.reloadData()
+                            },
                             onBackPress = {
                                 homeNavController.popBackStack(Route.Home, inclusive = false)
                             }
@@ -166,6 +174,8 @@ class MainActivity : ComponentActivity() {
                         var translateX by remember { mutableStateOf((initialX).log { "cellPosition.boundsInRoot().center.x" }) }
                         var translateY by remember { mutableStateOf((initialY).log { "cellPosition.boundsInRoot().center.y" }) }
                         var opacity by remember { mutableStateOf(0f) }
+
+                        var isVisible by remember { mutableStateOf(true) }
 
                         // Trigger the animation when the screen is displayed
                         LaunchedEffect(Unit) {
@@ -213,10 +223,13 @@ class MainActivity : ComponentActivity() {
                         ) {
                             MyProfileRoot(
                                 navController = homeNavController,
+                                onContactUpdated = {
+                                    homeViewModel.loadProfile()
+                                },
                                 onBackPress = {
                                     // Trigger exit animation
-                                    scaleX = 0.1f
-                                    scaleY = 0.1f
+                                    scaleX = 0.01f
+                                    scaleY = 0.01f
                                     translateX = initialX
                                     translateY = initialY
                                     opacity = 0f
@@ -297,10 +310,13 @@ class MainActivity : ComponentActivity() {
                             ExternalProfileRoot(
                                 id = it.toRoute<Route.ExternalProfile>().id,
                                 navController = homeNavController,
+                                onContactUpdated = {
+                                    homeViewModel.reloadData()
+                                },
                                 onBackPress = {
                                     // Trigger exit animation
-                                    scaleX = 0.1f
-                                    scaleY = 0.1f
+                                    scaleX = 0.01f
+                                    scaleY = 0.01f
                                     translateX = initialX
                                     translateY = initialY
                                     opacity = 0f
@@ -320,6 +336,9 @@ class MainActivity : ComponentActivity() {
                             navController = navController,
                             id = null,
                             input = it.toRoute<Route.NewContact>().input,
+                            onContactUpdated = {
+                                homeViewModel.reloadData()
+                            },
                             onBackPress = {
                                 homeNavController.popBackStack(Route.Home, inclusive = false)
                             },

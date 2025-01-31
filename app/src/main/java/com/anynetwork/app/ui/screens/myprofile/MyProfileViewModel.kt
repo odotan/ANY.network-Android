@@ -70,6 +70,7 @@ class MyProfileViewModel @Inject constructor(
                         avatarUri = _viewState.value.photoUri
                     )
                 )
+                _viewEffectFlow.value = MyProfileViewEffect.ProfileUpdated
             }
             is UpdateAddress -> _viewState.value =
                 _viewState.value.copy(address = event.address)
@@ -150,6 +151,9 @@ class MyProfileViewModel @Inject constructor(
             is BackButtonClick -> {
                 _viewEffectFlow.value = MyProfileViewEffect.NavigateBack
             }
+            is ClearViewEffect -> {
+                _viewEffectFlow.value = null
+            }
         }
     }
 }
@@ -229,6 +233,7 @@ sealed class MyProfileViewEvent {
     data class UpdatePhotoUri(val photoUri: String): MyProfileViewEvent()
     data object RemoveProfilePicture: MyProfileViewEvent()
     data object BackButtonClick: MyProfileViewEvent()
+    data object ClearViewEffect : MyProfileViewEvent()
 }
 
 sealed class MyProfileViewEffect {
@@ -244,4 +249,5 @@ sealed class MyProfileViewEffect {
     data object RequestFocusOnWorkEmailTextField: MyProfileViewEffect()
     data object RequestFocusOnOtherEmailTextField: MyProfileViewEffect()
     data object NavigateBack: MyProfileViewEffect()
+    data object ProfileUpdated: MyProfileViewEffect()
 }

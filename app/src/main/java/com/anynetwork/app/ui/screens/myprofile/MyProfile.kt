@@ -191,19 +191,24 @@ import kotlin.math.roundToInt
 @Composable
 fun MyProfileRoot(
     navController: NavHostController,
+    onContactUpdated: () -> Unit,
     onBackPress: @Composable () -> Unit
 ) {
     val viewModel: MyProfileViewModel = hiltViewModel<MyProfileViewModel>()
         .apply {
+            loadProfile()
             val viewEffect by viewEffectFlow.collectAsState()
             viewEffect.log { "viewEffect" }
             when (viewEffect) {
                 is NavigateBack -> {
                     onBackPress.invoke()
                 }
+                is ProfileUpdated -> {
+                    onContactUpdated.invoke()
+                }
                 else -> {}
             }
-            loadProfile()
+            onViewEvent(MyProfileViewEvent.ClearViewEffect)
         }
     MyProfile(
         viewModel = viewModel,

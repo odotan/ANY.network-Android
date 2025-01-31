@@ -180,6 +180,7 @@ fun ExternalProfileRoot(
     clickOffsetY: Float? = null,
     input: String? = null,
     isEnterAnimationFinished: Boolean = true,
+    onContactUpdated: () -> Unit,
     onBackPress: @Composable () -> Unit,
 ) {
     LaunchedEffect(Unit) {
@@ -189,7 +190,7 @@ fun ExternalProfileRoot(
         val navigateEvent by navigationEvents.collectAsState()
         if (navigateEvent == NavigateBack) {
             onBackPress.invoke()
-            onViewEvent(ExternalProfileViewEvent.ClearNavigationEffect)
+            onViewEvent(ClearNavigationEffect)
         }
 
         val viewEffect by viewEffectFlow.collectAsState()
@@ -214,8 +215,7 @@ fun ExternalProfileRoot(
                 onViewEvent(ClearViewEffect)
             }
             is ExternalProfileViewEffect.ContactUpdated -> {
-                val homeViewModel = hiltViewModel<HomeViewModel>()
-                homeViewModel.reloadData()
+                onContactUpdated.invoke()
                 onViewEvent(ClearViewEffect)
             }
             else -> {}
