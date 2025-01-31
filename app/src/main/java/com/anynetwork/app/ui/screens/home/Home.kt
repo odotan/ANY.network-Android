@@ -134,12 +134,7 @@ import com.anynetwork.app.ui.components.hexagon.hexCellsBackgroundColorsGrid
 import com.anynetwork.app.ui.components.text.AutoSizeText
 import com.anynetwork.app.ui.navigation.Route
 import com.anynetwork.app.ui.screens.externalprofile.VerticalLine
-import com.anynetwork.app.ui.screens.home.HomeViewEvent.CarouselContactInteractionClick
-import com.anynetwork.app.ui.screens.home.HomeViewEvent.ClearViewEffect
-import com.anynetwork.app.ui.screens.home.HomeViewEvent.GridItemButtonRemove
-import com.anynetwork.app.ui.screens.home.HomeViewEvent.GridItemClick
-import com.anynetwork.app.ui.screens.home.HomeViewEvent.HexagonalGridCellLongClick
-import com.anynetwork.app.ui.screens.home.HomeViewEvent.SwapGridItems
+import com.anynetwork.app.ui.screens.home.HomeViewEvent.*
 import com.anynetwork.app.ui.theme.DarkBlue
 import com.anynetwork.app.ui.theme.GreenColor
 import com.anynetwork.app.ui.theme.PrimaryColor
@@ -169,15 +164,15 @@ import kotlin.math.absoluteValue
 
 
 @Composable
-fun HomeRoot(navController: NavHostController, viewModel: HomeViewModel = hiltViewModel<HomeViewModel>()) {
+fun HomeRoot(
+    viewModel: HomeViewModel = hiltViewModel<HomeViewModel>(),
+    homeNavController: NavHostController
+) {
 
     Home(
         viewModel,
-        onMyProfileClick = {
-            navController.navigate(Route.MyProfile)
-        },
         onCreateNewContactClick = {
-            navController.navigate(Route.NewContact(it))
+            homeNavController.navigate(Route.NewContact(it))
         }
     )
 
@@ -201,15 +196,23 @@ fun HomeRoot(navController: NavHostController, viewModel: HomeViewModel = hiltVi
                     context.startActivity(callIntent)
                 }
                 is HomeViewEffect.NavigateToExternalProfile -> {
-                    navController.navigate(
-                        Route.ExternalProfile(
+                    viewModel.onViewAction(ClearViewEffect)
+                    homeNavController.navigate(
+                        if (viewEffect.offsetX != null && viewEffect.offsetY != null) Route.ExternalProfile(
                             id = viewEffect.contactId,
                             offsetX = viewEffect.offsetX,
                             offsetY = viewEffect.offsetY,
-                        )
+                        ) else Route.ExternalProfileNotExploding(id = viewEffect.contactId)
                     ) {
                         launchSingleTop = true
                     }
+                }
+                is HomeViewEffect.NavigateToMyProfile -> {
+                    viewModel.onViewAction(ClearViewEffect)
+                    homeNavController.navigate(Route.MyProfile(
+                        offsetX = viewEffect.offsetX,
+                        offsetY = viewEffect.offsetY,
+                    ))
                 }
                 else -> {}
             }
@@ -245,7 +248,6 @@ sealed class HomeScreenMode(val isSearching: Boolean) {
 @Composable
 private fun Home(
     viewModel: HomeViewModel,
-    onMyProfileClick: () -> Unit,
     onCreateNewContactClick: (String?) -> Unit,
 ) {
     val density = LocalDensity.current
@@ -563,7 +565,14 @@ private fun Home(
                                 id = cellIndex,
                                 isHoverable = false,
                                 image = ImageHexagonContentStyle.Image.FromUri(optimizedPhotoUri!!),
-                                onClick = { onMyProfileClick.invoke() },
+                                onClick = {
+                                    viewModel.onViewAction(
+                                        MyProfileGridItemClick(
+                                            offsetX = it.x,
+                                            offsetY = it.y
+                                        )
+                                    )
+                                },
                                 onLongClick = { viewModel.onViewAction(HexagonalGridCellLongClick) },
                             )
                         } else {
@@ -591,7 +600,14 @@ private fun Home(
                                         )
                                     }
                                 },
-                                onClick = { onMyProfileClick.invoke() },
+                                onClick = {
+                                    viewModel.onViewAction(
+                                        MyProfileGridItemClick(
+                                            offsetX = it.x,
+                                            offsetY = it.y
+                                        )
+                                    )
+                                },
                                 onLongClick = { viewModel.onViewAction(HexagonalGridCellLongClick) },
                             )
                         }
@@ -640,16 +656,20 @@ private fun Home(
                                     if (gridItem.contact == null) return@CustomHexagonContentStyle
                                     when (gridItem.badge) {
                                         is GridItem.Badge.PhoneBadge ->
-                                            viewModel.onViewAction(HomeViewEvent.BadgeInteractionClick(
+                                            viewModel.onViewAction(
+                                                BadgeInteractionClick(
                                                 contact = gridItem.contact,
                                                 interactionType = Interaction.Type.Phone
-                                            ))
+                                            )
+                                            )
 
                                         is GridItem.Badge.EmailBadge ->
-                                            viewModel.onViewAction(HomeViewEvent.BadgeInteractionClick(
+                                            viewModel.onViewAction(
+                                                BadgeInteractionClick(
                                                 contact = gridItem.contact,
                                                 interactionType = Interaction.Type.Email
-                                            ))
+                                            )
+                                            )
 
                                         is GridItem.Badge.FavoriteBadge -> viewModel.onViewAction(
                                             GridItemClick(
@@ -701,17 +721,21 @@ private fun Home(
                                                 if (gridItem.contact == null) return@Badge
                                                 when (it) {
                                                     is GridItem.Badge.PhoneBadge -> {
-                                                        viewModel.onViewAction(HomeViewEvent.BadgeInteractionClick(
+                                                        viewModel.onViewAction(
+                                                            BadgeInteractionClick(
                                                             contact = gridItem.contact!!,
                                                             interactionType = Interaction.Type.Phone
-                                                        ))
+                                                        )
+                                                        )
                                                     }
 
                                                     is GridItem.Badge.EmailBadge -> {
-                                                        viewModel.onViewAction(HomeViewEvent.BadgeInteractionClick(
+                                                        viewModel.onViewAction(
+                                                            BadgeInteractionClick(
                                                             contact = gridItem.contact!!,
                                                             interactionType = Interaction.Type.Email
-                                                        ))
+                                                        )
+                                                        )
                                                     }
 
                                                     is GridItem.Badge.FavoriteBadge -> {
@@ -1337,11 +1361,7 @@ fun BottomSheet(
                         modifier = Modifier
                             .clickable {
                                 viewModel.onViewAction(
-                                    GridItemClick(
-                                        contact = contact,
-                                        offsetX = 0f,
-                                        offsetY = 0f,
-                                    )
+                                    GridItemClick(contact = contact,)
                                 )
                             }
                             .padding(horizontal = 16.fdph)
@@ -1350,11 +1370,7 @@ fun BottomSheet(
                         contact = contact,
                         onClick = {
                             viewModel.onViewAction(
-                                GridItemClick(
-                                    contact = contact,
-                                    offsetX = 0f,
-                                    offsetY = 0f,
-                                )
+                                GridItemClick(contact = contact,)
                             )
                         },
                         onInteractionClick = { contact, interactionType ->

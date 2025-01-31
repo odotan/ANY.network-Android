@@ -22,20 +22,21 @@ object Route {
     data object Home
 
     @Serializable
-    object MyProfile
-
-    @Serializable
-    data class ExternalProfileWithOffset(
-        val id: Long,
-        val clickOffsetX: Float,
-        val clickOffsetY: Float
+    data class MyProfile(
+        val offsetX: Float,
+        val offsetY: Float,
     )
 
     @Serializable
     data class ExternalProfile(
         val id: Long,
-        val offsetX: Float?,
-        val offsetY: Float?,
+        val offsetX: Float,
+        val offsetY: Float,
+    )
+
+    @Serializable
+    data class ExternalProfileNotExploding(
+        val id: Long,
     )
 
     @Serializable

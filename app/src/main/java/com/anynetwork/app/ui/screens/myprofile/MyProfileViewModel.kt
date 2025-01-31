@@ -147,6 +147,9 @@ class MyProfileViewModel @Inject constructor(
             is RemoveProfilePicture -> {
                 _viewState.value = _viewState.value.copy(photoUri = null)
             }
+            is BackButtonClick -> {
+                _viewEffectFlow.value = MyProfileViewEffect.NavigateBack
+            }
         }
     }
 }
@@ -225,6 +228,7 @@ sealed class MyProfileViewEvent {
     ): MyProfileViewEvent()
     data class UpdatePhotoUri(val photoUri: String): MyProfileViewEvent()
     data object RemoveProfilePicture: MyProfileViewEvent()
+    data object BackButtonClick: MyProfileViewEvent()
 }
 
 sealed class MyProfileViewEffect {
@@ -239,4 +243,5 @@ sealed class MyProfileViewEffect {
     data object RequestFocusOnEmailTextField: MyProfileViewEffect()
     data object RequestFocusOnWorkEmailTextField: MyProfileViewEffect()
     data object RequestFocusOnOtherEmailTextField: MyProfileViewEffect()
+    data object NavigateBack: MyProfileViewEffect()
 }

@@ -278,11 +278,12 @@ fun HexagonalGrid(
                         val cellPosition = cellPositions[index]!!
                         when (contentStyle) {
                             is ImageHexagonContentStyle -> contentStyle.onClick.invoke(
-                                cellPositions[index]!!.positionOnScreen()
+                                cellPosition.boundsInRoot().center
                             )
 
                             is CustomHexagonContentStyle -> contentStyle.onClick.invoke(
-                                cellPosition.boundsInRoot().center
+                                cellPosition.boundsInRoot().center.log { "onClick center position" }
+//                                cellPosition.positionOnScreen()
                             )
 
                             is ContactContentStyle -> contentStyle.onClick.invoke(cellPosition.boundsInRoot().center)

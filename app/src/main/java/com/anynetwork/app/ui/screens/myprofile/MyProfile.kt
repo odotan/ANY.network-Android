@@ -30,7 +30,6 @@ import androidx.compose.foundation.gestures.animateTo
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -50,8 +49,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.IconButton
@@ -97,11 +94,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -111,7 +106,6 @@ import coil.size.Size
 import com.anynetwork.app.R
 import com.anynetwork.app.ui.components.HexagonTextField
 import com.anynetwork.app.ui.components.HexagonTextFieldClearTrailingIcon
-import com.anynetwork.app.ui.components.NavigationIconState
 import com.anynetwork.app.ui.components.Screen
 import com.anynetwork.app.ui.components.SheetValue
 import com.anynetwork.app.ui.components.ToolbarState
@@ -142,11 +136,6 @@ import com.anynetwork.app.ui.components.hexagon.createPolygon
 import com.anynetwork.app.ui.components.hexagon.hexCellsBackgroundColors
 import com.anynetwork.app.ui.components.textfield.ProfileTextFieldLeading
 import com.anynetwork.app.ui.navigation.Route
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileMode
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.BackButtonClick
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.EditButtonClick
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.FavoriteButtonClick
 import com.anynetwork.app.ui.screens.externalprofile.VerticalLine
 import com.anynetwork.app.ui.screens.myprofile.MyProfileViewEffect.*
 import com.anynetwork.app.ui.screens.myprofile.MyProfileViewEvent.SaveButtonClick
@@ -180,7 +169,6 @@ import com.anynetwork.app.ui.theme.TwitterColor
 import com.anynetwork.app.ui.theme.WhatsappColor
 import com.anynetwork.app.ui.theme.montserratFontFamily
 import com.anynetwork.app.ui.utils.checkSelfPermission
-import com.anynetwork.app.ui.utils.csp
 import com.anynetwork.app.ui.utils.fdph
 import com.anynetwork.app.ui.utils.fdpv
 import com.anynetwork.app.ui.utils.fsp
@@ -202,10 +190,21 @@ import kotlin.math.roundToInt
 
 @Composable
 fun MyProfileRoot(
-    navController: NavHostController
+    navController: NavHostController,
+    onBackPress: @Composable () -> Unit
 ) {
     val viewModel: MyProfileViewModel = hiltViewModel<MyProfileViewModel>()
-    viewModel.loadProfile()
+        .apply {
+            val viewEffect by viewEffectFlow.collectAsState()
+            viewEffect.log { "viewEffect" }
+            when (viewEffect) {
+                is NavigateBack -> {
+                    onBackPress.invoke()
+                }
+                else -> {}
+            }
+            loadProfile()
+        }
     MyProfile(
         viewModel = viewModel,
         onBackButtonClick = {
@@ -277,7 +276,7 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
         if (mode is MyProfileMode.Edit) {
             mode = MyProfileMode.Edit(isCanceling = true)
         } else {
-            onBackButtonClick.invoke()
+            viewModel.onViewEvent(MyProfileViewEvent.BackButtonClick)
         }
     }
 
@@ -1746,7 +1745,7 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
                             if (mode is MyProfileMode.Edit) {
                                 mode = MyProfileMode.Edit(isCanceling = true)
                             } else {
-                                onBackButtonClick.invoke()
+                                viewModel.onViewEvent(MyProfileViewEvent.BackButtonClick)
                             }
                         }
                     ) {

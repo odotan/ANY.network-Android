@@ -533,6 +533,12 @@ class HomeViewModel @Inject constructor(
                 }
                 else -> {}
             }
+            is HomeViewEvent.MyProfileGridItemClick -> {
+                _viewEffectFlow.value = HomeViewEffect.NavigateToMyProfile(
+                    offsetX = viewAction.offsetX,
+                    offsetY = viewAction.offsetY,
+                )
+            }
             is HomeViewEvent.GridItemClick -> {
                 _viewEffectFlow.value = HomeViewEffect.NavigateToExternalProfile(
                     contactId = viewAction.contact.id,
@@ -581,6 +587,8 @@ class HomeViewModel @Inject constructor(
                 }
             }
             HomeViewEvent.ClearViewEffect -> _viewEffectFlow.value = null
+
+            HomeViewEvent.ClearNavigationEffect -> _viewEffectFlow.value = null
         }
     }
 }
@@ -610,6 +618,7 @@ data class HomeViewState(
 )
 
 sealed class HomeViewEvent {
+    data class MyProfileGridItemClick(val offsetX: Float, val offsetY: Float): HomeViewEvent()
     data class GridItemClick(val contact: Contact, val offsetX: Float? = null, val offsetY: Float? = null): HomeViewEvent()
     data object HexagonalGridCellLongClick: HomeViewEvent()
     data class GridItemButtonRemove(val gridItem: GridItem): HomeViewEvent()
@@ -617,12 +626,14 @@ sealed class HomeViewEvent {
     data class CarouselContactInteractionClick(val contact: Contact, val interactionType: Int): HomeViewEvent()
     data class BadgeInteractionClick(val contact: Contact, val interactionType: Int): HomeViewEvent()
     data object ClearViewEffect: HomeViewEvent()
+    data object ClearNavigationEffect: HomeViewEvent()
 }
 
 sealed class HomeViewEffect {
     data class CallPhoneNumber(val phoneNumber: String): HomeViewEffect()
     data class WriteEmail(val emailAddress: String): HomeViewEffect()
     data class NavigateToExternalProfile(val contactId: Long, val offsetX: Float? = null, val offsetY: Float? = null): HomeViewEffect()
+    data class NavigateToMyProfile(val offsetX: Float, val offsetY: Float): HomeViewEffect()
 }
 
 fun HomeViewModel.createCellPosition(row: Int, column: Int) = HexGridCellPosition(
