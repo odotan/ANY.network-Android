@@ -200,16 +200,13 @@ fun ExternalProfileRoot(
     clickOffsetY: Float? = null,
     input: String? = null,
     isEnterAnimationFinished: Boolean = true,
-    onRouteChange: @Composable (Any?) -> Unit = {},
+    onBackPress: @Composable () -> Unit = {}
 ) {
 
     val viewModel: ExternalProfileViewModel = hiltViewModel<ExternalProfileViewModel>().apply {
         val navigateEvent by navigationEvents.collectAsState()
-        navigateEvent.log { "navigationEvent" }
         if (navigateEvent == NavigateBack) {
-            Timber.i("onRouteChange")
-//            navController.popBackStack(Route.Home, inclusive = false)
-            onRouteChange.invoke(null)
+            onBackPress()
         }
         onViewEvent(ExternalProfileViewEvent.ClearNavigationEffect)
 

@@ -173,7 +173,7 @@ import kotlin.math.absoluteValue
 @Composable
 fun HomeRoot(
     navController: NavHostController,
-    onRouteChange: (Any?) -> Unit,
+    homeNavController: NavHostController,
     viewModel: HomeViewModel = hiltViewModel<HomeViewModel>()
 ) {
 
@@ -208,7 +208,7 @@ fun HomeRoot(
                 }
                 is HomeViewEffect.NavigateToExternalProfile -> {
                     Timber.i("onRouteChange")
-                    navController.navigate(
+                    homeNavController.navigate(
                         Route.ExternalProfile(
                             id = viewEffect.contactId,
                             offsetX = viewEffect.offsetX,

@@ -81,6 +81,8 @@ class MainActivity : ComponentActivity() {
                 var route: Any? by remember { mutableStateOf(null) }
 
                 val navController = rememberNavController()
+                val homeNavController = rememberNavController()
+
                 NavHost(
                     navController = navController,
                     startDestination = Route.Splash,
@@ -187,10 +189,8 @@ class MainActivity : ComponentActivity() {
                         }
                     ) {
                         HomeRoot(
-                            navController,
-                            onRouteChange = { route ->
-
-                            }
+                            navController = navController,
+                            homeNavController = homeNavController
                         )
                     }
 
@@ -262,92 +262,180 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                when (route.log { "route" }) {
-                    is Route.ExternalProfile -> {
-                        (route as Route.ExternalProfile).let {
-                            val transitionDuration = 600 // Duration of the explosion animation
-                            val x = it.offsetX
-                            val y = it.offsetY
-                            val currentConfig = LocalConfiguration.current
-                            val width = currentConfig.screenWidthDp.toFloat()
-                            val height = currentConfig.screenHeightDp.toFloat()
+                NavHost(
+                    navController = homeNavController,
+                    startDestination = Route.Home,
+                    enterTransition = {
+                        fadeIn()
+                    },
+                    exitTransition = { fadeOut() },
+                    popEnterTransition = {
+                        fadeIn()
+                    },
+                    popExitTransition = {
+                        fadeOut()
+                    }
+                ) {
+                    composable<Route.Home> {  }
 
-                            val toolbarHeight =
-                                TopAppBarDefaults.LargeAppBarCollapsedHeight.toFloatPx()
-                            val statusBarHeight = 20.dp.toFloatPx()
+                    composable<Route.ExternalProfile>(
 
-                            // Define animation states
-                            var scaleX by remember { mutableStateOf(0.1f) } // Start scaled based on initial width
-                            var scaleY by remember { mutableStateOf(0.1f) } // Start scaled based on initial height
-                            var translateX by remember { mutableStateOf((x - width).log { "cellPosition.boundsInRoot().center.x" }) }
-                            var translateY by remember { mutableStateOf((y - height - toolbarHeight - statusBarHeight).log { "cellPosition.boundsInRoot().center.y" }) }
-                            var opacity by remember { mutableStateOf(0f) }
+                    ) {
+                        val transitionDuration = 400 // Duration of the explosion animation
+                        val x = it.toRoute<Route.ExternalProfile>().offsetX
+                        val y = it.toRoute<Route.ExternalProfile>().offsetY
+                        val currentConfig = LocalConfiguration.current
+                        val width = currentConfig.screenWidthDp.toFloat()
+                        val height = currentConfig.screenHeightDp.toFloat()
 
-                            // Trigger the animation when the screen is displayed
-                            LaunchedEffect(it.id) {
-                                scaleX = 1f // Explode slightly larger than the screen
-                                scaleY = 1f
-                                translateX = 0f // Move to center
-                                translateY = 0f
-                                opacity = 1f
-                            }
+                        val toolbarHeight = TopAppBarDefaults.LargeAppBarCollapsedHeight.toFloatPx()
+                        val statusBarHeight = 20.dp.toFloatPx()
 
-                            // Animate values
+                        // Define animation states
+                        var scaleX by remember { mutableStateOf(0.1f) } // Start scaled based on initial width
+                        var scaleY by remember { mutableStateOf(0.1f) } // Start scaled based on initial height
+                        var translateX by remember { mutableStateOf((x - width).log { "cellPosition.boundsInRoot().center.x" }) }
+                        var translateY by remember { mutableStateOf((y - height - toolbarHeight - statusBarHeight).log { "cellPosition.boundsInRoot().center.y" }) }
+                        var opacity by remember { mutableStateOf(0f) }
 
-                            val animatedScaleX = animateFloatAsState(
-                                targetValue = scaleX,
-                                animationSpec = tween(durationMillis = transitionDuration)
-                            )
-                            val animatedScaleY = animateFloatAsState(
-                                targetValue = scaleY,
-                                animationSpec = tween(durationMillis = transitionDuration)
-                            )
-                            val animatedTranslateX = animateFloatAsState(
-                                targetValue = translateX,
-                                animationSpec = tween(durationMillis = transitionDuration)
-                            )
-                            val animatedTranslateY = animateFloatAsState(
-                                targetValue = translateY,
-                                animationSpec = tween(durationMillis = transitionDuration)
-                            )
-                            val animatedOpacity = animateFloatAsState(
-                                targetValue = opacity,
-                                animationSpec = tween(durationMillis = transitionDuration)
-                            )
+                        // Trigger the animation when the screen is displayed
+                        LaunchedEffect(Unit) {
+                            scaleX = 1f // Explode slightly larger than the screen
+                            scaleY = 1f
+                            translateX = 0f // Move to center
+                            translateY = 0f
+                            opacity = 1f
+                        }
 
-                            // Apply animations to the DetailScreen
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .graphicsLayer(
-                                        scaleX = animatedScaleX.value,
-                                        scaleY = animatedScaleY.value,
-                                        translationX = animatedTranslateX.value,
-                                        translationY = animatedTranslateY.value,
-                                        alpha = animatedOpacity.value
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                ExternalProfileRoot(
-                                    id = it.id,
-                                    navController = navController,
-                                    onRouteChange = {
-                                        scaleX = .1f // Explode slightly larger than the screen
-                                        scaleY = .1f
-                                        translateX = x - width // Move to center
-                                        translateY = y - height - toolbarHeight - statusBarHeight
-                                        opacity = 0f
+                        // Animate values
+                        val animatedScaleX = animateFloatAsState(targetValue = scaleX, animationSpec = tween(durationMillis = transitionDuration))
+                        val animatedScaleY = animateFloatAsState(targetValue = scaleY, animationSpec = tween(durationMillis = transitionDuration))
+                        val animatedTranslateX = animateFloatAsState(targetValue = translateX, animationSpec = tween(durationMillis = transitionDuration))
+                        val animatedTranslateY = animateFloatAsState(targetValue = translateY, animationSpec = tween(durationMillis = transitionDuration))
+                        val animatedOpacity = animateFloatAsState(targetValue = opacity, animationSpec = tween(durationMillis = transitionDuration))
 
-                                        LaunchedEffect(Unit) {
-                                            delay(transitionDuration.toLong()) // Wait for animation to complete
-                                            route = null // Only change the route after animation finishes
-                                        }
+                        // Apply animations to the DetailScreen
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer(
+                                    scaleX = animatedScaleX.value,
+                                    scaleY = animatedScaleY.value,
+                                    translationX = animatedTranslateX.value,
+                                    translationY = animatedTranslateY.value,
+                                    alpha = animatedOpacity.value
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            ExternalProfileRoot(
+                                id = it.toRoute<Route.ExternalProfile>().id,
+                                navController = homeNavController,
+                                onBackPress = {
+                                    // Trigger exit animation
+                                    scaleX = 0.1f
+                                    scaleY = 0.1f
+                                    translateX = x - width
+                                    translateY = y - height - toolbarHeight - statusBarHeight
+                                    opacity = 0f
+
+                                    // Wait for animation to finish before changing the route
+                                    LaunchedEffect(Unit) {
+                                        delay(transitionDuration.toLong()) // Wait for animation to complete
+                                        navController.popBackStack()
                                     }
-                                )
-                            }
+                                }
+                            )
                         }
                     }
+
                 }
+
+//                when (route.log { "route" }) {
+//                    is Route.ExternalProfile -> {
+//                        (route as Route.ExternalProfile).let {
+//                            val transitionDuration = 600 // Duration of the explosion animation
+//                            val x = it.offsetX
+//                            val y = it.offsetY
+//                            val currentConfig = LocalConfiguration.current
+//                            val width = currentConfig.screenWidthDp.toFloat()
+//                            val height = currentConfig.screenHeightDp.toFloat()
+//
+//                            val toolbarHeight =
+//                                TopAppBarDefaults.LargeAppBarCollapsedHeight.toFloatPx()
+//                            val statusBarHeight = 20.dp.toFloatPx()
+//
+//                            // Define animation states
+//                            var scaleX by remember { mutableStateOf(0.1f) } // Start scaled based on initial width
+//                            var scaleY by remember { mutableStateOf(0.1f) } // Start scaled based on initial height
+//                            var translateX by remember { mutableStateOf((x - width).log { "cellPosition.boundsInRoot().center.x" }) }
+//                            var translateY by remember { mutableStateOf((y - height - toolbarHeight - statusBarHeight).log { "cellPosition.boundsInRoot().center.y" }) }
+//                            var opacity by remember { mutableStateOf(0f) }
+//
+//                            // Trigger the animation when the screen is displayed
+//                            LaunchedEffect(it.id) {
+//                                scaleX = 1f // Explode slightly larger than the screen
+//                                scaleY = 1f
+//                                translateX = 0f // Move to center
+//                                translateY = 0f
+//                                opacity = 1f
+//                            }
+//
+//                            // Animate values
+//
+//                            val animatedScaleX = animateFloatAsState(
+//                                targetValue = scaleX,
+//                                animationSpec = tween(durationMillis = transitionDuration)
+//                            )
+//                            val animatedScaleY = animateFloatAsState(
+//                                targetValue = scaleY,
+//                                animationSpec = tween(durationMillis = transitionDuration)
+//                            )
+//                            val animatedTranslateX = animateFloatAsState(
+//                                targetValue = translateX,
+//                                animationSpec = tween(durationMillis = transitionDuration)
+//                            )
+//                            val animatedTranslateY = animateFloatAsState(
+//                                targetValue = translateY,
+//                                animationSpec = tween(durationMillis = transitionDuration)
+//                            )
+//                            val animatedOpacity = animateFloatAsState(
+//                                targetValue = opacity,
+//                                animationSpec = tween(durationMillis = transitionDuration)
+//                            )
+//
+//                            // Apply animations to the DetailScreen
+//                            Box(
+//                                modifier = Modifier
+//                                    .fillMaxSize()
+//                                    .graphicsLayer(
+//                                        scaleX = animatedScaleX.value,
+//                                        scaleY = animatedScaleY.value,
+//                                        translationX = animatedTranslateX.value,
+//                                        translationY = animatedTranslateY.value,
+//                                        alpha = animatedOpacity.value
+//                                    ),
+//                                contentAlignment = Alignment.Center
+//                            ) {
+//                                ExternalProfileRoot(
+//                                    id = it.id,
+//                                    navController = navController,
+//                                    onRouteChange = {
+//                                        scaleX = .1f // Explode slightly larger than the screen
+//                                        scaleY = .1f
+//                                        translateX = x - width // Move to center
+//                                        translateY = y - height - toolbarHeight - statusBarHeight
+//                                        opacity = 0f
+//
+//                                        LaunchedEffect(Unit) {
+//                                            delay(transitionDuration.toLong()) // Wait for animation to complete
+//                                            route = null // Only change the route after animation finishes
+//                                        }
+//                                    }
+//                                )
+//                            }
+//                        }
+//                    }
+//                }
             }
         }
     }
