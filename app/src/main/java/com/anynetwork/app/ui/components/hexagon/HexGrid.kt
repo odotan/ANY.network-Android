@@ -108,6 +108,7 @@ fun HexagonalGrid(
     offsetEvenRows: Boolean = true,
     showIndexes: Boolean = false,
     isEditModeActivating: Boolean = false,
+    isEnterAnimationFinished: Boolean = true,
     gridScaling: Float = 1f,
     itemsList: List<HexagonContentStyle> = emptyList()
 ) {
@@ -247,7 +248,7 @@ fun HexagonalGrid(
                         applyOffset -> cellModifierWithOffset
                         else -> cellModifier
                     }
-                        .then(if (cellPositions[index] == null)
+                        .then(if (cellPositions[index] == null && isEnterAnimationFinished)
                             Modifier.onGloballyPositioned { coordinates ->
 
                                 val height = coordinates.size.height

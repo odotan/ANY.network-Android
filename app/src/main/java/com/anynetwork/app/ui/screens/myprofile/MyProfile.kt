@@ -192,6 +192,7 @@ import kotlin.math.roundToInt
 fun MyProfileRoot(
     navController: NavHostController,
     onContactUpdated: () -> Unit,
+    isEnterAnimationFinished: Boolean = true,
     onBackPress: @Composable () -> Unit
 ) {
     val viewModel: MyProfileViewModel = hiltViewModel<MyProfileViewModel>()
@@ -212,6 +213,7 @@ fun MyProfileRoot(
         }
     MyProfile(
         viewModel = viewModel,
+        isEnterAnimationFinished = isEnterAnimationFinished,
         onBackButtonClick = {
             navController.popBackStack(Route.Home, inclusive = false)
         }
@@ -224,7 +226,10 @@ sealed class MyProfileMode {
 }
 
 @Composable
-private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewModel) {
+private fun MyProfile(
+    isEnterAnimationFinished: Boolean = true,
+    onBackButtonClick: () -> Unit, viewModel: MyProfileViewModel,
+) {
     val scale = 6 / 4.7f
 
     val context = LocalContext.current
@@ -417,7 +422,7 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
     }
     val cameraPhotoUri: Uri = FileProvider.getUriForFile(
         context,
-        "${context.packageName}.fileprovider",
+        "${context.packageName}.fileprovider".log { "fileprovider" },
         photoFile
     )
     val cameraLauncher = rememberLauncherForActivityResult(
@@ -1048,6 +1053,7 @@ private fun MyProfile(onBackButtonClick: () -> Unit, viewModel: MyProfileViewMod
                         if (profilePictureCellOffset == null) profilePictureCellOffset = offset
                     }
                 },
+                isEnterAnimationFinished = isEnterAnimationFinished,
                 isScrollEnabled = false,
                 offsetY = when {
                     profilePictureCellOffset == null -> 0f

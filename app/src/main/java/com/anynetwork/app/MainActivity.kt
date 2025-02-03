@@ -15,14 +15,9 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,10 +36,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import com.anynetwork.app.ui.components.text.toFloatPx
 import com.anynetwork.app.ui.navigation.Route
 import com.anynetwork.app.ui.screens.connect.ConnectRoot
-import com.anynetwork.app.ui.screens.contactspermissions.ContactsPermissionsRoot
 import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileRoot
 import com.anynetwork.app.ui.screens.home.HomeRoot
 import com.anynetwork.app.ui.screens.home.HomeViewModel
@@ -145,8 +138,8 @@ class MainActivity : ComponentActivity() {
 
                     composable<Route.ExternalProfileNotExploding> {
                         ExternalProfileRoot(
-                            id = it.toRoute<Route.ExternalProfileNotExploding>().id,
                             navController = homeNavController,
+                            id = it.toRoute<Route.ExternalProfileNotExploding>().id,
                             onContactUpdated = {
                                 homeViewModel.reloadData()
                             },
@@ -187,6 +180,7 @@ class MainActivity : ComponentActivity() {
                         }
 
                         // Animate values
+                        var isEnterAnimationFinished by remember { mutableStateOf(false) }
                         val animatedScaleX = animateFloatAsState(
                             targetValue = scaleX,
                             animationSpec = tween(durationMillis = transitionDuration)
@@ -205,7 +199,10 @@ class MainActivity : ComponentActivity() {
                         )
                         val animatedOpacity = animateFloatAsState(
                             targetValue = opacity,
-                            animationSpec = tween(durationMillis = transitionDuration)
+                            animationSpec = tween(durationMillis = transitionDuration),
+                            finishedListener = {
+                                isEnterAnimationFinished = true
+                            }
                         )
 
                         // Apply animations to the DetailScreen
@@ -226,6 +223,7 @@ class MainActivity : ComponentActivity() {
                                 onContactUpdated = {
                                     homeViewModel.loadProfile()
                                 },
+                                isEnterAnimationFinished = isEnterAnimationFinished,
                                 onBackPress = {
                                     // Trigger exit animation
                                     scaleX = 0.01f
@@ -273,6 +271,7 @@ class MainActivity : ComponentActivity() {
                         }
 
                         // Animate values
+                        var isEnterAnimationFinished by remember { mutableStateOf(false) }
                         val animatedScaleX = animateFloatAsState(
                             targetValue = scaleX,
                             animationSpec = tween(durationMillis = transitionDuration)
@@ -291,7 +290,10 @@ class MainActivity : ComponentActivity() {
                         )
                         val animatedOpacity = animateFloatAsState(
                             targetValue = opacity,
-                            animationSpec = tween(durationMillis = transitionDuration)
+                            animationSpec = tween(durationMillis = transitionDuration),
+                            finishedListener = {
+                                isEnterAnimationFinished = true
+                            }
                         )
 
                         // Apply animations to the DetailScreen
@@ -308,8 +310,9 @@ class MainActivity : ComponentActivity() {
                             contentAlignment = Alignment.Center
                         ) {
                             ExternalProfileRoot(
-                                id = it.toRoute<Route.ExternalProfile>().id,
                                 navController = homeNavController,
+                                id = it.toRoute<Route.ExternalProfile>().id,
+                                isEnterAnimationFinished = isEnterAnimationFinished,
                                 onContactUpdated = {
                                     homeViewModel.reloadData()
                                 },

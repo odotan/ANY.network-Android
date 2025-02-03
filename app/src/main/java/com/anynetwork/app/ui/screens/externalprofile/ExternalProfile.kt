@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalFoundationApi::class, ExperimentalAnimatedInsets::class)
+@file:OptIn(ExperimentalFoundationApi::class)
 
 package com.anynetwork.app.ui.screens.externalprofile
 
@@ -135,9 +135,7 @@ import com.anynetwork.app.ui.components.hexagon.TransparentHexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.createPolygon
 import com.anynetwork.app.ui.components.hexagon.hexCellsBackgroundColors
 import com.anynetwork.app.ui.components.textfield.ProfileTextFieldLeading
-import com.anynetwork.app.ui.navigation.Route
 import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.*
-import com.anynetwork.app.ui.screens.home.HomeViewModel
 import com.anynetwork.app.ui.screens.myprofile.offsetToAvoidKeyboard
 import com.anynetwork.app.ui.theme.DarkBlue
 import com.anynetwork.app.ui.theme.EmailColor
@@ -157,7 +155,6 @@ import com.anynetwork.app.ui.utils.fdpv
 import com.anynetwork.app.ui.utils.fsp
 import com.anynetwork.app.ui.utils.log
 import com.anynetwork.app.ui.utils.xdpv
-import com.google.accompanist.insets.ExperimentalAnimatedInsets
 import com.yalantis.ucrop.UCrop
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
@@ -176,8 +173,6 @@ import kotlin.math.roundToInt
 fun ExternalProfileRoot(
     navController: NavHostController,
     id: Long?,
-    clickOffsetX: Float? = null,
-    clickOffsetY: Float? = null,
     input: String? = null,
     isEnterAnimationFinished: Boolean = true,
     onContactUpdated: () -> Unit,
@@ -229,8 +224,6 @@ fun ExternalProfileRoot(
     }
     ExternalProfile(
         viewModel = viewModel,
-        navController = navController,
-        clickOffset = clickOffsetX?.let { Offset(clickOffsetX, clickOffsetY!!) },
         isEnterAnimationFinished = isEnterAnimationFinished
     )
 }
@@ -277,8 +270,6 @@ val ethereumCellPosition = centralCellPosition.getNeighborPosition(Right)
 @Composable
 private fun ExternalProfile(
     viewModel: ExternalProfileViewModel,
-    navController: NavHostController,
-    clickOffset: Offset?,
     isEnterAnimationFinished: Boolean
 ) {
     isEnterAnimationFinished.log { "isEnterAnimationFinished" }
@@ -409,6 +400,7 @@ private fun ExternalProfile(
             }.absoluteValue.log { "percentage" }
             Timber.i("currentOffset: $currentOffset / " +
                     "expandedOffset: $expandedOffset / " +
+                    "collapsedOffset: $collapsedOffset / " +
                     "anchoredDraggableState currentValue: ${anchoredDraggableState.currentValue} / " +
                     "anchoredDraggableState settledValue: ${anchoredDraggableState.settledValue} / ")
             percentage.coerceIn(0f, 100f) // Ensure percentage is between 0 and 100
@@ -924,7 +916,7 @@ private fun ExternalProfile(
                 else -> getRequestNetworkModeGridItems()
             }
 
-            var triggerRecalculation by remember(isEnterAnimationFinished) { mutableStateOf(isEnterAnimationFinished) }.log { "triggerRecalculation" }
+//            val isEnterAnimationFinished by remember(isEnterAnimationFinished) { mutableStateOf(isEnterAnimationFinished) }.log { "triggerRecalculation" }
             HexagonalGrid(
                 modifier = Modifier
                     .alpha(if (viewState.mode is ExternalProfileMode.NewContact) 0f else 1f),
@@ -941,7 +933,7 @@ private fun ExternalProfile(
                         } else if (index == trailingCellPosition.getIndex()) {
                             if (trailingCellOffset == null) trailingCellOffset = offset
                         } else if (index == profilePictureCellPosition.getIndex()) {
-                            if (profilePictureCellOffset == null) profilePictureCellOffset = offset
+                            if (profilePictureCellOffset == null) profilePictureCellOffset = offset.log { "profilePictureCellOffset" }
                         }
                     }
                 },
@@ -949,6 +941,7 @@ private fun ExternalProfile(
                     viewModel.onGridZoomChange(zoom = zoom)
                 },
                 isScrollEnabled = false,
+                isEnterAnimationFinished = isEnterAnimationFinished,
                 offsetY = when {
                     profilePictureCellOffset == null -> 0f
                     else -> -(profilePictureCellOffset!!.y - with(LocalDensity.current) {
