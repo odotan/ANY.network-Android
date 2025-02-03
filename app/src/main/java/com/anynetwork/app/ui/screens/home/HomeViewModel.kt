@@ -14,6 +14,7 @@ import com.anynetwork.app.ui.utils.log
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -399,11 +400,6 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             val newGridItems = processContactsForGrid(if (screenMode is HomeScreenMode.SearchingGrid) searchContacts.value else contacts.value, interactions.value)
             updateHexGridItems(newGridItems)
-            if (_hexGridItems.value != newGridItems) {
-                Timber.d("Hex grid updated with new items.")
-            } else {
-                Timber.d("Hex grid update skipped; items are identical.")
-            }
         }
     }
 

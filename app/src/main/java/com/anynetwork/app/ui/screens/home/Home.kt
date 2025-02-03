@@ -6,6 +6,7 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.view.inputmethod.InputMethodManager
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -80,6 +81,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -177,6 +179,14 @@ fun HomeRoot(
     )
 
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
+
+    fun hideKeyboard() {
+        val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        focusManager.clearFocus()
+        imm.hideSoftInputFromWindow(null, 0)
+    }
+
     LaunchedEffect(viewModel.viewEffectFlow) {
         viewModel.viewEffectFlow.collect { viewEffect ->
             viewEffect.log { "viewEffect" }
@@ -197,6 +207,7 @@ fun HomeRoot(
                 }
                 is HomeViewEffect.NavigateToExternalProfile -> {
                     viewModel.onViewAction(ClearViewEffect)
+                    hideKeyboard()
                     homeNavController.navigate(
                         if (viewEffect.offsetX != null && viewEffect.offsetY != null) Route.ExternalProfile(
                             id = viewEffect.contactId,
