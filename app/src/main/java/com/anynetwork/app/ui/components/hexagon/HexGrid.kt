@@ -61,6 +61,7 @@ import androidx.compose.ui.unit.times
 import androidx.compose.ui.unit.toIntRect
 import androidx.compose.ui.unit.toRect
 import androidx.compose.ui.zIndex
+import com.anynetwork.app.model.Interaction
 import com.anynetwork.app.ui.components.hexagon.HexGridCellPosition.Neighbor.BottomLeft
 import com.anynetwork.app.ui.components.hexagon.HexGridCellPosition.Neighbor.BottomRight
 import com.anynetwork.app.ui.components.hexagon.HexGridCellPosition.Neighbor.Left
@@ -70,6 +71,11 @@ import com.anynetwork.app.ui.components.hexagon.HexGridCellPosition.Neighbor.Top
 import com.anynetwork.app.ui.components.zoomable.ScrollGesturePropagation
 import com.anynetwork.app.ui.components.zoomable.rememberZoomState
 import com.anynetwork.app.ui.components.zoomable.zoomable
+import com.anynetwork.app.ui.screens.home.GridItem
+import com.anynetwork.app.ui.screens.home.HomeViewEvent.BadgeInteractionClick
+import com.anynetwork.app.ui.screens.home.HomeViewEvent.GridItemClick
+import com.anynetwork.app.ui.utils.fdph
+import com.anynetwork.app.ui.utils.fdpv
 import com.anynetwork.app.ui.utils.log
 import kotlinx.coroutines.delay
 import kotlinx.parcelize.Parcelize
@@ -279,7 +285,7 @@ fun HexagonalGrid(
                         val cellPosition = cellPositions[index]!!
                         when (contentStyle) {
                             is ImageHexagonContentStyle -> contentStyle.onClick.invoke(
-                                cellPosition.boundsInRoot().center
+                                cellPosition.boundsInRoot().center.log { "onClick center position" }
                             )
 
                             is CustomHexagonContentStyle -> contentStyle.onClick.invoke(
@@ -291,6 +297,10 @@ fun HexagonalGrid(
 
                             is IconHexagonContentStyle -> contentStyle.onClick.invoke(
                                 cellPositions[index]!!.positionOnScreen()
+                            )
+
+                            is AutoresizeTextContentStyle -> contentStyle.onClick.invoke(
+                                cellPosition.boundsInRoot().center.log { "onClick center position" }
                             )
 
                             else -> {}
@@ -487,6 +497,29 @@ private fun StatelessRoundedHexagon(
         )
 
 //        Box(modifier = Modifier.size(1.dp).background(Color.Red)) { }
+
+        if (contentStyle !is NontransparentHexagonContentStyle) return
+        val hasBadge by remember(contentStyle.badgeOverlay) { mutableStateOf(contentStyle.badgeOverlay != null) }
+        if (hasBadge) {
+            val gridColumns = contentStyle.badgeOverlay!!.gridColumns
+            val gridScaling = contentStyle.badgeOverlay!!.gridScaling
+            Badge(
+                Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(
+                        bottom = 10.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv * gridScaling),
+                        end = 11.fdph * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv * gridScaling)
+                    )
+                    .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv * gridScaling))
+                    .zIndex(2f),
+                color = contentStyle.badgeOverlay!!.badge.color,
+                iconResourceId = contentStyle.badgeOverlay.badge.iconResId,
+                iconColorFilter = contentStyle.badgeOverlay.badge.iconColorFilter,
+                onClick = {
+                    contentStyle.badgeOverlay.onClick.invoke()
+                }
+            )
+        }
 
         if (drawOverlay) {
             if (contentStyle is IconHexagonContentStyle) {

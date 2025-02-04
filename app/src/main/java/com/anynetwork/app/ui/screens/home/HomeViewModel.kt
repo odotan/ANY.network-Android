@@ -108,8 +108,11 @@ class HomeViewModel @Inject constructor(
                 .debounce(50)
                 .collect { query ->
                     withContext(Dispatchers.Default) {
-                        if (!viewState.value.mode.isSearching) return@withContext
                         searchQuery.value.log { "searching contacts" }
+                        if (!viewState.value.mode.isSearching) {
+                            _searchContacts.value = contacts.value
+                            return@withContext
+                        }
                         val filteredContacts = contacts.value
                             .filter {
                                 it.matchesQuery(searchQuery.value.log { "filteredContacts with search query" })
@@ -202,11 +205,7 @@ class HomeViewModel @Inject constructor(
 
     private fun updateHexGridItems(newItems: List<GridItem>) {
         Timber.i("updateHexGridItems - size: ${newItems.size}")
-        val currentItems = _hexGridItems.value
-        if (!currentItems.isIdenticalTo(newItems)) {
-            Timber.i("updateHexGridItems 2")
-            _hexGridItems.value = newItems
-        }
+        _hexGridItems.value = newItems
     }
 
     // Extension function to compare lists deeply

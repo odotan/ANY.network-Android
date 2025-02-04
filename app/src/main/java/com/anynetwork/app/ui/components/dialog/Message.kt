@@ -14,6 +14,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -61,23 +64,23 @@ fun Message(
     ) {
         Surface(
             modifier = Modifier
-                .fillMaxSize()
                 .padding(top = 3.fdpv, end = 3.fdph),
             color = Color.White.copy(alpha = 0.05f),
             shape = MaterialTheme.shapes.extraLarge
         ) {
-            Column(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(137.fdpv)
+                        .wrapContentHeight()
                 ) {
                     icon.invoke(this)
 
                     Column(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .padding(start = 93.fdph, top = 21.fdpv)
+                            .fillMaxWidth()
+                            .wrapContentHeight()
+                            .padding(start = 93.fdph, top = 21.fdpv, end = 23.fdph)
                     ) {
                         Text(
                             modifier = Modifier
@@ -95,7 +98,7 @@ fun Message(
                         Text(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 8.fdpv),
+                                .padding(top = 8.fdpv, bottom = 15.fdpv),
                             text = description,
                             textAlign = TextAlign.Start,
                             color = Color(0xFFFFFFFF),
@@ -118,15 +121,15 @@ fun Message(
 
                     Row(
                         modifier = Modifier
-                            .fillMaxSize()
+                            .height(44.fdpv)
                             .align(Alignment.CenterHorizontally)
                             .clickable { action.onClick.invoke() },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.CenterVertically),
+                                .align(Alignment.CenterVertically)
+                                .fillMaxWidth(),
                             text = action.text,
                             textAlign = TextAlign.Center,
                             color = GreenColor,

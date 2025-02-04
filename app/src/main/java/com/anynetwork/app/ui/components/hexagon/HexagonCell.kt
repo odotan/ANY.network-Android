@@ -6,7 +6,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
@@ -25,13 +24,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -80,7 +82,8 @@ open class NontransparentHexagonContentStyle(
     val background: Background,
     val isDraggable: Boolean,
     val isHoverable: Boolean,
-    val removableStrategy: RemovableStrategy?
+    val removableStrategy: RemovableStrategy?,
+    val badgeOverlay: BadgeOverlay? = null
 ): HexagonContentStyle(id) {
     sealed class Background {
         data class SingleColor(val value: Color): Background()
@@ -89,6 +92,31 @@ open class NontransparentHexagonContentStyle(
             val startOffset: Offset = Offset(0.0f, 0.0f),
             val endOffset: Offset = Offset(100.0f, 0.0f)
         ) : Background()
+    }
+
+    open class BadgeOverlay(
+        val badge: GridItem.Badge,
+        val gridColumns: Int,
+        val gridScaling: Float,
+        val onClick: () -> Unit) {
+        class FavoriteBadge(
+            badge: GridItem.Badge,
+            gridColumns: Int,
+            gridScaling: Float,
+            onClick: () -> Unit
+        ): BadgeOverlay(badge, gridColumns, gridScaling, onClick)
+        class EmailBadge(
+            badge: GridItem.Badge,
+            gridColumns: Int,
+            gridScaling: Float,
+            onClick: () -> Unit
+        ): BadgeOverlay(badge, gridColumns, gridScaling, onClick)
+        class PhoneBadge(
+            badge: GridItem.Badge,
+            gridColumns: Int,
+            gridScaling: Float,
+            onClick: () -> Unit
+        ): BadgeOverlay(badge, gridColumns, gridScaling, onClick)
     }
 }
 @Stable
@@ -138,7 +166,7 @@ class PopupHexagonContentStyle(
 class ImageHexagonContentStyle(
     id: Int,
     background: Background = Background.SingleColor(Color(0xFF6E4CD4)),
-    isDraggable: Boolean = false,
+    isDraggable: Boolean = true,
     isHoverable: Boolean = true,
     removableStrategy: RemovableStrategy? = null,
     val contentDescription: String = "",
@@ -146,18 +174,21 @@ class ImageHexagonContentStyle(
     val alpha: Float = 1f,
     val onClick: ((Offset) -> Unit) = {},
     val onLongClick: (() -> Unit) = {},
+    val isShakable: Boolean = false,
+    badgeOverlay: BadgeOverlay? = null
 ): NontransparentHexagonContentStyle(
     id = id,
     background = background,
     isDraggable = isDraggable,
     isHoverable = isHoverable,
-    removableStrategy = removableStrategy
+    removableStrategy = removableStrategy,
+    badgeOverlay = badgeOverlay
 ) {
-    sealed class Image {
-        data class VectorResource(val id: Int): Image()
-        data class FromNetwork(val url: String): Image()
-        data class Resource(val id: Int): Image()
-        data class FromUri(val uri: String): Image()
+    open class Image(val size: coil.size.Size? = null, val fractionOfParentSize: Float = 1f) {
+        class VectorResource(val id: Int, size: coil.size.Size? = null, fractionOfParentSize: Float = 1f): Image(size, fractionOfParentSize)
+        class FromNetwork(val url: String, size: coil.size.Size? = null, fractionOfParentSize: Float = 1f): Image(size, fractionOfParentSize)
+        class Resource(val id: Int, size: coil.size.Size? = null, fractionOfParentSize: Float = 1f): Image(size, fractionOfParentSize)
+        class FromUri(val uri: String, size: coil.size.Size? = null, fractionOfParentSize: Float = 1f): Image(size, fractionOfParentSize)
     }
 }
 @Stable
@@ -186,6 +217,29 @@ class IconHexagonContentStyle(
         data class VectorResource(val id: Int): Image()
     }
 }
+
+@Stable
+class AutoresizeTextContentStyle(
+    id: Int,
+    background: NontransparentHexagonContentStyle.Background,
+    isDraggable: Boolean = true,
+    isHoverable: Boolean = true,
+    removableStrategy: RemovableStrategy? = null,
+    val text: String,
+    val gridColumns: Int,
+    val gridScaling: Float,
+    val onClick: ((Offset) -> Unit) = {},
+    val onLongClick: (() -> Unit) = {},
+    val isShakable: Boolean = false,
+    badgeOverlay: BadgeOverlay? = null
+): NontransparentHexagonContentStyle(
+    id = id,
+    background = background,
+    isDraggable = isDraggable,
+    isHoverable = isHoverable,
+    removableStrategy = removableStrategy,
+    badgeOverlay = badgeOverlay
+)
 
 @Stable
 class ContactContentStyle(
@@ -229,6 +283,15 @@ class CustomHexagonContentStyle(
     removableStrategy = removableStrategy
 )
 
+fun Modifier.cellBackground(background: NontransparentHexagonContentStyle.Background): Modifier {
+    return when (background) {
+        is NontransparentHexagonContentStyle.Background.SingleColor -> this.background(background.value)
+        is NontransparentHexagonContentStyle.Background.Gradient -> this.background(
+            Brush.linearGradient(background.colors, background.startOffset, background.endOffset)
+        )
+    }
+}
+
 @Composable
 fun RoundedHexagon(
     modifier: Modifier = Modifier,
@@ -253,147 +316,145 @@ fun RoundedHexagon(
                     }
                 )
             } else modifier,
-        contentAlignment = Alignment.Center,
         content = {
             when (contentStyle) {
-                is NontransparentHexagonContentStyle -> Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .drawBehind {
-                            when (val background = contentStyle.background) {
-                                is NontransparentHexagonContentStyle.Background.SingleColor -> {
-                                    val color = background.value.run {
-                                        if (contentStyle is IconHexagonContentStyle) {
-                                            copy(alpha = contentStyle.alpha)
-                                        } else if (contentStyle is ImageHexagonContentStyle) {
-                                            copy(alpha = contentStyle.alpha)
-                                        } else this
-                                    }
-                                    drawRect(color)
-                                }
-                                is NontransparentHexagonContentStyle.Background.Gradient -> {
-                                    val brush = Brush.linearGradient(
-                                        colors = background.colors,
-                                        start = background.startOffset,
-                                        end = background.endOffset
+                is NontransparentHexagonContentStyle -> {
+                    val background by remember(contentStyle) { mutableStateOf(contentStyle.background) }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .cellBackground(background),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        when (contentStyle) {
+                            is ContactContentStyle -> {
+                                if (contentStyle.contact.avatarUri != null) {
+                                    Image(
+                                        modifier = Modifier
+                                            .fillMaxSize(),
+                                        painter = rememberAsyncImagePainter(
+                                            model = ImageRequest.Builder(LocalContext.current)
+                                                .data(contentStyle.contact.avatarUri)
+                                                .size(coil.size.Size.ORIGINAL)
+                                                .scale(scale = Scale.FILL)
+                                                .build()
+                                        ),
+                                        contentScale = ContentScale.Crop,
+                                        contentDescription = null,
                                     )
-                                    drawRect(
-                                        brush = brush,
-                                        size = size
+                                } else {
+                                    val fullname = contentStyle.contact
+                                        .name
+                                        .uppercase()
+                                    AutoSizeText(
+                                        modifier = Modifier.fillMaxSize(0.9f),
+                                        text = fullname,
+                                        maxLines = if (fullname.contains(" ")) 2 else 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        color = Color(0xFFAFAEB8),
+                                        alignment = Alignment.Center,
+                                        maxTextSize = 11.csp * (LocalConfiguration.current.screenWidthDp.dp / contentStyle.gridColumns / 79.93f.fdpv) * scale * contentStyle.gridScaling,
+                                        style = TextStyle(
+                                            fontFamily = montserratFontFamily,
+                                            fontWeight = FontWeight.SemiBold,
+                                        )
                                     )
                                 }
                             }
-                        },
-                    contentAlignment = Alignment.Center
-                    ) {
-                    when (contentStyle) {
-//                        is ContactContentStyle -> {
-//                            if (contentStyle.contact.avatarUri != null) {
-//                                Image(
-//                                    modifier = Modifier
-//                                        .fillMaxSize(),
-//                                    painter = rememberAsyncImagePainter(
-//                                        model = ImageRequest.Builder(LocalContext.current)
-//                                            .data(contentStyle.contact.avatarUri)
-//                                            .size(coil.size.Size.ORIGINAL)
-//                                            .scale(scale = Scale.FILL)
-//                                            .build()
-//                                    ),
-//                                    contentScale = ContentScale.Crop,
-//                                    contentDescription = null,
-//                                )
-//                            } else {
-//                                val fullname = contentStyle.contact
-//                                    .name
-//                                    .uppercase()
-//                                AutoSizeText(
-//                                    modifier = Modifier.fillMaxSize(0.9f),
-//                                    text = fullname,
-//                                    maxLines = if (fullname.contains(" ")) 2 else 1,
-//                                    overflow = TextOverflow.Ellipsis,
-//                                    color = Color(0xFFAFAEB8),
-//                                    alignment = Alignment.Center,
-//                                    maxTextSize = 11.csp * (LocalConfiguration.current.screenWidthDp.dp / contentStyle.gridColumns / 79.93f.fdpv) * scale * contentStyle.gridScaling,
-//                                    style = TextStyle(
-//                                        fontFamily = montserratFontFamily,
-//                                        fontWeight = FontWeight.SemiBold,
-//                                    )
-//                                )
-//                            }
-//                        }
-                        is TrashCanHexagonContentStyle -> {
-                            val alpha by animateFloatAsState(
-                                targetValue = when {
-                                    showContent && hovered -> 1f
-                                    showContent -> 0.4f
-                                    else -> 0f
-                                },
-                                animationSpec = tween(300)
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(Color.Red.copy(alpha = alpha)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Image(
-                                    modifier = Modifier.fillMaxSize(fraction = .7f),
-                                    painter = rememberAsyncImagePainter(
-                                        model = ImageRequest.Builder(LocalContext.current)
-                                            .data(R.drawable.ic_delete)
-                                            .size(coil.size.Size.ORIGINAL)
-                                            .scale(coil.size.Scale.FIT)
-                                            .build()
-                                    ),
-                                    contentDescription = "delete",
-                                    colorFilter = ColorFilter.tint(Color.White.copy(alpha = alpha)),
-                                    contentScale = ContentScale.Fit
+
+                            is AutoresizeTextContentStyle -> {
+                                val text = remember(contentStyle.text) { contentStyle.text }
+                                AutoSizeText(
+                                    modifier = Modifier.fillMaxWidth(0.9f).fillMaxHeight(),
+                                    text = text,
+                                    maxLines = if (text.contains(" ")) 2 else 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    color = Color(0xFFAFAEB8),
+                                    alignment = Alignment.Center,
+                                    maxTextSize = 11.csp * (LocalConfiguration.current.screenWidthDp.dp / contentStyle.gridColumns / 79.93f.fdpv) * scale * contentStyle.gridScaling,
+                                    style = TextStyle(
+                                        fontFamily = montserratFontFamily,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
                                 )
                             }
-                        }
-
-                        is CustomHexagonContentStyle -> contentStyle.content.invoke(this, scale)
-
-                        is ImageHexagonContentStyle -> {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .alpha(contentStyle.alpha),
-                                verticalArrangement = Arrangement.Bottom
-                            ) {
-                                if (contentStyle.image is ImageHexagonContentStyle.Image.VectorResource) {
+                            is TrashCanHexagonContentStyle -> {
+                                val alpha by animateFloatAsState(
+                                    targetValue = when {
+                                        showContent && hovered -> 1f
+                                        showContent -> 0.4f
+                                        else -> 0f
+                                    },
+                                    animationSpec = tween(300)
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(Color.Red.copy(alpha = alpha)),
+                                    contentAlignment = Alignment.Center
+                                ) {
                                     Image(
-                                        modifier = Modifier
-                                            .fillMaxSize(),
+                                        modifier = Modifier.fillMaxSize(fraction = .7f),
                                         painter = rememberAsyncImagePainter(
                                             model = ImageRequest.Builder(LocalContext.current)
-                                                .data(contentStyle.image.id)
+                                                .data(R.drawable.ic_delete)
+                                                .size(coil.size.Size.ORIGINAL)
+                                                .scale(coil.size.Scale.FIT)
+                                                .build()
+                                        ),
+                                        contentDescription = "delete",
+                                        colorFilter = ColorFilter.tint(Color.White.copy(alpha = alpha)),
+                                        contentScale = ContentScale.Fit
+                                    )
+                                }
+                            }
+
+                            is CustomHexagonContentStyle -> contentStyle.content.invoke(this, scale)
+
+                            is ImageHexagonContentStyle -> {
+                                var contentStyleImage by remember { mutableStateOf(contentStyle.image) }
+                                if (contentStyleImage is ImageHexagonContentStyle.Image.VectorResource) {
+
+                                    Image(
+                                        modifier = Modifier
+                                            .fillMaxSize(contentStyleImage.fractionOfParentSize)
+                                            .alpha(contentStyle.alpha),
+                                        painter = rememberAsyncImagePainter(
+                                            model = ImageRequest.Builder(LocalContext.current)
+                                                .data((contentStyleImage as ImageHexagonContentStyle.Image.VectorResource).id)
+                                                .apply {
+                                                    if (contentStyleImage.size != null)
+                                                        size(contentStyleImage.size!!.height, contentStyleImage.size!!.width)
+                                                    else size(coil.size.Size.ORIGINAL)
+                                                }
+                                                .build()
+                                        ),
+                                        contentScale = ContentScale.Crop,
+                                        contentDescription = contentStyle.contentDescription,
+                                    )
+                                } else if (contentStyleImage is ImageHexagonContentStyle.Image.Resource) {
+                                    Image(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .alpha(contentStyle.alpha),
+                                        painter = rememberAsyncImagePainter(
+                                            model = ImageRequest.Builder(LocalContext.current)
+                                                .data((contentStyleImage as ImageHexagonContentStyle.Image.Resource).id)
                                                 .size(coil.size.Size.ORIGINAL) // Load the image at its original resolution
                                                 .build()
                                         ),
                                         contentScale = ContentScale.Crop,
                                         contentDescription = contentStyle.contentDescription,
                                     )
-                                } else if (contentStyle.image is ImageHexagonContentStyle.Image.Resource) {
+                                } else if (contentStyleImage is ImageHexagonContentStyle.Image.FromNetwork) {
                                     Image(
                                         modifier = Modifier
-                                            .fillMaxSize(),
+                                            .fillMaxSize()
+                                            .alpha(contentStyle.alpha),
                                         painter = rememberAsyncImagePainter(
                                             model = ImageRequest.Builder(LocalContext.current)
-                                                .data(contentStyle.image.id)
-                                                .size(coil.size.Size.ORIGINAL) // Load the image at its original resolution
-                                                .build()
-                                        ),
-                                        contentScale = ContentScale.Crop,
-                                        contentDescription = contentStyle.contentDescription,
-                                    )
-                                } else if (contentStyle.image is ImageHexagonContentStyle.Image.FromNetwork) {
-                                    Image(
-                                        modifier = Modifier
-                                            .fillMaxSize(),
-                                        painter = rememberAsyncImagePainter(
-                                            model = ImageRequest.Builder(LocalContext.current)
-                                                .data(contentStyle.image.url)
+                                                .data((contentStyleImage as ImageHexagonContentStyle.Image.FromNetwork).url)
                                                 .diskCachePolicy(CachePolicy.ENABLED)
                                                 .memoryCachePolicy(CachePolicy.ENABLED)
                                                 .size(coil.size.Size.ORIGINAL) // Load the image at its original resolution
@@ -402,13 +463,14 @@ fun RoundedHexagon(
                                         contentDescription = contentStyle.contentDescription,
                                         contentScale = ContentScale.Crop
                                     )
-                                } else if (contentStyle.image is ImageHexagonContentStyle.Image.FromUri) {
+                                } else if (contentStyleImage is ImageHexagonContentStyle.Image.FromUri) {
                                     Image(
                                         modifier = Modifier
-                                            .fillMaxSize(),
+                                            .fillMaxSize()
+                                            .alpha(contentStyle.alpha),
                                         painter = rememberAsyncImagePainter(
                                             model = ImageRequest.Builder(LocalContext.current)
-                                                .data(contentStyle.image.uri)
+                                                .data((contentStyleImage as ImageHexagonContentStyle.Image.FromUri).uri)
                                                 .size(coil.size.Size.ORIGINAL) // Load the image at its original resolution
                                                 .build()
                                         ),
@@ -417,136 +479,136 @@ fun RoundedHexagon(
                                     )
                                 }
                             }
-                        }
 
-                        is IconHexagonContentStyle -> {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .align(Alignment.Center),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (contentStyle.image is IconHexagonContentStyle.Image.VectorResource) {
-                                    Image(
-                                        modifier = contentStyle.modifier
-                                            .alpha(contentStyle.alpha),
-                                        painter = rememberAsyncImagePainter(
-                                            model = ImageRequest.Builder(LocalContext.current)
-                                                .data(contentStyle.image.id)
-                                                .size(coil.size.Size.ORIGINAL) // Load the image at its original resolution
-                                                .build()
-                                        ),
-                                        contentDescription = contentStyle.contentDescription,
-                                        colorFilter = when {
-                                            contentStyle.tintColor != null -> ColorFilter.tint(contentStyle.tintColor)
-                                            else -> null
-                                        }
-                                    )
+                            is IconHexagonContentStyle -> {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .align(Alignment.Center),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (contentStyle.image is IconHexagonContentStyle.Image.VectorResource) {
+                                        Image(
+                                            modifier = contentStyle.modifier
+                                                .alpha(contentStyle.alpha),
+                                            painter = rememberAsyncImagePainter(
+                                                model = ImageRequest.Builder(LocalContext.current)
+                                                    .data(contentStyle.image.id)
+                                                    .size(coil.size.Size.ORIGINAL) // Load the image at its original resolution
+                                                    .build()
+                                            ),
+                                            contentDescription = contentStyle.contentDescription,
+                                            colorFilter = when {
+                                                contentStyle.tintColor != null -> ColorFilter.tint(contentStyle.tintColor)
+                                                else -> null
+                                            }
+                                        )
+                                    }
                                 }
                             }
-                        }
 
-                        is PopupHexagonContentStyle -> {
-                            Text(
-                                modifier = Modifier
-                                    .align(Alignment.TopCenter)
-                                    .padding(top = 104.8.fdpv)
-                                    .padding(horizontal = 54.fdph),
-                                text = contentStyle.message,
-                                fontSize = 24.fsp,
-                                textAlign = TextAlign.Center,
-                                style = TextStyle(
-                                    fontFamily = montserratFontFamily,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                ),
-                            )
-
-                            Row(
-                                modifier = Modifier
-                                    .align(Alignment.BottomCenter)
-                                    .padding(bottom = 109.26.fdpv)
-                                    .height(84.fdpv)
-                            ) {
-                                Column(
+                            is PopupHexagonContentStyle -> {
+                                Text(
                                     modifier = Modifier
-                                        .weight(1f)
-                                        .padding(top = 9.fdpv)
-                                        .height(48.fdpv)
-                                        .clickable { contentStyle.options[0].onClick.invoke() },
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(
-                                        modifier = Modifier
-                                            .weight(1f),
-                                        text = contentStyle.options[0].title,
-                                        fontSize = 24.fsp,
-                                        style = TextStyle(
-                                            fontFamily = montserratFontFamily,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = Color.White
-                                        ),
-                                    )
-
-                                    Text(
-                                        modifier = Modifier
-                                            .weight(1f),
-                                        text = contentStyle.options[0].message,
-                                        fontSize = 14.fsp,
-                                        style = TextStyle(
-                                            fontFamily = montserratFontFamily,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color.White
-                                        ),
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier
-                                    .fillMaxHeight()
-                                    .width(1.fdph)
-                                    .background(Color.White.copy(alpha = 0.13f))
+                                        .align(Alignment.TopCenter)
+                                        .padding(top = 104.8.fdpv)
+                                        .padding(horizontal = 54.fdph),
+                                    text = contentStyle.message,
+                                    fontSize = 24.fsp,
+                                    textAlign = TextAlign.Center,
+                                    style = TextStyle(
+                                        fontFamily = montserratFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    ),
                                 )
 
-                                Column(
+                                Row(
                                     modifier = Modifier
-                                        .weight(1f)
-                                        .padding(top = 9.fdpv)
-                                        .height(48.fdpv)
-                                        .clickable { contentStyle.options[1].onClick.invoke() },
-                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                        .align(Alignment.BottomCenter)
+                                        .padding(bottom = 109.26.fdpv)
+                                        .height(84.fdpv)
                                 ) {
-                                    Text(
+                                    Column(
                                         modifier = Modifier
-                                            .weight(1f),
-                                        text = contentStyle.options[1].title,
-                                        fontSize = 24.fsp,
-                                        style = TextStyle(
-                                            fontFamily = montserratFontFamily,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = Color.White
-                                        ),
+                                            .weight(1f)
+                                            .padding(top = 9.fdpv)
+                                            .height(48.fdpv)
+                                            .clickable { contentStyle.options[0].onClick.invoke() },
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(
+                                            modifier = Modifier
+                                                .weight(1f),
+                                            text = contentStyle.options[0].title,
+                                            fontSize = 24.fsp,
+                                            style = TextStyle(
+                                                fontFamily = montserratFontFamily,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = Color.White
+                                            ),
+                                        )
+
+                                        Text(
+                                            modifier = Modifier
+                                                .weight(1f),
+                                            text = contentStyle.options[0].message,
+                                            fontSize = 14.fsp,
+                                            style = TextStyle(
+                                                fontFamily = montserratFontFamily,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White
+                                            ),
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier
+                                        .fillMaxHeight()
+                                        .width(1.fdph)
+                                        .background(Color.White.copy(alpha = 0.13f))
                                     )
 
-                                    Text(
+                                    Column(
                                         modifier = Modifier
-                                            .weight(1f),
-                                        text = contentStyle.options[1].message,
-                                        fontSize = 14.fsp,
-                                        style = TextStyle(
-                                            fontFamily = montserratFontFamily,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color.White
-                                        ),
-                                    )
+                                            .weight(1f)
+                                            .padding(top = 9.fdpv)
+                                            .height(48.fdpv)
+                                            .clickable { contentStyle.options[1].onClick.invoke() },
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                    ) {
+                                        Text(
+                                            modifier = Modifier
+                                                .weight(1f),
+                                            text = contentStyle.options[1].title,
+                                            fontSize = 24.fsp,
+                                            style = TextStyle(
+                                                fontFamily = montserratFontFamily,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = Color.White
+                                            ),
+                                        )
+
+                                        Text(
+                                            modifier = Modifier
+                                                .weight(1f),
+                                            text = contentStyle.options[1].message,
+                                            fontSize = 14.fsp,
+                                            style = TextStyle(
+                                                fontFamily = montserratFontFamily,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White
+                                            ),
+                                        )
+                                    }
                                 }
+                            }
+
+                            else -> {
+
                             }
                         }
 
-                        else -> {
-
-                        }
                     }
-
                 }
                 else -> null
             }

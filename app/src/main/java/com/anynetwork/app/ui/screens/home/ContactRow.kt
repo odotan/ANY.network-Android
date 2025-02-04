@@ -54,6 +54,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -134,7 +135,8 @@ fun ContactsRow(
                     this.shadowElevation = shadowElevation
                     clip = true
                     shape = roundedPolygonShape
-                }),
+                })
+                .zIndex(1f),
             contentStyle = CustomHexagonContentStyle(
                 id = 0,
                 background = NontransparentHexagonContentStyle.Background.SingleColor(
@@ -233,7 +235,7 @@ fun ContactsRow(
 
                 LaunchedEffect(interactionType) {
                     subtitle = interactionPickerItems.getOrNull(interactionPickerItems.map { it.interactionType }.indexOf(interactionType))?.value
-                        ?: interactionPickerItems[0].value
+                        ?: if (interactionPickerItems.isNotEmpty()) interactionPickerItems[0].value else ""
                 }
                 LaunchedEffect(Unit) {
                     currentInteractionType = interactionType

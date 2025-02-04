@@ -6,9 +6,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import com.anynetwork.app.R
 import com.anynetwork.app.model.Contact
+import com.anynetwork.app.ui.components.hexagon.NontransparentHexagonContentStyle
 import com.anynetwork.app.ui.theme.EmailColor
 import com.anynetwork.app.ui.theme.GreenColor
 import com.anynetwork.app.ui.theme.YellowColor
+
+data class GridCellData(
+    val id: Int,
+    val background: NontransparentHexagonContentStyle.Background,
+    val contact: Contact?,
+    val isDraggable: Boolean,
+    val isShakable: Boolean,
+    val isRemovable: Boolean,
+    val badge: GridItem.Badge?,
+    val isTransparent: Boolean,
+    val isTrash: Boolean
+)
 
 @Stable
 @Immutable

@@ -27,7 +27,7 @@ object AppConfig {
         var lScreenWidthDp = configuration.screenWidthDp
         var lWidthPx = context.resources.displayMetrics.widthPixels
         var lHeightPx = context.resources.displayMetrics.heightPixels
-        var lScreenHeightDp =configuration.screenHeightDp
+        var lScreenHeightDp = configuration.screenHeightDp
         var lYdpi =context.resources.displayMetrics.ydpi
         var lXdpi =context.resources.displayMetrics.xdpi
         var test =context.resources.displayMetrics.xdpi

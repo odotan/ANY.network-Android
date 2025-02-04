@@ -132,6 +132,10 @@ private fun Onboarding(navController: NavHostController) {
     val fastPace = false//BuildConfig.DEBUG
     val fastPaceDelay = 200L
 
+    val currentConfiguration = LocalConfiguration.current
+    currentConfiguration.densityDpi.log { "densityDpi" }
+    val currentDensity = LocalDensity.current
+
     LaunchedEffect(Unit) {
         // Defer the animation start to improve performance
         delay(if (fastPace) fastPaceDelay else 300)
@@ -158,7 +162,12 @@ private fun Onboarding(navController: NavHostController) {
         showMainMessage = true
         delay(if (fastPace) fastPaceDelay else (1500 + centerMessageAlphaAnimationDuration.toLong()))
 
-        paddingTopCenterMessage = 410.fdpv
+//        paddingTopCenterMessage = 0.fdpv
+//        paddingTopCenterMessage = 400.fdpv
+        paddingTopCenterMessage = currentConfiguration.screenHeightDp.dp -
+                with(currentDensity) { (centralOffset!!.y).toDp() } -
+                with(currentDensity) { centralHeight!!.toDp() } * scale - 70.fdpv
+
         showFirstGroupOfContacts = true
         delay(if (fastPace) fastPaceDelay else (600 + centerMessageAlphaAnimationDurationAnimationDuration.toLong()))
 
