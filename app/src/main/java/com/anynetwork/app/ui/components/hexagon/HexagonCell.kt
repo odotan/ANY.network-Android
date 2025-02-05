@@ -24,10 +24,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -59,7 +57,6 @@ import androidx.graphics.shapes.RoundedPolygon
 import coil.compose.rememberAsyncImagePainter
 import coil.request.CachePolicy
 import coil.request.ImageRequest
-import coil.size.Scale
 import com.anynetwork.app.R
 import com.anynetwork.app.model.Contact
 import com.anynetwork.app.ui.components.text.AutoSizeText
@@ -319,7 +316,7 @@ fun RoundedHexagon(
         content = {
             when (contentStyle) {
                 is NontransparentHexagonContentStyle -> {
-                    val background by remember(contentStyle) { mutableStateOf(contentStyle.background) }
+                    val background by rememberUpdatedState(contentStyle.background)
 
                     Box(
                         modifier = Modifier
@@ -328,40 +325,40 @@ fun RoundedHexagon(
                         contentAlignment = Alignment.Center
                     ) {
                         when (contentStyle) {
-                            is ContactContentStyle -> {
-                                if (contentStyle.contact.avatarUri != null) {
-                                    Image(
-                                        modifier = Modifier
-                                            .fillMaxSize(),
-                                        painter = rememberAsyncImagePainter(
-                                            model = ImageRequest.Builder(LocalContext.current)
-                                                .data(contentStyle.contact.avatarUri)
-                                                .size(coil.size.Size.ORIGINAL)
-                                                .scale(scale = Scale.FILL)
-                                                .build()
-                                        ),
-                                        contentScale = ContentScale.Crop,
-                                        contentDescription = null,
-                                    )
-                                } else {
-                                    val fullname = contentStyle.contact
-                                        .name
-                                        .uppercase()
-                                    AutoSizeText(
-                                        modifier = Modifier.fillMaxSize(0.9f),
-                                        text = fullname,
-                                        maxLines = if (fullname.contains(" ")) 2 else 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        color = Color(0xFFAFAEB8),
-                                        alignment = Alignment.Center,
-                                        maxTextSize = 11.csp * (LocalConfiguration.current.screenWidthDp.dp / contentStyle.gridColumns / 79.93f.fdpv) * scale * contentStyle.gridScaling,
-                                        style = TextStyle(
-                                            fontFamily = montserratFontFamily,
-                                            fontWeight = FontWeight.SemiBold,
-                                        )
-                                    )
-                                }
-                            }
+//                            is ContactContentStyle -> {
+//                                if (contentStyle.contact.avatarUri != null) {
+//                                    Image(
+//                                        modifier = Modifier
+//                                            .fillMaxSize(),
+//                                        painter = rememberAsyncImagePainter(
+//                                            model = ImageRequest.Builder(LocalContext.current)
+//                                                .data(contentStyle.contact.avatarUri)
+//                                                .size(coil.size.Size.ORIGINAL)
+//                                                .scale(scale = Scale.FILL)
+//                                                .build()
+//                                        ),
+//                                        contentScale = ContentScale.Crop,
+//                                        contentDescription = null,
+//                                    )
+//                                } else {
+//                                    val fullname = contentStyle.contact
+//                                        .name
+//                                        .uppercase()
+//                                    AutoSizeText(
+//                                        modifier = Modifier.fillMaxSize(0.9f),
+//                                        text = fullname,
+//                                        maxLines = if (fullname.contains(" ")) 2 else 1,
+//                                        overflow = TextOverflow.Ellipsis,
+//                                        color = Color(0xFFAFAEB8),
+//                                        alignment = Alignment.Center,
+//                                        maxTextSize = 11.csp * (LocalConfiguration.current.screenWidthDp.dp / contentStyle.gridColumns / 79.93f.fdpv) * scale * contentStyle.gridScaling,
+//                                        style = TextStyle(
+//                                            fontFamily = montserratFontFamily,
+//                                            fontWeight = FontWeight.SemiBold,
+//                                        )
+//                                    )
+//                                }
+//                            }
 
                             is AutoresizeTextContentStyle -> {
                                 val text = remember(contentStyle.text) { contentStyle.text }
@@ -413,7 +410,7 @@ fun RoundedHexagon(
                             is CustomHexagonContentStyle -> contentStyle.content.invoke(this, scale)
 
                             is ImageHexagonContentStyle -> {
-                                var contentStyleImage by remember { mutableStateOf(contentStyle.image) }
+                                val contentStyleImage = contentStyle.image
                                 if (contentStyleImage is ImageHexagonContentStyle.Image.VectorResource) {
 
                                     Image(
@@ -614,7 +611,7 @@ fun RoundedHexagon(
             }
             if (hovered) {
                 if (contentStyle !is TrashCanHexagonContentStyle) {
-                    Box(modifier = Modifier.fillMaxSize().drawBehind {
+                    Spacer(modifier = Modifier.fillMaxSize().drawBehind {
                         drawRect(
                             color = Color.Cyan.copy(alpha = 0.25f),
                             size = size,
