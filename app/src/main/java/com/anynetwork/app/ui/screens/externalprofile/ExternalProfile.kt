@@ -1159,8 +1159,8 @@ private fun ExternalProfile(
                                         anchoredDraggableState.targetValue
                                     )
                                 }
-                            })
-                        .nestedScroll(nestedScrollConnection),
+                            }
+                            .nestedScroll(nestedScrollConnection)),
                     ) {
                         Column(
                             modifier = Modifier
@@ -1214,7 +1214,9 @@ private fun ExternalProfile(
                                     )
                                 }
                                 .imePadding()
-                                .nestedScroll(nestedScrollConnection),
+                                .then(if (viewState.mode is ExternalProfileMode.NewContact)
+                                    Modifier
+                                else Modifier.nestedScroll(nestedScrollConnection)),
                             state = listState,
 //                            userScrollEnabled = dragPercentage.value.log { "dragPercentage" } == 100f,
                         ) {
