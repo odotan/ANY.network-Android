@@ -363,7 +363,7 @@ fun RoundedHexagon(
                             is AutoresizeTextContentStyle -> {
                                 val text = remember(contentStyle.text) { contentStyle.text }
                                 AutoSizeText(
-                                    modifier = Modifier.fillMaxWidth(0.9f).fillMaxHeight(),
+                                    modifier = Modifier.fillMaxWidth(0.9f),
                                     text = text,
                                     maxLines = if (text.contains(" ")) 2 else 1,
                                     overflow = TextOverflow.Ellipsis,
@@ -614,7 +614,6 @@ fun RoundedHexagon(
                     Spacer(modifier = Modifier.fillMaxSize().drawBehind {
                         drawRect(
                             color = Color.Cyan.copy(alpha = 0.25f),
-                            size = size,
                         )
                     })
                 }

@@ -766,8 +766,7 @@ private fun Home(
                                     }
                                 )
                             } else {
-                                val cellPosition = viewModel.cellPositions.find { it.row == row && it.column == column }
-                                val cellPositionIndex = viewModel.cellPositions.indexOf(cellPosition)
+                                val cellPositionIndex = viewModel.cellPositions.indexOfFirst { it.row == row && it.column == column }
                                 val cellLayer = calculateLayersForElements(cellPositionIndex)
                                 val isOutsideHexGridHexagon = cellLayer > gridColumns / 2 || cellPositionIndex == -1
                                 if (isOutsideHexGridHexagon) {
@@ -785,8 +784,7 @@ private fun Home(
                                 }
                             }
                         } else {
-                            val cellPosition = viewModel.cellPositions.find { it.row == row && it.column == column }
-                            val cellPositionIndex = viewModel.cellPositions.indexOf(cellPosition)
+                            val cellPositionIndex = viewModel.cellPositions.indexOfFirst { it.row == row && it.column == column }
                             val cellLayer = calculateLayersForElements(cellPositionIndex)
                             val isOutsideHexGridHexagon = cellLayer > gridColumns / 2 || cellPositionIndex == -1
                             if (isOutsideHexGridHexagon) {
