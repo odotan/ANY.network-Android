@@ -125,13 +125,18 @@ fun HexagonalGrid(
     }
 
     val currentConfig = LocalConfiguration.current
-    val gridWidth by remember { derivedStateOf { currentConfig.screenWidthDp.dp * gridScaling } }
-    val cellWidth by remember { derivedStateOf {  (gridWidth / rowSize).log { "cellWidth" } } }
-    val cellHeight by remember { derivedStateOf { cellWidth * 96.99f/86.93f } }
+    val screenWidthDp by remember { derivedStateOf { currentConfig.screenWidthDp } }
+    val gridWidth by remember { derivedStateOf { screenWidthDp.dp * gridScaling } }
+    val (cellWidth, cellHeight) = remember(screenWidthDp, gridScaling, rowSize) {
+        val calculatedWidth = (screenWidthDp.dp * gridScaling) / rowSize
+        val calculatedHeight = calculatedWidth * 96.99f/86.93f
+        calculatedWidth to calculatedHeight
+    }
     val horizontalOffset = remember { ((cellWidth) / 2) }
 
-    val verticalBorder by remember { derivedStateOf { (cellWidth * 0.04403f).log { "verticalBorder" } } }
-    val horizontalBorder by remember { derivedStateOf { (cellHeight * 0.0395f).log { "horizontalBorder" } } }
+    val (verticalBorder, horizontalBorder) = remember(cellWidth, cellHeight) {
+        cellWidth * 0.04403f to cellHeight * 0.0395f
+    }
 
     var draggedItem by remember { mutableStateOf<Int?>(null) }
     var draggedOffset by remember { mutableStateOf(DpOffset(0.dp, 0.dp)) }
@@ -142,7 +147,7 @@ fun HexagonalGrid(
     val cellPositions = remember { mutableStateMapOf<Int, LayoutCoordinates>() }
 
     val zoomState = rememberZoomState(
-        initialScale = initialScale.log { "initialScale" },
+        initialScale = initialScale,
         minScale = minScale,
         maxScale = maxScale,
         offsetX = initialOffset.x,
@@ -156,7 +161,7 @@ fun HexagonalGrid(
         )
     }
 
-    val verticalSpacing = remember { (-(96.99f * cellWidth / 86.93f) * 0.2333333f).log { "verticalSpacing" } }
+    val verticalSpacing = remember { (-(96.99f * cellWidth / 86.93f) * 0.2333333f) }
     val polygon = remember { createPolygon() }
     val context = LocalContext.current
 
@@ -197,7 +202,7 @@ fun HexagonalGrid(
     Box(
         modifier = if (gridScaling > 1f) Modifier.fillMaxSize()
             .requiredWidth(gridWidth * gridScaling)
-            .requiredHeight(currentConfig.screenWidthDp.dp * gridScaling)
+            .requiredHeight(screenWidthDp.dp * gridScaling)
         else Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
@@ -218,46 +223,52 @@ fun HexagonalGrid(
             maxItemsInEachRow = rowSize
         ) {
             repeat(itemsList.size) { index ->
-
                 val contentStyle = itemsList[index]
                 val rowIndex = index / rowSize
-
-                val roundedPolygonShape = remember { RoundedPolygonShape(polygon) }
-
-                var rotation = remember { Animatable(0f) }
-                val isRotating =
-                    ((contentStyle is CustomHexagonContentStyle && contentStyle.isShakable) || (contentStyle is IconHexagonContentStyle && contentStyle.isShakable)) && isEditModeActivating
-                if (isRotating) {
-                    rotation = remember { Animatable(-5f) }
-                    // Trigger shake effect only if the cell is not empty
-                    LaunchedEffect(Unit) {
-                        delay(Random.nextLong(150))
-                        val shakeSpec = infiniteRepeatable<Float>(
-                            animation = tween(150, easing = LinearEasing),
-                            repeatMode = RepeatMode.Reverse
-                        )
-                        // Animate between -10 and 10 degrees
-                        rotation.animateTo(5f, animationSpec = shakeSpec)
-                    }
-                }
-                val showContent = remember(contentStyle, draggedItem) {
-                    (contentStyle is TrashCanHexagonContentStyle &&
-                            draggedItem != null
-                            && (itemsList[draggedItem!!] as? NontransparentHexagonContentStyle)?.removableStrategy != null
-                            )
-                }
-
 
                 val applyOffset = remember(rowIndex, offsetEvenRows) {
                     offsetEvenRows && rowIndex % 2 == 1 || !offsetEvenRows && rowIndex % 2 == 0
                 }
-                if (contentStyle is NontransparentHexagonContentStyle) {
+
+                val isTransparent = remember(contentStyle) { contentStyle is TransparentHexagonContentStyle }
+
+                if (isTransparent) {
+                    Spacer(modifier = when {
+                        applyOffset -> cellModifierWithOffset
+                        else -> cellModifier
+                    })
+                } else {
+                    val roundedPolygonShape = remember { RoundedPolygonShape(polygon) }
+
+                    var rotation = remember { Animatable(0f) }
+                    val isRotating =
+                        ((contentStyle is CustomHexagonContentStyle && contentStyle.isShakable) || (contentStyle is IconHexagonContentStyle && contentStyle.isShakable)) && isEditModeActivating
+                    if (isRotating) {
+                        rotation = remember { Animatable(-5f) }
+                        // Trigger shake effect only if the cell is not empty
+                        LaunchedEffect(Unit) {
+                            delay(Random.nextLong(150))
+                            val shakeSpec = infiniteRepeatable<Float>(
+                                animation = tween(150, easing = LinearEasing),
+                                repeatMode = RepeatMode.Reverse
+                            )
+                            // Animate between -10 and 10 degrees
+                            rotation.animateTo(5f, animationSpec = shakeSpec)
+                        }
+                    }
+                    val showContent = remember(contentStyle, draggedItem) {
+                        (contentStyle is TrashCanHexagonContentStyle &&
+                                draggedItem != null
+                                && (itemsList[draggedItem!!] as? NontransparentHexagonContentStyle)?.removableStrategy != null
+                                )
+                    }
+
                     StatelessRoundedHexagon(
                         modifier = when {
                             applyOffset -> cellModifierWithOffset
                             else -> cellModifier
                         }
-                            .then(if (cellPositions[index] == null && isEnterAnimationFinished)
+                            .then(if (cellPositions[index] == null && isEnterAnimationFinished && !isTransparent)
                                 Modifier.onGloballyPositioned { coordinates ->
 
                                     val height = coordinates.size.height
@@ -281,18 +292,18 @@ fun HexagonalGrid(
                         hexModifier = hexModifier,
                         shape = roundedPolygonShape,
                         contentStyle = contentStyle,
-                        hovered = hoveredItem == index && contentStyle.isHoverable,
+                        hovered = hoveredItem == index && (contentStyle is NontransparentHexagonContentStyle && contentStyle.isHoverable),
                         showContent = showContent,
-                        isDraggable = contentStyle.isDraggable,
+                        isDraggable = (contentStyle is NontransparentHexagonContentStyle && contentStyle.isDraggable),
                         onClick = {
                             val cellPosition = cellPositions[index]!!
                             when (contentStyle) {
                                 is ImageHexagonContentStyle -> contentStyle.onClick.invoke(
-                                    cellPosition.boundsInRoot().center.log { "onClick center position" }
+                                    cellPosition.boundsInRoot().center
                                 )
 
                                 is CustomHexagonContentStyle -> contentStyle.onClick.invoke(
-                                    cellPosition.boundsInRoot().center.log { "onClick center position" }
+                                    cellPosition.boundsInRoot().center
 //                                cellPosition.positionOnScreen()
                                 )
 
@@ -303,13 +314,13 @@ fun HexagonalGrid(
                                 )
 
                                 is AutoresizeTextContentStyle -> contentStyle.onClick.invoke(
-                                    cellPosition.boundsInRoot().center.log { "onClick center position" }
+                                    cellPosition.boundsInRoot().center
                                 )
 
                                 else -> {}
                             }
                         },
-                        screenWidthDp = LocalConfiguration.current.screenWidthDp,
+                        screenWidthDp = screenWidthDp,
                         pointerInput = {
                             detectDragGesturesAfterLongPress(
                                 onDragStart = {
@@ -405,13 +416,6 @@ fun HexagonalGrid(
                             )
                         }
                     )
-                } else {
-                    Spacer(
-                        modifier = when {
-                            applyOffset -> cellModifierWithOffset
-                            else -> cellModifier
-                        }
-                    )
                 }
             }
         }
@@ -456,7 +460,7 @@ fun HexagonalGrid(
                     contentStyle = itemsList[index] as NontransparentHexagonContentStyle,
                     drawOverlay = false,
                     scale = zoomState.scale * 1f / gridScaling,
-                    screenWidthDp = LocalConfiguration.current.screenWidthDp,
+                    screenWidthDp = screenWidthDp,
                 )
             }
         }
@@ -468,7 +472,7 @@ private fun StatelessRoundedHexagon(
     modifier: Modifier,
     hexModifier: Modifier,
     shape: Shape?,
-    contentStyle: NontransparentHexagonContentStyle,
+    contentStyle: HexagonContentStyle,
     onClick: ((Offset) -> Unit)? = null,
     showIndexes: Boolean = false,
     index: Int? = null,
@@ -481,6 +485,7 @@ private fun StatelessRoundedHexagon(
     pointerInput: (suspend PointerInputScope.() -> Unit)? = null,
     screenWidthDp: Int
 ) {
+//    if (contentStyle !is NontransparentHexagonContentStyle)
     Box(
         modifier = modifier,
         contentAlignment = Alignment.Center

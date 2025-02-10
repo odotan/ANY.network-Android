@@ -76,6 +76,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
@@ -143,6 +144,7 @@ import com.anynetwork.app.ui.utils.SP_HOME_GRID_ZOOM_OFFSET_X
 import com.anynetwork.app.ui.utils.SP_HOME_GRID_ZOOM_OFFSET_Y
 import com.anynetwork.app.ui.utils.SP_NAME
 import com.anynetwork.app.ui.utils.checkSelfPermission
+import com.anynetwork.app.ui.utils.csp
 import com.anynetwork.app.ui.utils.fdph
 import com.anynetwork.app.ui.utils.fdpv
 import com.anynetwork.app.ui.utils.log
@@ -258,6 +260,7 @@ private fun Home(
     val density = LocalDensity.current
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
+    val configuration = LocalConfiguration.current
 
     val systemBarsPadding = WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
     val toolbarHeight = TopAppBarDefaults.LargeAppBarCollapsedHeight
@@ -605,54 +608,126 @@ private fun Home(
                         val contactForCell = viewModel.cellPositions.take(optimizedHexGridContacts.size)
                             .find { it.getIndex() == cellIndex }
 
-                        if (contactForCell != null) {
-                            val gridItem = optimizedHexGridContacts[viewModel.cellPositions.indexOf(
-                                contactForCell
-                            )]
-                            if (gridItem !is GridItem.EmptyGridItem) {
+
+                        val cellPositionIndex = viewModel.cellPositions.indexOfFirst { it.row == row && it.column == column }
+                        val cellLayer = calculateLayersForElements(cellPositionIndex)
+                        val isOutsideHexGridHexagon = cellLayer > gridColumns / 2 - 2 || cellPositionIndex == -1
+
+                        if (!isOutsideHexGridHexagon) {
+                            if (contactForCell != null) {
+                                val gridItem =
+                                    optimizedHexGridContacts[viewModel.cellPositions.indexOf(
+                                        contactForCell
+                                    )]
+
+                                if (gridItem !is GridItem.EmptyGridItem) {
 //                                val gridItem = optimizedHexGridContacts[viewModel.cellPositions.indexOf(contactForCell)]
-                                val onClick: (Offset) -> Unit = { offset ->
-                                    gridItem.contact?.let {
-                                        when (gridItem.badge) {
-                                            is GridItem.Badge.PhoneBadge ->
-                                                viewModel.onViewAction(
-                                                    BadgeInteractionClick(
+                                    val onClick: (Offset) -> Unit = { offset ->
+                                        gridItem.contact?.let {
+                                            when (gridItem.badge) {
+                                                is GridItem.Badge.PhoneBadge ->
+                                                    viewModel.onViewAction(
+                                                        BadgeInteractionClick(
+                                                            contact = gridItem.contact,
+                                                            interactionType = Interaction.Type.Phone
+                                                        )
+                                                    )
+
+                                                is GridItem.Badge.EmailBadge ->
+                                                    viewModel.onViewAction(
+                                                        BadgeInteractionClick(
+                                                            contact = gridItem.contact,
+                                                            interactionType = Interaction.Type.Email
+                                                        )
+                                                    )
+
+                                                else -> viewModel.onViewAction(
+                                                    GridItemClick(
                                                         contact = gridItem.contact,
-                                                        interactionType = Interaction.Type.Phone
+                                                        offsetX = offset.x,
+                                                        offsetY = offset.y,
                                                     )
                                                 )
-
-                                            is GridItem.Badge.EmailBadge ->
-                                                viewModel.onViewAction(
-                                                    BadgeInteractionClick(
-                                                        contact = gridItem.contact,
-                                                        interactionType = Interaction.Type.Email
-                                                    )
-                                                )
-
-                                            else -> viewModel.onViewAction(
-                                                GridItemClick(
-                                                    contact = gridItem.contact,
-                                                    offsetX = offset.x,
-                                                    offsetY = offset.y,
-                                                )
-                                            )
+                                            }
                                         }
                                     }
-                                }
-                                if (gridItem.contact?.avatarUri != null)
-                                    ImageHexagonContentStyle(
+                                    if (gridItem.contact?.avatarUri != null)
+                                        ImageHexagonContentStyle(
+                                            id = cellIndex,
+                                            background = Background.SingleColor(backgroundColor),
+                                            image = ImageHexagonContentStyle.Image.FromUri(gridItem.contact.avatarUri),
+                                            onLongClick = {
+                                                viewModel.onViewAction(
+                                                    HexagonalGridCellLongClick
+                                                )
+                                            },
+                                            isShakable = true,
+                                            isDraggable = gridItem !is GridItem.SearchGridItem,
+                                            removableStrategy = RemovableStrategy {
+                                                viewModel.onViewAction(
+                                                    GridItemButtonRemove(gridItem = gridItem)
+                                                )
+                                            },
+                                            onClick = onClick,
+                                            badgeOverlay = when (gridItem.badge) {
+                                                is GridItem.Badge.PhoneBadge ->
+                                                    NontransparentHexagonContentStyle.BadgeOverlay.PhoneBadge(
+                                                        badge = gridItem.badge,
+                                                        gridColumns = gridColumns,
+                                                        gridScaling = gridScaling,
+                                                        onClick = {
+                                                            viewModel.onViewAction(
+                                                                BadgeInteractionClick(
+                                                                    contact = gridItem.contact,
+                                                                    interactionType = Interaction.Type.Phone
+                                                                )
+                                                            )
+                                                        }
+                                                    )
+
+                                                is GridItem.Badge.EmailBadge ->
+                                                    NontransparentHexagonContentStyle.BadgeOverlay.EmailBadge(
+                                                        badge = gridItem.badge,
+                                                        gridColumns = gridColumns,
+                                                        gridScaling = gridScaling,
+                                                        onClick = {
+                                                            viewModel.onViewAction(
+                                                                BadgeInteractionClick(
+                                                                    contact = gridItem.contact,
+                                                                    interactionType = Interaction.Type.Email
+                                                                )
+                                                            )
+                                                        }
+                                                    )
+
+                                                is GridItem.Badge.FavoriteBadge ->
+                                                    NontransparentHexagonContentStyle.BadgeOverlay.FavoriteBadge(
+                                                        badge = gridItem.badge,
+                                                        gridColumns = gridColumns,
+                                                        gridScaling = gridScaling,
+                                                        onClick = {
+                                                            viewModel.onViewAction(
+                                                                GridItemClick(
+                                                                    contact = gridItem.contact,
+                                                                )
+                                                            )
+                                                        }
+                                                    )
+
+                                                else -> null
+                                            }
+                                        )
+                                    else AutoresizeTextContentStyle(
                                         id = cellIndex,
                                         background = Background.SingleColor(backgroundColor),
-                                        image = ImageHexagonContentStyle.Image.FromUri(gridItem.contact.avatarUri),
-                                        onLongClick = { viewModel.onViewAction(HexagonalGridCellLongClick) },
-                                        isShakable = true,
                                         isDraggable = gridItem !is GridItem.SearchGridItem,
                                         removableStrategy = RemovableStrategy {
                                             viewModel.onViewAction(
                                                 GridItemButtonRemove(gridItem = gridItem)
                                             )
                                         },
+                                        text = gridItem.contact!!.name.uppercase(),
+                                        maxTextSize = 11.csp * (configuration.screenWidthDp.dp / gridColumns / 79.93f.fdpv) * gridScaling,
                                         onClick = onClick,
                                         badgeOverlay = when (gridItem.badge) {
                                             is GridItem.Badge.PhoneBadge ->
@@ -702,104 +777,27 @@ private fun Home(
                                             else -> null
                                         }
                                     )
-                                else AutoresizeTextContentStyle(
-                                    id = cellIndex,
-                                    background = Background.SingleColor(backgroundColor),
-                                    text = gridItem.contact!!.name.uppercase(),
-                                    gridColumns = gridColumns,
-                                    gridScaling = gridScaling,
-                                    onLongClick = { viewModel.onViewAction(HexagonalGridCellLongClick) },
-                                    isDraggable = gridItem !is GridItem.SearchGridItem,
-                                    isShakable = true,
-                                    removableStrategy = RemovableStrategy {
-                                        viewModel.onViewAction(
-                                            GridItemButtonRemove(gridItem = gridItem)
-                                        )
-                                    },
-                                    onClick = onClick,
-                                    badgeOverlay = when (gridItem.badge) {
-                                        is GridItem.Badge.PhoneBadge ->
-                                            NontransparentHexagonContentStyle.BadgeOverlay.PhoneBadge(
-                                                badge = gridItem.badge,
-                                                gridColumns = gridColumns,
-                                                gridScaling = gridScaling,
-                                                onClick = {
-                                                    viewModel.onViewAction(
-                                                        BadgeInteractionClick(
-                                                            contact = gridItem.contact,
-                                                            interactionType = Interaction.Type.Phone
-                                                        )
-                                                    )
-                                                }
-                                            )
-
-                                        is GridItem.Badge.EmailBadge ->
-                                            NontransparentHexagonContentStyle.BadgeOverlay.EmailBadge(
-                                                badge = gridItem.badge,
-                                                gridColumns = gridColumns,
-                                                gridScaling = gridScaling,
-                                                onClick = {
-                                                    viewModel.onViewAction(
-                                                        BadgeInteractionClick(
-                                                            contact = gridItem.contact,
-                                                            interactionType = Interaction.Type.Email
-                                                        )
-                                                    )
-                                                }
-                                            )
-
-                                        is GridItem.Badge.FavoriteBadge ->
-                                            NontransparentHexagonContentStyle.BadgeOverlay.FavoriteBadge(
-                                                badge = gridItem.badge,
-                                                gridColumns = gridColumns,
-                                                gridScaling = gridScaling,
-                                                onClick = {
-                                                    viewModel.onViewAction(
-                                                        GridItemClick(
-                                                            contact = gridItem.contact,
-                                                        )
-                                                    )
-                                                }
-                                            )
-
-                                        else -> null
-                                    }
-                                )
-                            } else {
-                                val cellPositionIndex = viewModel.cellPositions.indexOfFirst { it.row == row && it.column == column }
-                                val cellLayer = calculateLayersForElements(cellPositionIndex)
-                                val isOutsideHexGridHexagon = cellLayer > gridColumns / 2 || cellPositionIndex == -1
-                                if (isOutsideHexGridHexagon) {
-                                    TransparentHexagonContentStyle(id = cellIndex)
-                                } else if (cellPositionIndex % 11 == 0) {
-                                    TrashCanHexagonContentStyle(
-                                        id = cellIndex,
-                                        background = Background.SingleColor(backgroundColor)
-                                    )
                                 } else {
-                                    EmptyHexagonContentStyle(
-                                        id = cellIndex,
-                                        background = Background.SingleColor(backgroundColor),
-                                    )
+                                    if (cellPositionIndex % 11 == 0) {
+                                        TrashCanHexagonContentStyle(
+                                            id = cellIndex,
+                                            background = Background.SingleColor(backgroundColor)
+                                        )
+                                    } else {
+                                        EmptyHexagonContentStyle(
+                                            id = cellIndex,
+                                            background = Background.SingleColor(backgroundColor),
+                                        )
+                                    }
                                 }
-                            }
-                        } else {
-                            val cellPositionIndex = viewModel.cellPositions.indexOfFirst { it.row == row && it.column == column }
-                            val cellLayer = calculateLayersForElements(cellPositionIndex)
-                            val isOutsideHexGridHexagon = cellLayer > gridColumns / 2 || cellPositionIndex == -1
-                            if (isOutsideHexGridHexagon) {
-                                TransparentHexagonContentStyle(id = cellIndex)
-                            } else if (cellPositionIndex % 11 == 0) {
-                                TrashCanHexagonContentStyle(
-                                    id = cellIndex,
-                                    background = Background.SingleColor(backgroundColor)
-                                )
                             } else {
                                 EmptyHexagonContentStyle(
                                     id = cellIndex,
                                     background = Background.SingleColor(backgroundColor),
                                 )
                             }
+                        } else {
+                            TransparentHexagonContentStyle(id = cellIndex)
                         }
                     }
                 }
@@ -808,9 +806,9 @@ private fun Home(
             }
 
 
-//            LaunchedEffect(items) {
-//                items.flatten().filterIsInstance<NontransparentHexagonContentStyle>().size.log { "items size" }
-//            }
+            LaunchedEffect(items) {
+                items.filterIsInstance<NontransparentHexagonContentStyle>().size.log { "items size" }
+            }
 
             HexagonalGrid(
                 modifier = Modifier
@@ -1074,7 +1072,6 @@ private fun Home(
                     IconButton(
                         modifier = Modifier,
                         onClick = {
-                            viewModel.updateScreenMode(HomeScreenMode.SearchingList)
                             val newAnchors = DraggableAnchors {
                                 with(density) {
                                     SheetValue.Collapsed at collapsedOffset
@@ -1093,6 +1090,7 @@ private fun Home(
                                     newAnchors,
                                     SheetValue.Full
                                 )
+                                viewModel.updateScreenMode(HomeScreenMode.SearchingList)
                             }
                         }
                     ) {

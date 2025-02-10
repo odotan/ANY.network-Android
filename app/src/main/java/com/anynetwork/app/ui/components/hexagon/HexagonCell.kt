@@ -20,8 +20,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -44,13 +47,18 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.Cubic
 import androidx.graphics.shapes.RoundedPolygon
@@ -62,18 +70,19 @@ import com.anynetwork.app.model.Contact
 import com.anynetwork.app.ui.components.text.AutoSizeText
 import com.anynetwork.app.ui.screens.home.GridItem
 import com.anynetwork.app.ui.theme.montserratFontFamily
-import com.anynetwork.app.ui.utils.csp
 import com.anynetwork.app.ui.utils.fdph
 import com.anynetwork.app.ui.utils.fdpv
 import com.anynetwork.app.ui.utils.fsp
+import kotlin.reflect.typeOf
 
 class RemovableStrategy(val onRemove: () -> Unit)
 
-@Stable
 sealed class HexagonContentStyle(@Stable val id: Int)
-@Stable
+
+@Immutable
 open class TransparentHexagonContentStyle(id: Int): HexagonContentStyle(id)
-@Stable
+
+@Immutable
 open class NontransparentHexagonContentStyle(
     id: Int,
     val background: Background,
@@ -82,15 +91,16 @@ open class NontransparentHexagonContentStyle(
     val removableStrategy: RemovableStrategy?,
     val badgeOverlay: BadgeOverlay? = null
 ): HexagonContentStyle(id) {
-    sealed class Background {
-        data class SingleColor(val value: Color): Background()
-        data class Gradient(
+    @Immutable sealed class Background {
+        @Immutable data class SingleColor(val value: Color): Background()
+        @Immutable data class Gradient(
             val colors: List<Color>,
             val startOffset: Offset = Offset(0.0f, 0.0f),
             val endOffset: Offset = Offset(100.0f, 0.0f)
         ) : Background()
     }
 
+    @Immutable
     open class BadgeOverlay(
         val badge: GridItem.Badge,
         val gridColumns: Int,
@@ -116,7 +126,8 @@ open class NontransparentHexagonContentStyle(
         ): BadgeOverlay(badge, gridColumns, gridScaling, onClick)
     }
 }
-@Stable
+
+@Immutable
 class EmptyHexagonContentStyle(
     id: Int,
     background: Background = Background.SingleColor(Color(0xFF6E4CD4)),
@@ -132,7 +143,8 @@ class EmptyHexagonContentStyle(
     isHoverable = isHoverable,
     removableStrategy = removableStrategy
 )
-@Stable
+
+@Immutable
 class TrashCanHexagonContentStyle(
     id: Int,
     background: Background = Background.SingleColor(Color(0xFF6E4CD4)),
@@ -143,7 +155,8 @@ class TrashCanHexagonContentStyle(
     isHoverable = true,
     removableStrategy = null
 )
-@Stable
+
+@Immutable
 class PopupHexagonContentStyle(
     id: Int,
     background: Background = Background.SingleColor(Color(0xFF6E4CD4)),
@@ -159,86 +172,7 @@ class PopupHexagonContentStyle(
     data class Option(val title: String, val message: String, val onClick: () -> Unit)
 }
 
-@Stable
-class ImageHexagonContentStyle(
-    id: Int,
-    background: Background = Background.SingleColor(Color(0xFF6E4CD4)),
-    isDraggable: Boolean = true,
-    isHoverable: Boolean = true,
-    removableStrategy: RemovableStrategy? = null,
-    val contentDescription: String = "",
-    val image: Image,
-    val alpha: Float = 1f,
-    val onClick: ((Offset) -> Unit) = {},
-    val onLongClick: (() -> Unit) = {},
-    val isShakable: Boolean = false,
-    badgeOverlay: BadgeOverlay? = null
-): NontransparentHexagonContentStyle(
-    id = id,
-    background = background,
-    isDraggable = isDraggable,
-    isHoverable = isHoverable,
-    removableStrategy = removableStrategy,
-    badgeOverlay = badgeOverlay
-) {
-    open class Image(val size: coil.size.Size? = null, val fractionOfParentSize: Float = 1f) {
-        class VectorResource(val id: Int, size: coil.size.Size? = null, fractionOfParentSize: Float = 1f): Image(size, fractionOfParentSize)
-        class FromNetwork(val url: String, size: coil.size.Size? = null, fractionOfParentSize: Float = 1f): Image(size, fractionOfParentSize)
-        class Resource(val id: Int, size: coil.size.Size? = null, fractionOfParentSize: Float = 1f): Image(size, fractionOfParentSize)
-        class FromUri(val uri: String, size: coil.size.Size? = null, fractionOfParentSize: Float = 1f): Image(size, fractionOfParentSize)
-    }
-}
-@Stable
-class IconHexagonContentStyle(
-    id: Int,
-    background: Background = Background.SingleColor(Color(0xFF6E4CD4)),
-    isDraggable: Boolean = false,
-    isHoverable: Boolean = true,
-    removableStrategy: RemovableStrategy? = null,
-    val modifier: Modifier = Modifier.size(24.dp),
-    val alpha: Float = 1f,
-    val contentDescription: String = "",
-    val tintColor: Color? = null,
-    val image: Image,
-    val overlay: @Composable (BoxScope.() -> Unit)? = null,
-    val onClick: ((Offset) -> Unit) = {},
-    val isShakable: Boolean = false,
-): NontransparentHexagonContentStyle(
-    id = id,
-    background = background,
-    isDraggable = isDraggable,
-    isHoverable = isHoverable,
-    removableStrategy = removableStrategy
-) {
-    sealed class Image {
-        data class VectorResource(val id: Int): Image()
-    }
-}
-
-@Stable
-class AutoresizeTextContentStyle(
-    id: Int,
-    background: NontransparentHexagonContentStyle.Background,
-    isDraggable: Boolean = true,
-    isHoverable: Boolean = true,
-    removableStrategy: RemovableStrategy? = null,
-    val text: String,
-    val gridColumns: Int,
-    val gridScaling: Float,
-    val onClick: ((Offset) -> Unit) = {},
-    val onLongClick: (() -> Unit) = {},
-    val isShakable: Boolean = false,
-    badgeOverlay: BadgeOverlay? = null
-): NontransparentHexagonContentStyle(
-    id = id,
-    background = background,
-    isDraggable = isDraggable,
-    isHoverable = isHoverable,
-    removableStrategy = removableStrategy,
-    badgeOverlay = badgeOverlay
-)
-
-@Stable
+@Immutable
 class ContactContentStyle(
     id: Int,
     background: Background,
@@ -260,7 +194,7 @@ class ContactContentStyle(
     removableStrategy = removableStrategy
 )
 
-@Stable
+@Immutable
 class CustomHexagonContentStyle(
     id: Int,
     background: Background = Background.SingleColor(Color(0xFF6E4CD4)),
@@ -278,6 +212,84 @@ class CustomHexagonContentStyle(
     isDraggable = isDraggable,
     isHoverable = isHoverable,
     removableStrategy = removableStrategy
+)
+
+@Immutable
+class IconHexagonContentStyle(
+    id: Int,
+    background: Background = Background.SingleColor(Color(0xFF6E4CD4)),
+    isDraggable: Boolean = false,
+    isHoverable: Boolean = true,
+    removableStrategy: RemovableStrategy? = null,
+    val modifier: Modifier = Modifier.size(24.dp),
+    val alpha: Float = 1f,
+    val contentDescription: String = "",
+    val tintColor: Color? = null,
+    val image: Image,
+    val overlay: @Composable (BoxScope.() -> Unit)? = null,
+    val onClick: ((Offset) -> Unit) = {},
+    val isShakable: Boolean = false,
+): NontransparentHexagonContentStyle(
+    id = id,
+    background = background,
+    isDraggable = isDraggable,
+    isHoverable = isHoverable,
+    removableStrategy = removableStrategy
+) {
+    @Immutable
+    sealed class Image {
+        data class VectorResource(val id: Int): Image()
+    }
+}
+
+@Immutable
+class ImageHexagonContentStyle(
+    id: Int,
+    background: Background = Background.SingleColor(Color(0xFF6E4CD4)),
+    isDraggable: Boolean = true,
+    isHoverable: Boolean = true,
+    removableStrategy: RemovableStrategy? = null,
+    val contentDescription: String = "",
+    val image: Image,
+    val alpha: Float = 1f,
+    val onClick: ((Offset) -> Unit) = {},
+    val onLongClick: (() -> Unit) = {},
+    val isShakable: Boolean = false,
+    badgeOverlay: BadgeOverlay? = null
+): NontransparentHexagonContentStyle(
+    id = id,
+    background = background,
+    isDraggable = isDraggable,
+    isHoverable = isHoverable,
+    removableStrategy = removableStrategy,
+    badgeOverlay = badgeOverlay
+) {
+    @Immutable open class Image(val size: coil.size.Size? = null, val fractionOfParentSize: Float = 1f) {
+        class VectorResource(val id: Int, size: coil.size.Size? = null, fractionOfParentSize: Float = 1f): Image(size, fractionOfParentSize)
+        class FromNetwork(val url: String, size: coil.size.Size? = null, fractionOfParentSize: Float = 1f): Image(size, fractionOfParentSize)
+        class Resource(val id: Int, size: coil.size.Size? = null, fractionOfParentSize: Float = 1f): Image(size, fractionOfParentSize)
+        class FromUri(val uri: String, size: coil.size.Size? = null, fractionOfParentSize: Float = 1f): Image(size, fractionOfParentSize)
+    }
+}
+
+@Immutable
+class AutoresizeTextContentStyle(
+    id: Int,
+    background: Background,
+    isDraggable: Boolean = true,
+    isHoverable: Boolean = true,
+    removableStrategy: RemovableStrategy? = null,
+    val text: String,
+    val maxTextSize: TextUnit,
+    val onClick: (Offset) -> Unit = {},
+    badgeOverlay: BadgeOverlay? = null
+): NontransparentHexagonContentStyle(
+    id = id,
+    background = background,
+    isDraggable = isDraggable,
+    isHoverable = isHoverable,
+    removableStrategy = removableStrategy,
+    badgeOverlay = badgeOverlay
 )
 
 fun Modifier.cellBackground(background: NontransparentHexagonContentStyle.Background): Modifier {
@@ -300,6 +312,8 @@ fun RoundedHexagon(
     showContent: Boolean = true,
     scale: Float = 1f
 ) {
+    val montserratFontFamily = remember { FontFamily(Font(R.font.montserrat_semibold)) } // Remember at a higher level
+
     Box(
         modifier = if (onClick != null) modifier
             .pointerInput(Unit) {
@@ -325,51 +339,20 @@ fun RoundedHexagon(
                         contentAlignment = Alignment.Center
                     ) {
                         when (contentStyle) {
-//                            is ContactContentStyle -> {
-//                                if (contentStyle.contact.avatarUri != null) {
-//                                    Image(
-//                                        modifier = Modifier
-//                                            .fillMaxSize(),
-//                                        painter = rememberAsyncImagePainter(
-//                                            model = ImageRequest.Builder(LocalContext.current)
-//                                                .data(contentStyle.contact.avatarUri)
-//                                                .size(coil.size.Size.ORIGINAL)
-//                                                .scale(scale = Scale.FILL)
-//                                                .build()
-//                                        ),
-//                                        contentScale = ContentScale.Crop,
-//                                        contentDescription = null,
-//                                    )
-//                                } else {
-//                                    val fullname = contentStyle.contact
-//                                        .name
-//                                        .uppercase()
-//                                    AutoSizeText(
-//                                        modifier = Modifier.fillMaxSize(0.9f),
-//                                        text = fullname,
-//                                        maxLines = if (fullname.contains(" ")) 2 else 1,
-//                                        overflow = TextOverflow.Ellipsis,
-//                                        color = Color(0xFFAFAEB8),
-//                                        alignment = Alignment.Center,
-//                                        maxTextSize = 11.csp * (LocalConfiguration.current.screenWidthDp.dp / contentStyle.gridColumns / 79.93f.fdpv) * scale * contentStyle.gridScaling,
-//                                        style = TextStyle(
-//                                            fontFamily = montserratFontFamily,
-//                                            fontWeight = FontWeight.SemiBold,
-//                                        )
-//                                    )
-//                                }
-//                            }
 
                             is AutoresizeTextContentStyle -> {
-                                val text = remember(contentStyle.text) { contentStyle.text }
+                                val textState = remember(contentStyle.text) { contentStyle.text }
+                                val maxTextSize = remember(contentStyle.maxTextSize) { contentStyle.maxTextSize * scale }
+                                val textColor = remember { Color(0xFFAFAEB8) } // Example
+
                                 AutoSizeText(
                                     modifier = Modifier.fillMaxWidth(0.9f),
-                                    text = text,
-                                    maxLines = if (text.contains(" ")) 2 else 1,
+                                    text = textState,
+                                    maxLines = 2,
                                     overflow = TextOverflow.Ellipsis,
-                                    color = Color(0xFFAFAEB8),
+                                    color = textColor,
                                     alignment = Alignment.Center,
-                                    maxTextSize = 11.csp * (LocalConfiguration.current.screenWidthDp.dp / contentStyle.gridColumns / 79.93f.fdpv) * scale * contentStyle.gridScaling,
+                                    maxTextSize = maxTextSize,
                                     style = TextStyle(
                                         fontFamily = montserratFontFamily,
                                         fontWeight = FontWeight.SemiBold,
@@ -396,7 +379,7 @@ fun RoundedHexagon(
                                         painter = rememberAsyncImagePainter(
                                             model = ImageRequest.Builder(LocalContext.current)
                                                 .data(R.drawable.ic_delete)
-                                                .size(coil.size.Size.ORIGINAL)
+//                                                .size(coil.size.Size.ORIGINAL)
                                                 .scale(coil.size.Scale.FIT)
                                                 .build()
                                         ),
@@ -410,67 +393,74 @@ fun RoundedHexagon(
                             is CustomHexagonContentStyle -> contentStyle.content.invoke(this, scale)
 
                             is ImageHexagonContentStyle -> {
-                                val contentStyleImage = contentStyle.image
+                                val contentStyleImage by rememberUpdatedState(contentStyle.image)
                                 if (contentStyleImage is ImageHexagonContentStyle.Image.VectorResource) {
-
+                                    val painter = rememberAsyncImagePainter(
+                                        model = ImageRequest.Builder(LocalContext.current)
+                                            .data((contentStyleImage as ImageHexagonContentStyle.Image.VectorResource).id)
+                                            .apply {
+                                                if (contentStyleImage.size != null)
+                                                    size(contentStyleImage.size!!.height, contentStyleImage.size!!.width)
+                                                else size(coil.size.Size.ORIGINAL)
+                                            }
+                                            .build()
+                                    )
                                     Image(
                                         modifier = Modifier
                                             .fillMaxSize(contentStyleImage.fractionOfParentSize)
                                             .alpha(contentStyle.alpha),
-                                        painter = rememberAsyncImagePainter(
-                                            model = ImageRequest.Builder(LocalContext.current)
-                                                .data((contentStyleImage as ImageHexagonContentStyle.Image.VectorResource).id)
-                                                .apply {
-                                                    if (contentStyleImage.size != null)
-                                                        size(contentStyleImage.size!!.height, contentStyleImage.size!!.width)
-                                                    else size(coil.size.Size.ORIGINAL)
-                                                }
-                                                .build()
-                                        ),
+                                        painter = painter,
                                         contentScale = ContentScale.Crop,
                                         contentDescription = contentStyle.contentDescription,
                                     )
                                 } else if (contentStyleImage is ImageHexagonContentStyle.Image.Resource) {
+                                    val painter = rememberAsyncImagePainter(
+                                        model = ImageRequest.Builder(LocalContext.current)
+                                            .data((contentStyleImage as ImageHexagonContentStyle.Image.Resource).id)
+                                            .size(coil.size.Size.ORIGINAL) // Load the image at its original resolution
+                                            .build()
+                                    )
                                     Image(
                                         modifier = Modifier
                                             .fillMaxSize()
                                             .alpha(contentStyle.alpha),
-                                        painter = rememberAsyncImagePainter(
-                                            model = ImageRequest.Builder(LocalContext.current)
-                                                .data((contentStyleImage as ImageHexagonContentStyle.Image.Resource).id)
-                                                .size(coil.size.Size.ORIGINAL) // Load the image at its original resolution
-                                                .build()
-                                        ),
+                                        painter = painter,
                                         contentScale = ContentScale.Crop,
                                         contentDescription = contentStyle.contentDescription,
                                     )
                                 } else if (contentStyleImage is ImageHexagonContentStyle.Image.FromNetwork) {
+                                    val painter = rememberAsyncImagePainter(
+                                        model = ImageRequest.Builder(LocalContext.current)
+                                            .data((contentStyleImage as ImageHexagonContentStyle.Image.FromNetwork).url)
+                                            .diskCachePolicy(CachePolicy.ENABLED)
+                                            .memoryCachePolicy(CachePolicy.ENABLED)
+                                            .size(coil.size.Size.ORIGINAL) // Load the image at its original resolution
+                                            .build()
+                                    )
                                     Image(
                                         modifier = Modifier
                                             .fillMaxSize()
                                             .alpha(contentStyle.alpha),
-                                        painter = rememberAsyncImagePainter(
-                                            model = ImageRequest.Builder(LocalContext.current)
-                                                .data((contentStyleImage as ImageHexagonContentStyle.Image.FromNetwork).url)
-                                                .diskCachePolicy(CachePolicy.ENABLED)
-                                                .memoryCachePolicy(CachePolicy.ENABLED)
-                                                .size(coil.size.Size.ORIGINAL) // Load the image at its original resolution
-                                                .build()
-                                        ),
+                                        painter = painter,
                                         contentDescription = contentStyle.contentDescription,
                                         contentScale = ContentScale.Crop
                                     )
                                 } else if (contentStyleImage is ImageHexagonContentStyle.Image.FromUri) {
+                                    val painter = rememberAsyncImagePainter(
+                                        model = ImageRequest.Builder(LocalContext.current)
+                                            .data((contentStyleImage as ImageHexagonContentStyle.Image.FromUri).uri)
+                                            .apply {
+                                                if (contentStyleImage.size != null)
+                                                    size(contentStyleImage.size!!.height, contentStyleImage.size!!.width)
+                                                else size(coil.size.Size.ORIGINAL)
+                                            }
+                                            .build(),
+                                    )
                                     Image(
                                         modifier = Modifier
                                             .fillMaxSize()
                                             .alpha(contentStyle.alpha),
-                                        painter = rememberAsyncImagePainter(
-                                            model = ImageRequest.Builder(LocalContext.current)
-                                                .data((contentStyleImage as ImageHexagonContentStyle.Image.FromUri).uri)
-                                                .size(coil.size.Size.ORIGINAL) // Load the image at its original resolution
-                                                .build()
-                                        ),
+                                        painter = painter,
                                         contentScale = ContentScale.Crop,
                                         contentDescription = contentStyle.contentDescription,
                                     )
@@ -492,7 +482,7 @@ fun RoundedHexagon(
                                                 model = ImageRequest.Builder(LocalContext.current)
                                                     .data(contentStyle.image.id)
                                                     .size(coil.size.Size.ORIGINAL) // Load the image at its original resolution
-                                                    .build()
+                                                    .build(),
                                             ),
                                             contentDescription = contentStyle.contentDescription,
                                             colorFilter = when {
