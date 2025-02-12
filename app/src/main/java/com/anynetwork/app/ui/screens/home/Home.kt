@@ -124,6 +124,7 @@ import com.anynetwork.app.ui.components.hexagon.calculateLayersForElements
 import com.anynetwork.app.ui.components.hexagon.createPolygon
 import com.anynetwork.app.ui.components.hexagon.generateHexagonColors
 import com.anynetwork.app.ui.components.hexagon.hexCellsBackgroundColorsGrid
+import com.anynetwork.app.ui.components.text.roundToPx
 import com.anynetwork.app.ui.navigation.Route
 import com.anynetwork.app.ui.screens.externalprofile.VerticalLine
 import com.anynetwork.app.ui.screens.home.HomeViewEvent.BadgeInteractionClick
@@ -157,9 +158,11 @@ import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import round
 import timber.log.Timber
 import kotlin.math.absoluteValue
 import kotlin.math.exp
+import kotlin.math.roundToInt
 
 
 @Composable
@@ -558,6 +561,15 @@ private fun Home(
                 }
             }
 
+            val currentConfig = LocalConfiguration.current
+            val screenWidthDp by remember { derivedStateOf { currentConfig.screenWidthDp } }
+            val (cellWidth, cellHeight) = remember(screenWidthDp, gridScaling, gridColumns) {
+                val calculatedWidth = screenWidthDp.toFloat() / 2
+                val calculatedHeight = calculatedWidth * 96.99f/86.93f
+
+                Timber.i("cell width/height: $calculatedWidth/ ${calculatedHeight.roundToInt()}")
+                calculatedWidth.roundToInt() to calculatedHeight.roundToInt()
+            }
             // Find the central element
             val items = remember(optimizedPhotoUri, optimizedHexGridContacts) {
                 Timber.i("home start animation reload items")
@@ -656,7 +668,10 @@ private fun Home(
                                         ImageHexagonContentStyle(
                                             id = cellIndex,
                                             background = Background.SingleColor(backgroundColor),
-                                            image = ImageHexagonContentStyle.Image.FromUri(gridItem.contact.avatarUri),
+                                            image = ImageHexagonContentStyle.Image.FromUri(
+                                                uri = gridItem.contact.avatarUri,
+                                                size = Size(width = cellWidth, height = cellHeight)
+                                            ),
                                             onLongClick = {
                                                 viewModel.onViewAction(
                                                     HexagonalGridCellLongClick
