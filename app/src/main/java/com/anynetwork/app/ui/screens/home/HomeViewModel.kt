@@ -71,6 +71,14 @@ class HomeViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), _hexGridItems.value)
 
+    private val _searchingHexGridItems = MutableStateFlow<List<GridItem>>(emptyList())
+    val searchingHexGridItems: StateFlow<List<GridItem>> = _searchingHexGridItems
+        .distinctUntilChanged { old, new -> old.isIdenticalTo(new) }
+        .onEach { newValue ->
+            newValue.size.log { "searchingHexGridItems emitted size" }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), _searchingHexGridItems.value)
+
     private val _viewState = MutableStateFlow(HomeViewState())
     val viewState: StateFlow<HomeViewState> = _viewState
         .distinctUntilChanged { old, new ->
@@ -121,13 +129,8 @@ class HomeViewModel @Inject constructor(
 
                         _searchContacts.value = filteredContacts
 
-                        val newGridItems = processContactsForGrid(filteredContacts, interactions.value)
-                        updateHexGridItems(newGridItems)
-                        if (_hexGridItems.value != newGridItems) {
-                            Timber.d("Hex grid updated with new items.")
-                        } else {
-                            Timber.d("Hex grid update skipped; items are identical.")
-                        }
+                        val newGridItems = processContactsForSearchingGrid(filteredContacts)
+                        _searchingHexGridItems.value = newGridItems
                     }
                 }
         }
@@ -195,11 +198,8 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             val newGridItems = processContactsForGrid(contacts, interactions)
             updateHexGridItems(newGridItems)
-            if (_hexGridItems.value != newGridItems) {
-                Timber.d("Hex grid updated with new items.")
-            } else {
-                Timber.d("Hex grid update skipped; items are identical.")
-            }
+            val searchingGridItems = processContactsForSearchingGrid(contacts)
+            _searchingHexGridItems.value = searchingGridItems
         }
     }
 
@@ -229,74 +229,71 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private suspend fun processContactsForGrid(contacts: List<Contact>, interactions: List<Interaction>): List<GridItem> = withContext(Dispatchers.IO) {
-        when (viewState.value.mode) {
-            is HomeScreenMode.SearchingGrid, HomeScreenMode.SearchingList -> {
-                val s = contacts.map { GridItem.SearchGridItem(it) }
-                s.toMutableList().apply {
-                    addAll(s)
-                    addAll(s)
-                    addAll(s)
-                    addAll(s)
-                    addAll(s)
-                    addAll(s)
-                    addAll(s)
-                    addAll(s)
-                    addAll(s)
-                }
-//                contacts.map { GridItem.SearchGridItem(it) }
-            }
-            else -> {
-                contacts
-                    .filter { it.isFavorite }
-                    .forEach { contact ->
-                        if (gridOrder.firstOrNull { it.itemId == contact.id && it.itemType == Order.Type.FAVORITE_CONTACT } == null) {
-                            viewModelScope.launch {
-                                addAtRandomGridPlace(
-                                    itemType = Order.Type.FAVORITE_CONTACT,
-                                    itemId = contact.id
-                                )
-                            }
-                        }
-                    }
-                interactions
-                    .forEach { interaction ->
-                        if (gridOrder.firstOrNull { it.itemId == interaction.id && it.itemType == Order.Type.INTERACTION } == null) {
-                            viewModelScope.launch {
-                                addAtRandomGridPlace(
-                                    itemType = Order.Type.INTERACTION,
-                                    itemId = interaction.id
-                                )
-                            }
-                        }
-                    }
-                val gridItems = cellPositions.mapIndexed { index, item ->
-                    GridItem.EmptyGridItem() as GridItem
-                }.toMutableList()
-                gridOrder
-                    .apply {
-                        size.log { "gridOrder size" }
-                    }.forEachIndexed { index, order ->
-                    contacts.filter { it.isFavorite }
-                        .find { it.id == order.itemId }
-                        ?.let { GridItem.FavoritedContactGridItem(it) }
-                        ?.let { favoriteGridItem ->
-                            gridItems[order.order] = favoriteGridItem
-                        }
-                    interactions.find { it.id == order.itemId && order.itemType == Order.Type.INTERACTION}
-                        ?.let { interaction ->
-                            val contact = contacts.find { it.id == interaction.contactId }
-                            contact?.let {
-                                GridItem.InteractionGridItem(it, interaction.id, interaction.toBadge())
-                            }
-                        }
-                        ?.let { interactionGridItem ->
-                            gridItems[order.order] = interactionGridItem
-                        }
-                }
-                gridItems
-            }
+    private suspend fun processContactsForSearchingGrid(contacts: List<Contact>): List<GridItem> = withContext(Dispatchers.IO) {
+        val s = contacts.map { GridItem.SearchGridItem(it) }
+        s.toMutableList().apply {
+            addAll(s)
+            addAll(s)
+            addAll(s)
+            addAll(s)
+            addAll(s)
+            addAll(s)
+            addAll(s)
+            addAll(s)
+            addAll(s)
         }
+    }
+
+    private suspend fun processContactsForGrid(contacts: List<Contact>, interactions: List<Interaction>): List<GridItem> = withContext(Dispatchers.IO) {
+        contacts
+            .filter { it.isFavorite }
+            .forEach { contact ->
+                if (gridOrder.firstOrNull { it.itemId == contact.id && it.itemType == Order.Type.FAVORITE_CONTACT } == null) {
+                    viewModelScope.launch {
+                        addAtRandomGridPlace(
+                            itemType = Order.Type.FAVORITE_CONTACT,
+                            itemId = contact.id
+                        )
+                    }
+                }
+            }
+        interactions
+            .forEach { interaction ->
+                if (gridOrder.firstOrNull { it.itemId == interaction.id && it.itemType == Order.Type.INTERACTION } == null) {
+                    viewModelScope.launch {
+                        addAtRandomGridPlace(
+                            itemType = Order.Type.INTERACTION,
+                            itemId = interaction.id
+                        )
+                    }
+                }
+            }
+        val gridItems = cellPositions.mapIndexed { index, item ->
+            GridItem.EmptyGridItem() as GridItem
+        }.toMutableList()
+        gridOrder
+            .apply {
+                size.log { "gridOrder size" }
+            }.forEachIndexed { index, order ->
+            contacts.filter { it.isFavorite }
+                .find { it.id == order.itemId }
+                ?.let { GridItem.FavoritedContactGridItem(it) }
+                ?.let { favoriteGridItem ->
+                    gridItems[order.order] = favoriteGridItem
+                }
+            interactions.find { it.id == order.itemId && order.itemType == Order.Type.INTERACTION}
+                ?.let { interaction ->
+                    val contact = contacts.find { it.id == interaction.contactId }
+                    contact?.let {
+                        GridItem.InteractionGridItem(it, interaction.id, interaction.toBadge())
+                    }
+                }
+                ?.let { interactionGridItem ->
+                    gridItems[order.order] = interactionGridItem
+                }
+        }
+        gridItems
+
     }
 
     fun loadProfile() = viewModelScope.launch {
@@ -409,8 +406,10 @@ class HomeViewModel @Inject constructor(
         )
 
         viewModelScope.launch {
-            val newGridItems = processContactsForGrid(if (screenMode is HomeScreenMode.SearchingGrid) searchContacts.value else contacts.value, interactions.value)
+            val newGridItems = processContactsForGrid(contacts.value, interactions.value)
             updateHexGridItems(newGridItems)
+            val searchingGridItems = processContactsForSearchingGrid(searchContacts.value)
+            _searchingHexGridItems.value = searchingGridItems
         }
     }
 
@@ -464,6 +463,8 @@ class HomeViewModel @Inject constructor(
                     if (interaction == null) {
                         val newGridItems = processContactsForGrid(contacts.value, _interactions.value)
                         updateHexGridItems(newGridItems)
+                        val searchingGridItems = processContactsForSearchingGrid(searchContacts.value)
+                        _searchingHexGridItems.value = searchingGridItems
                     }
                 }
             }
@@ -508,6 +509,8 @@ class HomeViewModel @Inject constructor(
                     if (interaction == null) {
                         val newGridItems = processContactsForGrid(contacts.value, _interactions.value)
                         updateHexGridItems(newGridItems)
+                        val searchingGridItems = processContactsForSearchingGrid(searchContacts.value)
+                        _searchingHexGridItems.value = searchingGridItems
                     }
                 }
             }
@@ -591,6 +594,8 @@ class HomeViewModel @Inject constructor(
                     gridOrder = orderRepository.getOrder()
                     val newGridItems = processContactsForGrid(contacts.value, interactions.value)
                     updateHexGridItems(newGridItems)
+                    val searchingGridItems = processContactsForSearchingGrid(searchContacts.value)
+                    _searchingHexGridItems.value = searchingGridItems
                 }
             }
             HomeViewEvent.ClearViewEffect -> _viewEffectFlow.value = null
