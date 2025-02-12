@@ -87,14 +87,15 @@ data class Contact(
         if (other !is Contact) return false
 
         return id == other.id &&
-                firstName() == other.firstName() &&
-                lastName() == other.lastName() &&
-                mobilePhone() == other.mobilePhone() &&
-                workPhone() == other.workPhone() &&
-                homeEmail() == other.homeEmail() &&
-                workEmail() == other.workEmail() &&
+                name == other.name &&  // Compare the actual name
+                phones == other.phones && // Compare the actual phones list
+                emails == other.emails && // Compare the actual emails list
                 avatarUri == other.avatarUri &&
-                isFavorite == other.isFavorite
+                isFavorite == other.isFavorite &&
+                company == other.company &&
+                title == other.title &&
+                department == other.department &&
+                priority == other.priority
     }
 
     override fun hashCode(): Int {
@@ -107,6 +108,7 @@ data class Contact(
         result = 31 * result + (company?.hashCode() ?: 0)
         result = 31 * result + (title?.hashCode() ?: 0)
         result = 31 * result + (department?.hashCode() ?: 0)
+        result = 31 * result + (priority?.hashCode() ?: 0)
         return result
     }
 }

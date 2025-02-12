@@ -358,6 +358,17 @@ fun RoundedHexagon(
                                         fontWeight = FontWeight.SemiBold,
                                     )
                                 )
+//                                Text(
+//                                    modifier = Modifier.fillMaxWidth(0.9f),
+//                                    text = textState,
+//                                    maxLines = 2,
+//                                    overflow = TextOverflow.Ellipsis,
+//                                    color = textColor,
+//                                    style = TextStyle(
+//                                        fontFamily = montserratFontFamily,
+//                                        fontWeight = FontWeight.SemiBold,
+//                                    )
+//                                )
                             }
                             is TrashCanHexagonContentStyle -> {
                                 val alpha by animateFloatAsState(

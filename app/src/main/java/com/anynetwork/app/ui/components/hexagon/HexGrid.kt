@@ -63,7 +63,6 @@ import androidx.compose.ui.unit.times
 import androidx.compose.ui.unit.toIntRect
 import androidx.compose.ui.unit.toRect
 import androidx.compose.ui.zIndex
-import com.anynetwork.app.model.Interaction
 import com.anynetwork.app.ui.components.hexagon.HexGridCellPosition.Neighbor.BottomLeft
 import com.anynetwork.app.ui.components.hexagon.HexGridCellPosition.Neighbor.BottomRight
 import com.anynetwork.app.ui.components.hexagon.HexGridCellPosition.Neighbor.Left
@@ -73,9 +72,6 @@ import com.anynetwork.app.ui.components.hexagon.HexGridCellPosition.Neighbor.Top
 import com.anynetwork.app.ui.components.zoomable.ScrollGesturePropagation
 import com.anynetwork.app.ui.components.zoomable.rememberZoomState
 import com.anynetwork.app.ui.components.zoomable.zoomable
-import com.anynetwork.app.ui.screens.home.GridItem
-import com.anynetwork.app.ui.screens.home.HomeViewEvent.BadgeInteractionClick
-import com.anynetwork.app.ui.screens.home.HomeViewEvent.GridItemClick
 import com.anynetwork.app.ui.utils.fdph
 import com.anynetwork.app.ui.utils.fdpv
 import com.anynetwork.app.ui.utils.log
@@ -268,7 +264,7 @@ fun HexagonalGrid(
                             applyOffset -> cellModifierWithOffset
                             else -> cellModifier
                         }
-                            .then(if (cellPositions[index] == null && isEnterAnimationFinished && !isTransparent)
+                            .then(if (cellPositions[index] == null && isEnterAnimationFinished)
                                 Modifier.onGloballyPositioned { coordinates ->
 
                                     val height = coordinates.size.height

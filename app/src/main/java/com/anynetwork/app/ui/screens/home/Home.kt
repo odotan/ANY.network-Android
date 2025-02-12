@@ -159,6 +159,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import kotlin.math.absoluteValue
+import kotlin.math.exp
 
 
 @Composable
@@ -1227,14 +1228,16 @@ fun BottomSheet(
                 )
                 .align(Alignment.CenterHorizontally)
         ) {
-            if (!screenMode.isSearching) Box(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Row(
+            AnimatedVisibility(visible = !screenMode.isSearching) {
+                Box(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
                 ) {
-                    DragHandle()
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        DragHandle()
+                    }
                 }
             }
 
