@@ -122,7 +122,7 @@ class ExternalProfileViewModel @Inject constructor(
             }
             is RequestNetworkButtonClick -> {
                 _viewState.value = _viewState.value.copy(
-                    mode = ExternalProfileMode.RequestNetwork()
+                    mode = ExternalProfileMode.RequestNetwork(event.isSearching)
                 )
             }
             EditButtonClick -> {

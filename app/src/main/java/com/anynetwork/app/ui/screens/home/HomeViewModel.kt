@@ -232,19 +232,19 @@ class HomeViewModel @Inject constructor(
     private suspend fun processContactsForGrid(contacts: List<Contact>, interactions: List<Interaction>): List<GridItem> = withContext(Dispatchers.IO) {
         when (viewState.value.mode) {
             is HomeScreenMode.SearchingGrid, HomeScreenMode.SearchingList -> {
-                val s = contacts.map { GridItem.SearchGridItem(it) }
-                s.toMutableList().apply {
-                    addAll(s)
-                    addAll(s)
-                    addAll(s)
-                    addAll(s)
-                    addAll(s)
-                    addAll(s)
-                    addAll(s)
-                    addAll(s)
-                    addAll(s)
-                }
-//                contacts.map { GridItem.SearchGridItem(it) }
+//                val s = contacts.map { GridItem.SearchGridItem(it) }
+//                s.toMutableList().apply {
+//                    addAll(s)
+//                    addAll(s)
+//                    addAll(s)
+//                    addAll(s)
+//                    addAll(s)
+//                    addAll(s)
+//                    addAll(s)
+//                    addAll(s)
+//                    addAll(s)
+//                }
+                contacts.map { GridItem.SearchGridItem(it) }
             }
             else -> {
                 contacts

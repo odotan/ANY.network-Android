@@ -114,6 +114,7 @@ import com.anynetwork.app.ui.components.dialog.AlertDialog
 import com.anynetwork.app.ui.components.dialog.AlertDialogButtonState
 import com.anynetwork.app.ui.components.dialog.DropDownDialogMenuCategory
 import com.anynetwork.app.ui.components.dialog.ExpandableDrillDownMenu
+import com.anynetwork.app.ui.components.hexagon.ChangeScale
 import com.anynetwork.app.ui.components.hexagon.CustomHexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.DeleteButton
 import com.anynetwork.app.ui.components.hexagon.EmptyHexagonContentStyle
@@ -150,6 +151,7 @@ import com.anynetwork.app.ui.theme.TiktokColor
 import com.anynetwork.app.ui.theme.TwitterColor
 import com.anynetwork.app.ui.theme.WhatsappColor
 import com.anynetwork.app.ui.theme.montserratFontFamily
+import com.anynetwork.app.ui.utils.KeyboardDismissListener
 import com.anynetwork.app.ui.utils.fdph
 import com.anynetwork.app.ui.utils.fdpv
 import com.anynetwork.app.ui.utils.fsp
@@ -621,247 +623,8 @@ private fun ExternalProfile(
         }
     }
 
-    val alpha = 1 - dragPercentage.value/100f
-    val itemAlpha by animateFloatAsState(
-        targetValue = if (viewState.mode is ExternalProfileMode.Edit) .3f else 1f,
-        animationSpec = tween(300)
-    )
-
-    val normalHexItems = List(gridRows * gridColumns) { index ->
-        val row = index / gridColumns
-        val column = index % gridColumns
-
-        val isCenter = row == centralCellPosition.row && column == centralCellPosition.column
-
-        val cellIndex = createCellPosition(
-            column = column,
-            row = row,
-        ).getIndex()
-
-        val backgroundColor = hexCellsBackgroundColors[cellIndex]
-
-        when {
-            isCenter -> /*IconHexagonContentStyle(
-                    modifier = Modifier
-                        .fillMaxWidth(1 / 2f)
-                        .fillMaxSize(43f / 80),
-                    background = SingleColor(Color(0xFF393939)),
-                    contentDescription = "Any network",
-                    image = VectorResource(id = R.drawable.ic_any_network),
-
-                )*/EmptyHexagonContentStyle(
-                id = cellIndex,
-                background = SingleColor(backgroundColor.copy(alpha = backgroundColor.alpha * alpha))
-            )
-            profilePictureCellPosition.isSame(column, row) -> remember(viewState.mode) {
-                CustomHexagonContentStyle(
-                    id = cellIndex,
-                    content = {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .align(Alignment.Center)
-                                .background(Color(0xFF6E4CD4))
-                        ) {
-                            if (photoUri == null) {
-                                Image(
-                                    modifier = Modifier
-                                        .align(Alignment.Center)
-                                        .fillMaxSize(0.335f),
-                                    painter = rememberAsyncImagePainter(
-                                        model = ImageRequest.Builder(LocalContext.current)
-                                            .data(R.drawable.ic_profile)
-                                            .size(Size(580, 660))
-                                            .build()
-                                    ),
-                                    contentDescription = null,
-                                )
-                            } else {
-                                Image(
-                                    modifier = Modifier
-                                        .fillMaxSize(),
-                                    painter = rememberAsyncImagePainter(photoUri),
-                                    contentScale = ContentScale.Crop,
-                                    contentDescription = null,
-                                )
-                            }
-                        }
-                    },
-                    isShakable = true,
-                    overlay = {
-                        if (viewState.mode is ExternalProfileMode.Edit) {
-                            cellWidth?.let {
-                                Box(
-                                    modifier = Modifier
-                                        .align(Alignment.BottomCenter)
-                                        .padding(bottom = 7.8.fdpv)
-                                        .size(24.fdpv * ((with(LocalDensity.current) { cellWidth!!.toDp() }) / 79.93f.fdpv))
-                                        .clip(CircleShape)
-                                        .background(PrimaryColor)
-                                        .border(
-                                            width = 1.fdpv,
-                                            color = Color.White,
-                                            shape = CircleShape
-                                        ),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Image(
-                                        modifier = Modifier
-                                            .fillMaxWidth(fraction = 10.18f / 24),
-                                        painter = painterResource(R.drawable.ic_edit_only_pen),
-                                        contentDescription = "edit profile",
-                                    )
-                                }
-                            }
-                            if (photoUri != null) DeleteButton(
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .padding(top = 17.31.fdpv, end = 1.fdpv)
-                                    .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
-                                    .alpha(alpha),
-                                onClick = {
-                                    viewModel.onViewEvent(RemoveProfilePicture)
-                                }
-                            )
-                        }
-                    },
-                    onClick = { _ ->
-                        if (viewState.mode is ExternalProfileMode.Edit) {
-                            isChooseMethodEditProfilePictureDialog = true
-                        }
-                    },
-                )
-            }
-            facebookCellPosition.isSame(column, row) -> /*IconHexagonContentStyle(
-                    background = SingleColor(FacebookColor),
-                    contentDescription = "Facebook",
-                    image = VectorResource(id = R.drawable.ic_facebook)
-                )*/EmptyHexagonContentStyle(
-                id = cellIndex,
-                background = SingleColor(backgroundColor.copy(alpha = backgroundColor.alpha * alpha))
-            )
-            messengerCellPosition.isSame(column, row) -> /*IconHexagonContentStyle(
-                    background = SingleColor(MessengerColor),
-                    contentDescription = "Messenger",
-                    image = VectorResource(id = R.drawable.ic_messenger)
-                )*/EmptyHexagonContentStyle(
-                id = cellIndex,
-                background = SingleColor(backgroundColor.copy(alpha = backgroundColor.alpha * alpha))
-            )
-            instagramCellPosition.isSame(column, row) -> /*IconHexagonContentStyle(
-                    background = SingleColor(InstagramColor),
-                    contentDescription = "Instagram",
-                    image = VectorResource(id = R.drawable.ic_instagram)
-                )*/EmptyHexagonContentStyle(
-                id = cellIndex,
-                background = SingleColor(backgroundColor.copy(alpha = backgroundColor.alpha * alpha))
-            )
-
-            emailCellPosition.isSame(column, row) -> remember(viewState.mode, itemAlpha, alpha, email) {
-                if (email != null && email!!.isNotEmpty()) IconHexagonContentStyle(
-                    id = cellIndex,
-                    background = SingleColor(EmailColor.copy(alpha = itemAlpha * alpha)),
-                    alpha = itemAlpha * alpha,
-                    contentDescription = "Email",
-                    image = VectorResource(id = R.drawable.ic_email),
-                    onClick = {
-                        viewModel.onViewEvent(EmailButtonClick)
-                    },
-                    isShakable = true,
-                    overlay = if (viewState.mode is ExternalProfileMode.Edit) {
-                        {
-                            DeleteButton(
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .padding(top = 17.31.fdpv, end = 1.fdpv)
-                                    .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
-                                    .alpha(alpha),
-                                onClick = {
-
-                                }
-                            )
-                        }
-                    } else null
-                ) else EmptyHexagonContentStyle(
-                    id = cellIndex,
-                    background = SingleColor(backgroundColor.copy(alpha = backgroundColor.alpha * alpha))
-                )
-            }
-
-            phoneCellPosition.isSame(column, row) -> remember(viewState.mode, itemAlpha, alpha, phone) {
-                if (phone != null && phone!!.isNotEmpty()) IconHexagonContentStyle(
-                    id = cellIndex,
-                    background = SingleColor(PhoneColor.copy(alpha = itemAlpha * alpha)),
-                    alpha = itemAlpha * alpha,
-                    contentDescription = "Phone",
-                    image = VectorResource(id = R.drawable.ic_phone),
-                    onClick = {
-                        viewModel.onViewEvent(PhoneButtonClick)
-                    },
-                    isShakable = true,
-                    overlay = if (viewState.mode is ExternalProfileMode.Edit) {
-                        {
-                            DeleteButton(
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .padding(top = 17.31.fdpv, end = 1.fdpv)
-                                    .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
-                                    .alpha(alpha),
-                                onClick = {
-
-                                }
-                            )
-                        }
-                    } else null
-                ) else {
-                    EmptyHexagonContentStyle(
-                        id = cellIndex,
-                        background = SingleColor(backgroundColor.copy(alpha = backgroundColor.alpha * alpha))
-                    )
-                }
-            }
-
-            twitterCellPosition.isSame(column, row) ->
-                /*IconHexagonContentStyle(
-                    background = SingleColor(TwitterColor),
-                    contentDescription = "Twitter",
-                    image = VectorResource(id = R.drawable.ic_twitter)
-                )*/EmptyHexagonContentStyle(
-                id = cellIndex,
-                background = SingleColor(backgroundColor.copy(alpha = backgroundColor.alpha * alpha))
-            )
-
-            whatsappCellPosition.isSame(column, row) -> /*IconHexagonContentStyle(
-                    background = SingleColor(WhatsappColor),
-                    contentDescription = "Whatsapp",
-                    image = VectorResource(id = R.drawable.ic_whatsapp)
-                )*/EmptyHexagonContentStyle(
-                id = cellIndex,
-                background = SingleColor(backgroundColor.copy(alpha = backgroundColor.alpha * alpha))
-            )
-
-            telegramCellPosition.isSame(column, row) -> //if (apps.contains("Telegram")) {
-//                    IconHexagonContentStyle(
-//                            background = SingleColor(TelegramColor),
-//                            contentDescription = "Telegram",
-//                            image = VectorResource(id = R.drawable.ic_telegram)
-//                        )
-//                    } else {
-                EmptyHexagonContentStyle(
-                    id = cellIndex,
-                    background = SingleColor(backgroundColor.copy(alpha = backgroundColor.alpha * alpha))
-                )
-//                    }
-//
-//                trailingCellPosition.isSame(column, row) -> TransparentHexagonContentStyle(
-//                    id = cellIndex,
-//                )
-            else -> EmptyHexagonContentStyle(
-                id = cellIndex,
-                background = SingleColor(backgroundColor.copy(alpha = backgroundColor.alpha * alpha))
-            )
-        }
-    }
+    val currentConfig = LocalConfiguration.current
+    val currentDensity = LocalDensity.current
 
     Screen(
         modifier = Modifier.fillMaxSize()
@@ -911,9 +674,523 @@ private fun ExternalProfile(
             ),
         ),
         hexagonGrid = {
+            var changeScale: ChangeScale? by remember {
+                mutableStateOf(null)
+            }
+
+            val alpha = 1 - dragPercentage.value/100f
+            val itemAlpha by animateFloatAsState(
+                targetValue = if (viewState.mode is ExternalProfileMode.Edit) .3f else 1f,
+                animationSpec = tween(300)
+            )
+
+            val normalHexItems = List(gridRows * gridColumns) { index ->
+                val row = index / gridColumns
+                val column = index % gridColumns
+
+                val isCenter = row == centralCellPosition.row && column == centralCellPosition.column
+
+                val cellIndex = createCellPosition(
+                    column = column,
+                    row = row,
+                ).getIndex()
+
+                val backgroundColor = hexCellsBackgroundColors[cellIndex]
+
+                when {
+                    isCenter -> /*IconHexagonContentStyle(
+                    modifier = Modifier
+                        .fillMaxWidth(1 / 2f)
+                        .fillMaxSize(43f / 80),
+                    background = SingleColor(Color(0xFF393939)),
+                    contentDescription = "Any network",
+                    image = VectorResource(id = R.drawable.ic_any_network),
+
+                )*/EmptyHexagonContentStyle(
+                        id = cellIndex,
+                        background = SingleColor(backgroundColor.copy(alpha = backgroundColor.alpha * alpha))
+                    )
+                    profilePictureCellPosition.isSame(column, row) -> remember(viewState.mode) {
+                        CustomHexagonContentStyle(
+                            id = cellIndex,
+                            content = {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .align(Alignment.Center)
+                                        .background(Color(0xFF6E4CD4))
+                                ) {
+                                    if (photoUri == null) {
+                                        Image(
+                                            modifier = Modifier
+                                                .align(Alignment.Center)
+                                                .fillMaxSize(0.335f),
+                                            painter = rememberAsyncImagePainter(
+                                                model = ImageRequest.Builder(LocalContext.current)
+                                                    .data(R.drawable.ic_profile)
+                                                    .size(Size(580, 660))
+                                                    .build()
+                                            ),
+                                            contentDescription = null,
+                                        )
+                                    } else {
+                                        Image(
+                                            modifier = Modifier
+                                                .fillMaxSize(),
+                                            painter = rememberAsyncImagePainter(photoUri),
+                                            contentScale = ContentScale.Crop,
+                                            contentDescription = null,
+                                        )
+                                    }
+                                }
+                            },
+                            isShakable = true,
+                            overlay = {
+                                if (viewState.mode is ExternalProfileMode.Edit) {
+                                    cellWidth?.let {
+                                        Box(
+                                            modifier = Modifier
+                                                .align(Alignment.BottomCenter)
+                                                .padding(bottom = 7.8.fdpv)
+                                                .size(24.fdpv * ((with(LocalDensity.current) { cellWidth!!.toDp() }) / 79.93f.fdpv))
+                                                .clip(CircleShape)
+                                                .background(PrimaryColor)
+                                                .border(
+                                                    width = 1.fdpv,
+                                                    color = Color.White,
+                                                    shape = CircleShape
+                                                ),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Image(
+                                                modifier = Modifier
+                                                    .fillMaxWidth(fraction = 10.18f / 24),
+                                                painter = painterResource(R.drawable.ic_edit_only_pen),
+                                                contentDescription = "edit profile",
+                                            )
+                                        }
+                                    }
+                                    if (photoUri != null) DeleteButton(
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(top = 17.31.fdpv, end = 1.fdpv)
+                                            .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
+                                            .alpha(alpha),
+                                        onClick = {
+                                            viewModel.onViewEvent(RemoveProfilePicture)
+                                        }
+                                    )
+                                }
+                            },
+                            onClick = { _ ->
+                                if (viewState.mode is ExternalProfileMode.Edit) {
+                                    isChooseMethodEditProfilePictureDialog = true
+                                }
+                            },
+                        )
+                    }
+                    facebookCellPosition.isSame(column, row) -> /*IconHexagonContentStyle(
+                    background = SingleColor(FacebookColor),
+                    contentDescription = "Facebook",
+                    image = VectorResource(id = R.drawable.ic_facebook)
+                )*/EmptyHexagonContentStyle(
+                        id = cellIndex,
+                        background = SingleColor(backgroundColor.copy(alpha = backgroundColor.alpha * alpha))
+                    )
+                    messengerCellPosition.isSame(column, row) -> /*IconHexagonContentStyle(
+                    background = SingleColor(MessengerColor),
+                    contentDescription = "Messenger",
+                    image = VectorResource(id = R.drawable.ic_messenger)
+                )*/EmptyHexagonContentStyle(
+                        id = cellIndex,
+                        background = SingleColor(backgroundColor.copy(alpha = backgroundColor.alpha * alpha))
+                    )
+                    instagramCellPosition.isSame(column, row) -> /*IconHexagonContentStyle(
+                    background = SingleColor(InstagramColor),
+                    contentDescription = "Instagram",
+                    image = VectorResource(id = R.drawable.ic_instagram)
+                )*/EmptyHexagonContentStyle(
+                        id = cellIndex,
+                        background = SingleColor(backgroundColor.copy(alpha = backgroundColor.alpha * alpha))
+                    )
+
+                    emailCellPosition.isSame(column, row) -> remember(viewState.mode, itemAlpha, alpha, email) {
+                        if (email != null && email!!.isNotEmpty()) IconHexagonContentStyle(
+                            id = cellIndex,
+                            background = SingleColor(EmailColor.copy(alpha = itemAlpha * alpha)),
+                            alpha = itemAlpha * alpha,
+                            contentDescription = "Email",
+                            image = VectorResource(id = R.drawable.ic_email),
+                            onClick = {
+                                viewModel.onViewEvent(EmailButtonClick)
+                            },
+                            isShakable = true,
+                            overlay = if (viewState.mode is ExternalProfileMode.Edit) {
+                                {
+                                    DeleteButton(
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(top = 17.31.fdpv, end = 1.fdpv)
+                                            .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
+                                            .alpha(alpha),
+                                        onClick = {
+
+                                        }
+                                    )
+                                }
+                            } else null
+                        ) else EmptyHexagonContentStyle(
+                            id = cellIndex,
+                            background = SingleColor(backgroundColor.copy(alpha = backgroundColor.alpha * alpha))
+                        )
+                    }
+
+                    phoneCellPosition.isSame(column, row) -> remember(viewState.mode, itemAlpha, alpha, phone) {
+                        if (phone != null && phone!!.isNotEmpty()) IconHexagonContentStyle(
+                            id = cellIndex,
+                            background = SingleColor(PhoneColor.copy(alpha = itemAlpha * alpha)),
+                            alpha = itemAlpha * alpha,
+                            contentDescription = "Phone",
+                            image = VectorResource(id = R.drawable.ic_phone),
+                            onClick = {
+                                viewModel.onViewEvent(PhoneButtonClick)
+                            },
+                            isShakable = true,
+                            overlay = if (viewState.mode is ExternalProfileMode.Edit) {
+                                {
+                                    DeleteButton(
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(top = 17.31.fdpv, end = 1.fdpv)
+                                            .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
+                                            .alpha(alpha),
+                                        onClick = {
+
+                                        }
+                                    )
+                                }
+                            } else null
+                        ) else {
+                            EmptyHexagonContentStyle(
+                                id = cellIndex,
+                                background = SingleColor(backgroundColor.copy(alpha = backgroundColor.alpha * alpha))
+                            )
+                        }
+                    }
+
+                    twitterCellPosition.isSame(column, row) ->
+                        /*IconHexagonContentStyle(
+                            background = SingleColor(TwitterColor),
+                            contentDescription = "Twitter",
+                            image = VectorResource(id = R.drawable.ic_twitter)
+                        )*/EmptyHexagonContentStyle(
+                        id = cellIndex,
+                        background = SingleColor(backgroundColor.copy(alpha = backgroundColor.alpha * alpha))
+                    )
+
+                    whatsappCellPosition.isSame(column, row) -> /*IconHexagonContentStyle(
+                    background = SingleColor(WhatsappColor),
+                    contentDescription = "Whatsapp",
+                    image = VectorResource(id = R.drawable.ic_whatsapp)
+                )*/EmptyHexagonContentStyle(
+                        id = cellIndex,
+                        background = SingleColor(backgroundColor.copy(alpha = backgroundColor.alpha * alpha))
+                    )
+
+                    telegramCellPosition.isSame(column, row) -> //if (apps.contains("Telegram")) {
+//                    IconHexagonContentStyle(
+//                            background = SingleColor(TelegramColor),
+//                            contentDescription = "Telegram",
+//                            image = VectorResource(id = R.drawable.ic_telegram)
+//                        )
+//                    } else {
+                        EmptyHexagonContentStyle(
+                            id = cellIndex,
+                            background = SingleColor(backgroundColor.copy(alpha = backgroundColor.alpha * alpha))
+                        )
+//                    }
+//
+//                trailingCellPosition.isSame(column, row) -> TransparentHexagonContentStyle(
+//                    id = cellIndex,
+//                )
+                    else -> EmptyHexagonContentStyle(
+                        id = cellIndex,
+                        background = SingleColor(backgroundColor.copy(alpha = backgroundColor.alpha * alpha))
+                    )
+                }
+            }
+
+            val requestNetworkItemsAlpha by animateFloatAsState(
+                targetValue = if (viewState.mode is ExternalProfileMode.RequestNetwork) 1f else 0f,
+                animationSpec = tween(300)
+            )
+
+            val requestNetworkItems = List(gridRows * gridColumns) { index ->
+                val row = index / gridColumns
+                val column = index % gridColumns
+
+                val isCenter = row == centralCellPosition.row && column == centralCellPosition.column
+
+                val cellIndex = createCellPosition(
+                    column = column,
+                    row = row,
+                ).getIndex()
+
+                val backgroundColor = hexCellsBackgroundColors[cellIndex]
+
+                when {
+                    isCenter -> remember(requestNetworkItemsAlpha) {
+                        IconHexagonContentStyle(
+                            id = cellIndex,
+                            background = SingleColor(FacebookColor.copy(alpha = requestNetworkItemsAlpha)),
+                            alpha = requestNetworkItemsAlpha,
+                            contentDescription = "LinkedIn",
+                            image = VectorResource(id = R.drawable.ic_linkedin),
+                            onClick = { offset ->
+                                val screenWidth = with(currentDensity) { currentConfig.screenWidthDp.dp.toPx() }
+                                val screenHeight = with(currentDensity) { currentConfig.screenHeightDp.dp.toPx() }
+
+                                val newScale = gridColumns.toFloat()
+
+                                // Convert the clicked position into the zoomed coordinate system
+                                val newOffsetX = (screenWidth / 2 - offset.x) * (newScale / scale)
+                                val newOffsetY = (screenHeight / 2 - offset.y) * (newScale / scale)
+
+                                changeScale = ChangeScale(
+                                    scale = newScale,
+                                    position = Offset(newOffsetX, newOffsetY)
+                                )
+                            }
+                        )
+                    }
+                    linkCellPosition.isSame(column, row) -> remember(requestNetworkItemsAlpha) {
+                        IconHexagonContentStyle(
+                            id = cellIndex,
+                            background = SingleColor(PrimaryColor.copy(alpha = requestNetworkItemsAlpha)),
+                            alpha = requestNetworkItemsAlpha,
+                            contentDescription = "Link",
+                            image = VectorResource(id = R.drawable.ic_link),
+                            onClick = { offset ->
+                                val screenWidth = with(currentDensity) { currentConfig.screenWidthDp.dp.toPx() }
+                                val screenHeight = with(currentDensity) { currentConfig.screenHeightDp.dp.toPx() }
+
+                                val newScale = gridColumns.toFloat()
+
+                                // Convert the clicked position into the zoomed coordinate system
+                                val newOffsetX = (screenWidth / 2 - offset.x) * (newScale / scale)
+                                val newOffsetY = (screenHeight / 2 - offset.y) * (newScale / scale)
+
+                                changeScale = ChangeScale(
+                                    scale = newScale,
+                                    position = Offset(newOffsetX, newOffsetY)
+                                )
+                            }
+                        )
+                    }
+                    bitcoinCellPosition.isSame(column, row) -> remember(requestNetworkItemsAlpha) {
+                        IconHexagonContentStyle(
+                            id = cellIndex,
+                            background = Gradient(
+                                colors = listOf(
+                                    Color(0xFFF7931A).copy(alpha = requestNetworkItemsAlpha),
+                                    Color(0xFFFFE81C).copy(alpha = requestNetworkItemsAlpha)
+                                ),
+                                startOffset = Offset(-75f, 100f),
+                                endOffset = Offset(200f, -100f)
+                            ),
+                            alpha = requestNetworkItemsAlpha,
+                            contentDescription = "Bitcoin",
+                            image = VectorResource(id = R.drawable.ic_bitcoin),
+                            onClick = { offset ->
+                                val screenWidth = with(currentDensity) { currentConfig.screenWidthDp.dp.toPx() }
+                                val screenHeight = with(currentDensity) { currentConfig.screenHeightDp.dp.toPx() }
+
+                                val newScale = gridColumns.toFloat()
+
+                                // Convert the clicked position into the zoomed coordinate system
+                                val newOffsetX = (screenWidth / 2 - offset.x) * (newScale / scale)
+                                val newOffsetY = (screenHeight / 2 - offset.y) * (newScale / scale)
+
+                                changeScale = ChangeScale(
+                                    scale = newScale,
+                                    position = Offset(newOffsetX, newOffsetY)
+                                )
+                            }
+                        )
+                    }
+                    facebookCellPosition.isSame(column, row) -> remember(requestNetworkItemsAlpha) {
+                        IconHexagonContentStyle(
+                            id = cellIndex,
+                            background = SingleColor(FacebookColor.copy(alpha = requestNetworkItemsAlpha)),
+                            alpha = requestNetworkItemsAlpha,
+                            contentDescription = "Facebook",
+                            image = VectorResource(id = R.drawable.ic_facebook)
+                        )
+                    }
+                    messengerCellPosition.isSame(column, row) -> remember(requestNetworkItemsAlpha) {
+                        IconHexagonContentStyle(
+                            id = cellIndex,
+                            background = SingleColor(MessengerColor.copy(alpha = requestNetworkItemsAlpha)),
+                            alpha = requestNetworkItemsAlpha,
+                            contentDescription = "Messenger",
+                            image = VectorResource(id = R.drawable.ic_messenger)
+                        )
+                    }
+                    instagramCellPosition.isSame(column, row) -> remember(requestNetworkItemsAlpha) {
+                        IconHexagonContentStyle(
+                            id = cellIndex,
+                            background = SingleColor(InstagramColor.copy(alpha = requestNetworkItemsAlpha)),
+                            alpha = requestNetworkItemsAlpha,
+                            contentDescription = "Instagram",
+                            image = VectorResource(id = R.drawable.ic_instagram),
+                            onClick = { offset ->
+
+                                val screenWidth = with(currentDensity) { currentConfig.screenWidthDp.dp.toPx() }
+                                val screenHeight = with(currentDensity) { currentConfig.screenHeightDp.dp.toPx() }
+
+                                val newScale = gridColumns.toFloat()
+
+                                // Convert the clicked position into the zoomed coordinate system
+                                val newOffsetX = (screenWidth / 2 - offset.x) * (newScale / scale)
+                                val newOffsetY = (screenHeight / 2 - offset.y) * (newScale / scale)
+
+                                changeScale = ChangeScale(
+                                    scale = newScale,
+                                    position = Offset(newOffsetX, newOffsetY)
+                                )
+                            }
+                        )
+                    }
+
+                    emailCellPosition.isSame(column, row) -> remember(requestNetworkItemsAlpha) {
+                        IconHexagonContentStyle(
+                            id = cellIndex,
+                            background = SingleColor(EmailColor.copy(alpha = requestNetworkItemsAlpha)),
+                            alpha = requestNetworkItemsAlpha,
+                            contentDescription = "Email",
+                            image = VectorResource(id = R.drawable.ic_email)
+                        )
+                    }
+
+                    phoneCellPosition.isSame(column, row) -> remember(requestNetworkItemsAlpha) {
+                        IconHexagonContentStyle(
+                            id = cellIndex,
+                            background = SingleColor(PhoneColor.copy(alpha = requestNetworkItemsAlpha)),
+                            alpha = requestNetworkItemsAlpha,
+                            contentDescription = "Phone",
+                            image = VectorResource(id = R.drawable.ic_phone),
+                            onClick = {
+//                    val number = Uri.parse("tel:123456789")
+//                    val callIntent = Intent(Intent.ACTION_DIAL, number)
+//                    context.startActivity(callIntent)
+                            }
+                        )
+                    }
+
+                    twitterCellPosition.isSame(column, row) -> remember(requestNetworkItemsAlpha) {
+                        IconHexagonContentStyle(
+                            id = cellIndex,
+                            background = SingleColor(TwitterColor.copy(alpha = requestNetworkItemsAlpha)),
+                            alpha = requestNetworkItemsAlpha,
+                            contentDescription = "Twitter",
+                            image = VectorResource(id = R.drawable.ic_twitter)
+                        )
+                    }
+
+                    whatsappCellPosition.isSame(column, row) -> remember(requestNetworkItemsAlpha) {
+                        IconHexagonContentStyle(
+                            id = cellIndex,
+                            background = SingleColor(WhatsappColor.copy(alpha = requestNetworkItemsAlpha)),
+                            alpha = requestNetworkItemsAlpha,
+                            contentDescription = "Whatsapp",
+                            image = VectorResource(id = R.drawable.ic_whatsapp),
+                            onClick = { offset ->
+                                val screenWidth = with(currentDensity) { currentConfig.screenWidthDp.dp.toPx() }
+                                val screenHeight = with(currentDensity) { currentConfig.screenHeightDp.dp.toPx() }
+
+                                val newScale = gridColumns.toFloat()
+
+                                // Convert the clicked position into the zoomed coordinate system
+                                val newOffsetX = (screenWidth / 2 - offset.x) * (newScale / scale)
+                                val newOffsetY = (screenHeight / 2 - offset.y) * (newScale / scale)
+
+                                changeScale = ChangeScale(
+                                    scale = newScale,
+                                    position = Offset(newOffsetX, newOffsetY)
+                                )
+                            }
+                        )
+                    }
+
+                    telegramCellPosition.isSame(column, row) -> remember(requestNetworkItemsAlpha) {
+                        IconHexagonContentStyle(
+                            id = cellIndex,
+                            background = SingleColor(TelegramColor.copy(alpha = requestNetworkItemsAlpha)),
+                            alpha = requestNetworkItemsAlpha,
+                            contentDescription = "Telegram",
+                            image = VectorResource(id = R.drawable.ic_telegram)
+                        )
+                    }
+
+                    skypeCellPosition.isSame(column, row) -> remember(requestNetworkItemsAlpha) {
+                        IconHexagonContentStyle(
+                            id = cellIndex,
+                            background = SingleColor(TelegramColor.copy(alpha = requestNetworkItemsAlpha)),
+                            alpha = requestNetworkItemsAlpha,
+                            contentDescription = "Skype",
+                            image = VectorResource(id = R.drawable.ic_skype),
+                            onClick = { offset ->
+                                val screenWidth = with(currentDensity) { currentConfig.screenWidthDp.dp.toPx() }
+                                val screenHeight = with(currentDensity) { currentConfig.screenHeightDp.dp.toPx() }
+
+                                val newScale = gridColumns.toFloat()
+
+                                // Convert the clicked position into the zoomed coordinate system
+                                val newOffsetX = (screenWidth / 2 - offset.x) * (newScale / scale)
+                                val newOffsetY = (screenHeight / 2 - offset.y) * (newScale / scale)
+
+                                changeScale = ChangeScale(
+                                    scale = newScale,
+                                    position = Offset(newOffsetX, newOffsetY)
+                                )
+                            }
+                        )
+                    }
+
+                    tiktokCellPosition.isSame(column, row) -> remember(requestNetworkItemsAlpha) {
+                        IconHexagonContentStyle(
+                            id = cellIndex,
+                            background = SingleColor(TiktokColor.copy(alpha = requestNetworkItemsAlpha)),
+                            alpha = requestNetworkItemsAlpha,
+                            contentDescription = "TikTok",
+                            image = VectorResource(id = R.drawable.ic_tiktok)
+                        )
+                    }
+
+                    ethereumCellPosition.isSame(column, row) -> remember(requestNetworkItemsAlpha) {
+                        IconHexagonContentStyle(
+                            id = cellIndex,
+                            background = Gradient(
+                                colors = listOf(
+                                    Color.Black.copy(alpha = requestNetworkItemsAlpha),
+                                    Color.White.copy(alpha = requestNetworkItemsAlpha)
+                                ),
+                                startOffset = Offset(-75f, 100f),
+                                endOffset = Offset(200f, -100f)
+                            ),
+                            alpha = requestNetworkItemsAlpha,
+                            contentDescription = "Ethereum",
+                            image = VectorResource(id = R.drawable.ic_ethereum)
+                        )
+                    }
+
+                    else -> EmptyHexagonContentStyle(id = cellIndex, background = SingleColor(backgroundColor))
+                }
+            }
+
             val items = when {
                 viewState.mode == ExternalProfileMode.Normal || viewState.mode == ExternalProfileMode.Edit -> normalHexItems
-                else -> getRequestNetworkModeGridItems()
+                else -> requestNetworkItems
             }
 
 //            val isEnterAnimationFinished by remember(isEnterAnimationFinished) { mutableStateOf(isEnterAnimationFinished) }.log { "triggerRecalculation" }
@@ -923,6 +1200,7 @@ private fun ExternalProfile(
                 itemsList = items,
                 rowSize = gridColumns,
                 initialScale = scale,
+                changeScale = changeScale,
                 onCellPositionCalculated = { index, offset, width, height ->
                     Timber.i("onCellPositionCalculated for index: $index")
                     if (isEnterAnimationFinished) {
@@ -934,13 +1212,16 @@ private fun ExternalProfile(
                             if (trailingCellOffset == null) trailingCellOffset = offset
                         } else if (index == profilePictureCellPosition.getIndex()) {
                             if (profilePictureCellOffset == null) profilePictureCellOffset = offset.log { "profilePictureCellOffset" }
+                        } else if (index == whatsappCellPosition.getIndex()) {
+                            offset.log { "whatsappCellPosition" }
                         }
                     }
                 },
                 onZoom = { zoom, offset ->
+                    Timber.i("onZoom offset: ${offset}")
                     viewModel.onGridZoomChange(zoom = zoom)
                 },
-                isScrollEnabled = false,
+                isScrollEnabled = true,
                 isEnterAnimationFinished = isEnterAnimationFinished,
                 offsetY = when {
                     profilePictureCellOffset == null -> 0f
@@ -1894,8 +2175,14 @@ private fun ExternalProfile(
                             value = value,
                             onValueChange = {
                                 value = it
-                            },
+                            }
                         )
+                    }
+
+                    KeyboardDismissListener {
+                        if ((viewState.mode as ExternalProfileMode.RequestNetwork).isSearching) {
+                            viewModel.onViewEvent(RequestNetworkButtonClick(false))
+                        }
                     }
                 }
             }
@@ -1974,16 +2261,19 @@ private fun ExternalProfile(
                         .padding(horizontal = 9.fdph),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(
-                        modifier = Modifier,
-                        onClick = {}
-                    ) {
-                        Image(
-                            modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
-                            painter = painterResource(R.drawable.ic_rounded_plus_2),
-                            contentDescription = "back button",
-                        )
-                    }
+                    if (viewState.mode !is ExternalProfileMode.RequestNetwork) {
+                        IconButton(
+                            modifier = Modifier,
+                            onClick = {
+                                viewModel.onViewEvent(RequestNetworkButtonClick())
+                            }
+                        ) {
+                            Image(
+                                modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
+                                painter = painterResource(R.drawable.ic_rounded_plus_2),
+                                contentDescription = "back button",
+                            )
+                        }
 
 //                    VerticalLine()
 //
@@ -1998,71 +2288,92 @@ private fun ExternalProfile(
 //                        )
 //                    }
 
-                    VerticalLine()
+                        VerticalLine()
 
-                    IconButton(
-                        modifier = Modifier,
-                        onClick = {
-                            viewModel.onViewEvent(FavoriteButtonClick)
-                        }
-                    ) {
-                        val favoriteButtonAlpha by animateFloatAsState(
-                            targetValue = if (viewState.isFavorite) 0f else 1f,
-                            animationSpec = tween(300)
-                        )
-
-                        Image(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(vertical = 10.fdpv)
-                                .alpha(favoriteButtonAlpha),
-                            painter = painterResource(R.drawable.ic_star),
-                            contentDescription = "back button",
-                        )
-                        Image(
-                            modifier = Modifier.fillMaxSize()
-                                .padding(vertical = 10.fdpv)
-                                .alpha(1 - favoriteButtonAlpha),
-                            painter = painterResource(R.drawable.ic_star_filled),
-                            contentDescription = "back button",
-                        )
                     }
 
-                    VerticalLine()
-
-                    IconButton(
-                        modifier = Modifier,
-                        onClick = {
-                            if (viewState.mode !is ExternalProfileMode.Edit && viewState.mode !is ExternalProfileMode.NewContact) {
-                                viewModel.onViewEvent(EditButtonClick)
-                            } else {
-                                viewModel.onViewEvent(SaveButtonClick)
+                    if (viewState.mode !is ExternalProfileMode.RequestNetwork) {
+                        IconButton(
+                            modifier = Modifier,
+                            onClick = {
+                                viewModel.onViewEvent(FavoriteButtonClick)
                             }
-                        }
-                    ) {
-                        val alphaAnimationDuration = 300
-                        val editButtonAlpha by animateFloatAsState(
-                            targetValue = if (viewState.mode is ExternalProfileMode.Edit || viewState.mode is ExternalProfileMode.NewContact) 0f else 1f,
-                            animationSpec = tween(alphaAnimationDuration)
-                        )
-                        Image(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(vertical = 10.fdpv)
-                                .alpha(editButtonAlpha),
-                            painter = painterResource(R.drawable.ic_edit),
-                            contentDescription = "back button",
-                        )
+                        ) {
+                            val favoriteButtonAlpha by animateFloatAsState(
+                                targetValue = if (viewState.isFavorite) 0f else 1f,
+                                animationSpec = tween(300)
+                            )
 
-                        Image(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(vertical = 10.fdpv)
-                                .alpha(1- editButtonAlpha),
-                            painter = rememberVectorPainter(Icons.Outlined.Check),
-                            colorFilter = ColorFilter.tint(Color.White),
-                            contentDescription = "back button",
-                        )
+                            Image(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(vertical = 10.fdpv)
+                                    .alpha(favoriteButtonAlpha),
+                                painter = painterResource(R.drawable.ic_star),
+                                contentDescription = "back button",
+                            )
+                            Image(
+                                modifier = Modifier.fillMaxSize()
+                                    .padding(vertical = 10.fdpv)
+                                    .alpha(1 - favoriteButtonAlpha),
+                                painter = painterResource(R.drawable.ic_star_filled),
+                                contentDescription = "back button",
+                            )
+                        }
+
+                        VerticalLine()
+
+                        IconButton(
+                            modifier = Modifier,
+                            onClick = {
+                                if (viewState.mode !is ExternalProfileMode.Edit && viewState.mode !is ExternalProfileMode.NewContact) {
+                                    viewModel.onViewEvent(EditButtonClick)
+                                } else {
+                                    viewModel.onViewEvent(SaveButtonClick)
+                                }
+                            }
+                        ) {
+                            val alphaAnimationDuration = 300
+                            val editButtonAlpha by animateFloatAsState(
+                                targetValue = if (viewState.mode is ExternalProfileMode.Edit || viewState.mode is ExternalProfileMode.NewContact) 0f else 1f,
+                                animationSpec = tween(alphaAnimationDuration)
+                            )
+                            Image(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(vertical = 10.fdpv)
+                                    .alpha(editButtonAlpha),
+                                painter = painterResource(R.drawable.ic_edit),
+                                contentDescription = "back button",
+                            )
+
+                            Image(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(vertical = 10.fdpv)
+                                    .alpha(1 - editButtonAlpha),
+                                painter = rememberVectorPainter(Icons.Outlined.Check),
+                                colorFilter = ColorFilter.tint(Color.White),
+                                contentDescription = "back button",
+                            )
+                        }
+                    }
+                    if (viewState.mode is ExternalProfileMode.RequestNetwork) {
+                        IconButton(
+                            modifier = Modifier,
+                            onClick = {
+                                viewModel.onViewEvent(RequestNetworkButtonClick(isSearching = true))
+                            }
+                        ) {
+                            Image(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(vertical = 10.fdpv),
+                                painter = painterResource(R.drawable.ic_search),
+                                colorFilter = ColorFilter.tint(Color.White),
+                                contentDescription = "back button",
+                            )
+                        }
                     }
                 }
             }
@@ -2103,6 +2414,69 @@ private fun ExternalProfile(
     }
 }
 
+//fun buildCustomIconItem(cellIndex: Int, onClick: (Offset) -> Unit) {
+//    CustomHexagonContentStyle(
+//        id = cellIndex,
+//        content = {
+//            Box(
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .align(Alignment.Center),
+//                contentAlignment = Alignment.Center
+//            ) {
+//                Image(
+//                    modifier = Modifier
+//                        .alpha(contentStyle.alpha),
+//                    painter = rememberAsyncImagePainter(
+//                        model = ImageRequest.Builder(LocalContext.current)
+//                            .data(contentStyle.image.id)
+//                            .size(coil.size.Size.ORIGINAL) // Load the image at its original resolution
+//                            .build(),
+//                    ),
+//                    contentDescription = contentStyle.contentDescription,
+//                    colorFilter = when {
+//                        contentStyle.tintColor != null -> ColorFilter.tint(contentStyle.tintColor)
+//                        else -> null
+//                    }
+//                )
+//            }
+//            Box(
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .align(Alignment.Center)
+//                    .background(Color(0xFF6E4CD4))
+//            ) {
+//                if (photoUri == null) {
+//                    Image(
+//                        modifier = Modifier
+//                            .align(Alignment.Center)
+//                            .fillMaxSize(0.335f),
+//                        painter = rememberAsyncImagePainter(
+//                            model = ImageRequest.Builder(LocalContext.current)
+//                                .data(R.drawable.ic_profile)
+//                                .size(Size(580, 660))
+//                                .build()
+//                        ),
+//                        contentDescription = null,
+//                    )
+//                } else {
+//                    Image(
+//                        modifier = Modifier
+//                            .fillMaxSize(),
+//                        painter = rememberAsyncImagePainter(photoUri),
+//                        contentScale = ContentScale.Crop,
+//                        contentDescription = null,
+//                    )
+//                }
+//            }
+//        },
+//        isShakable = true,
+//        onClick = { offset ->
+//            onClick.invoke(offset)
+//        },
+//    )
+//}
+
 @Composable
 fun VerticalLine() {
     Box(
@@ -2121,130 +2495,3 @@ private fun createCellPosition(row: Int, column: Int) = HexGridCellPosition(
     row = row,
     gridRows = gridRows,
     gridColumns = gridColumns)
-
-private fun getRequestNetworkModeGridItems() = List(gridRows * gridColumns) { index ->
-    val row = index / gridColumns
-    val column = index % gridColumns
-
-    val isCenter = row == centralCellPosition.row && column == centralCellPosition.column
-
-    val cellIndex = createCellPosition(
-        column = column,
-        row = row,
-    ).getIndex()
-
-    val backgroundColor = hexCellsBackgroundColors[cellIndex]
-
-    when {
-        isCenter -> IconHexagonContentStyle(
-            id = cellIndex,
-            background = SingleColor(FacebookColor),
-            contentDescription = "LinkedIn",
-            image = VectorResource(id = R.drawable.ic_linkedin)
-        )
-        linkCellPosition.isSame(column, row) -> IconHexagonContentStyle(
-            id = cellIndex,
-            background = SingleColor(PrimaryColor),
-            contentDescription = "Link",
-            image = VectorResource(id = R.drawable.ic_link)
-        )
-        bitcoinCellPosition.isSame(column, row) -> IconHexagonContentStyle(
-            id = cellIndex,
-            background = Gradient(
-                colors = listOf(Color(0xFFF7931A), Color(0xFFFFE81C)),
-                startOffset = Offset(-75f, 100f),
-                endOffset = Offset(200f, -100f)
-            ),
-            contentDescription = "Bitcoin",
-            image = VectorResource(id = R.drawable.ic_bitcoin)
-        )
-        facebookCellPosition.isSame(column, row) -> IconHexagonContentStyle(
-            id = cellIndex,
-            background = SingleColor(FacebookColor),
-            contentDescription = "Facebook",
-            image = VectorResource(id = R.drawable.ic_facebook)
-        )
-        messengerCellPosition.isSame(column, row) -> IconHexagonContentStyle(
-            id = cellIndex,
-            background = SingleColor(MessengerColor),
-            contentDescription = "Messenger",
-            image = VectorResource(id = R.drawable.ic_messenger)
-        )
-        instagramCellPosition.isSame(column, row) -> IconHexagonContentStyle(
-            id = cellIndex,
-            background = SingleColor(InstagramColor),
-            contentDescription = "Instagram",
-            image = VectorResource(id = R.drawable.ic_instagram)
-        )
-
-        emailCellPosition.isSame(column, row) ->IconHexagonContentStyle(
-            id = cellIndex,
-            background = SingleColor(EmailColor),
-            contentDescription = "Email",
-            image = VectorResource(id = R.drawable.ic_email)
-        )
-
-        phoneCellPosition.isSame(column, row) -> IconHexagonContentStyle(
-            id = cellIndex,
-            background = SingleColor(PhoneColor),
-            contentDescription = "Phone",
-            image = VectorResource(id = R.drawable.ic_phone),
-            onClick = {
-//                    val number = Uri.parse("tel:123456789")
-//                    val callIntent = Intent(Intent.ACTION_DIAL, number)
-//                    context.startActivity(callIntent)
-            }
-        )
-
-        twitterCellPosition.isSame(column, row) ->
-            IconHexagonContentStyle(
-                id = cellIndex,
-                background = SingleColor(TwitterColor),
-                contentDescription = "Twitter",
-                image = VectorResource(id = R.drawable.ic_twitter)
-            )
-
-        whatsappCellPosition.isSame(column, row) -> IconHexagonContentStyle(
-            id = cellIndex,
-            background = SingleColor(WhatsappColor),
-            contentDescription = "Whatsapp",
-            image = VectorResource(id = R.drawable.ic_whatsapp)
-        )
-
-        telegramCellPosition.isSame(column, row) -> IconHexagonContentStyle(
-            id = cellIndex,
-            background = SingleColor(TelegramColor),
-            contentDescription = "Telegram",
-            image = VectorResource(id = R.drawable.ic_telegram)
-        )
-
-        skypeCellPosition.isSame(column, row) -> IconHexagonContentStyle(
-            id = cellIndex,
-            background = SingleColor(TelegramColor),
-            contentDescription = "Skype",
-            image = VectorResource(id = R.drawable.ic_skype)
-        )
-
-        tiktokCellPosition.isSame(column, row) -> IconHexagonContentStyle(
-            id = cellIndex,
-            background = SingleColor(TiktokColor),
-            contentDescription = "TikTok",
-            image = VectorResource(id = R.drawable.ic_tiktok)
-        )
-
-        ethereumCellPosition.isSame(column, row) -> IconHexagonContentStyle(
-            id = cellIndex,
-            background = Gradient(
-                colors = listOf(Color.Black, Color.White),
-                startOffset = Offset(-75f, 100f),
-                endOffset = Offset(200f, -100f)
-            ),
-            contentDescription = "Ethereum",
-            image = VectorResource(id = R.drawable.ic_ethereum)
-        )
-
-        trailingCellPosition.isSame(column, row) -> TransparentHexagonContentStyle(id = cellIndex,)
-
-        else -> EmptyHexagonContentStyle(id = cellIndex, background = SingleColor(backgroundColor))
-    }
-}

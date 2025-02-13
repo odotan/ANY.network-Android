@@ -12,6 +12,7 @@ import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -306,7 +307,7 @@ fun HexagonalGrid(
                                 is ContactContentStyle -> contentStyle.onClick.invoke(cellPosition.boundsInRoot().center)
 
                                 is IconHexagonContentStyle -> contentStyle.onClick.invoke(
-                                    cellPositions[index]!!.positionOnScreen()
+                                    cellPosition.boundsInParent().center
                                 )
 
                                 is AutoresizeTextContentStyle -> contentStyle.onClick.invoke(
