@@ -3,21 +3,23 @@ package com.anynetwork.app.ui.screens.myprofile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.anynetwork.app.data.profile.ProfileRepository
-import com.anynetwork.app.model.Contact
+import com.anynetwork.app.domain.SendSignInLinkUseCase
+import com.anynetwork.app.domain.VerifyEmailSignInUseCase
 import com.anynetwork.app.model.Profile
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEffect
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent
+import com.anynetwork.app.ui.screens.myprofile.EmailNetworkAuthentication.EmailError
 import com.anynetwork.app.ui.screens.myprofile.MyProfileViewEvent.*
-import com.anynetwork.app.ui.screens.newcontact.NewContactViewAction
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
 class MyProfileViewModel @Inject constructor(
-    val profileRepository: ProfileRepository
+    val profileRepository: ProfileRepository,
+    val sendSignInLinkUseCase: SendSignInLinkUseCase,
+    val verifyEmailSignInUseCase: VerifyEmailSignInUseCase
 ): ViewModel() {
 
     private val _viewState = MutableStateFlow(MyProfileViewState())
@@ -46,6 +48,19 @@ class MyProfileViewModel @Inject constructor(
                 otherEmail = it.otherEmail,
                 photoUri = it.avatarUri
             )
+        }
+    }
+
+    fun verifyEmail(emailSignInLink: String) {
+        viewModelScope.launch {
+            Timber.i("verifyEmail - emailSignInLink: $emailSignInLink")
+            try {
+                Timber.i("verifyEmail - success")
+                verifyEmailSignInUseCase("talkappdanny@gmail.com", emailSignInLink)
+            } catch (e: EmailError.Unknown) {
+                e.printStackTrace()
+                Timber.i("verifyEmail - error")
+            }
         }
     }
 
@@ -154,6 +169,10 @@ class MyProfileViewModel @Inject constructor(
             is ClearViewEffect -> {
                 _viewEffectFlow.value = null
             }
+
+            EmailCellClick -> viewModelScope.launch {
+                sendSignInLinkUseCase.execute("talkappdanny@gmail.com")
+            }
         }
     }
 }
@@ -231,6 +250,7 @@ sealed class MyProfileViewEvent {
         val shouldRequestFocus: Boolean = false
     ): MyProfileViewEvent()
     data class UpdatePhotoUri(val photoUri: String): MyProfileViewEvent()
+    data object EmailCellClick: MyProfileViewEvent()
     data object RemoveProfilePicture: MyProfileViewEvent()
     data object BackButtonClick: MyProfileViewEvent()
     data object ClearViewEffect : MyProfileViewEvent()

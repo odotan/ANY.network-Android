@@ -1,7 +1,10 @@
 package com.anynetwork.app.ui.screens.externalprofile
 
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.anynetwork.app.R
 import com.anynetwork.app.data.contacts.ContactsRepository
 import com.anynetwork.app.data.interaction.InteractionRepository
 import com.anynetwork.app.model.Contact
@@ -9,7 +12,23 @@ import com.anynetwork.app.model.Interaction
 import com.anynetwork.app.ui.base.NavigateBack
 import com.anynetwork.app.ui.base.NavigationEvent
 import com.anynetwork.app.ui.base.ViewEffect
+import com.anynetwork.app.ui.components.hexagon.ChangeScale
+import com.anynetwork.app.ui.components.hexagon.NontransparentHexagonContentStyle
+import com.anynetwork.app.ui.components.hexagon.NontransparentHexagonContentStyle.Background.Gradient
+import com.anynetwork.app.ui.components.hexagon.NontransparentHexagonContentStyle.Background.SingleColor
 import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.*
+import com.anynetwork.app.ui.theme.EmailColor
+import com.anynetwork.app.ui.theme.FacebookColor
+import com.anynetwork.app.ui.theme.InstagramColor
+import com.anynetwork.app.ui.theme.LinkedinColor
+import com.anynetwork.app.ui.theme.MessengerColor
+import com.anynetwork.app.ui.theme.PhoneColor
+import com.anynetwork.app.ui.theme.PrimaryColor
+import com.anynetwork.app.ui.theme.SkypeColor
+import com.anynetwork.app.ui.theme.TelegramColor
+import com.anynetwork.app.ui.theme.TiktokColor
+import com.anynetwork.app.ui.theme.TwitterColor
+import com.anynetwork.app.ui.theme.WhatsappColor
 import com.anynetwork.app.ui.utils.log
 import com.anynetwork.app.utils.isValidEmail
 import com.anynetwork.app.utils.isValidPhone
@@ -117,6 +136,10 @@ class ExternalProfileViewModel @Inject constructor(
 
                     is ExternalProfileMode.Edit -> {
                         _viewState.value = _viewState.value.copy(mode = ExternalProfileMode.Normal)
+                    }
+
+                    is ExternalProfileMode.FocusedNetwork -> {
+                        _viewState.value = _viewState.value.copy(mode = ExternalProfileMode.RequestNetwork())
                     }
                 }
             }
@@ -342,6 +365,8 @@ class ExternalProfileViewModel @Inject constructor(
                 _viewState.value = viewState.value.copy(isFavorite = newValue)
                 _contact.value = contact.value?.copy(isFavorite = newValue)
                 contactsRepository.favoriteContact(id, newValue)
+
+                _viewEffectFlow.value = ExternalProfileViewEffect.ContactUpdated
             }
 
             EmailButtonClick -> viewModelScope.launch {
@@ -375,8 +400,12 @@ class ExternalProfileViewModel @Inject constructor(
             ClearViewEffect -> {
                 _viewEffectFlow.value = null
             }
-            ExternalProfileViewEvent.ClearNavigationEffect -> {
+            ClearNavigationEffect -> {
                 _navigationEventFlow.value = null
+            }
+            is RequestNetworkClick -> {
+                _viewState.value = viewState.value.copy(mode = ExternalProfileMode.FocusedNetwork(network = event.network, focusedCellId = event.cellId))
+                _viewEffectFlow.value = ExternalProfileViewEffect.FocusGrid(changeScale = event.changeScale)
             }
         }
     }
@@ -385,8 +414,35 @@ class ExternalProfileViewModel @Inject constructor(
 sealed class ExternalProfileMode {
     data object Normal: ExternalProfileMode()
     data class RequestNetwork(val isSearching: Boolean = false): ExternalProfileMode()
+    data class FocusedNetwork(val network: Network, val focusedCellId: Int): ExternalProfileMode()
     data object Edit: ExternalProfileMode()
     data object NewContact: ExternalProfileMode()
+}
+
+sealed class Network(val image: Int, val background: NontransparentHexagonContentStyle.Background) {
+    data object Link: Network(image = R.drawable.ic_link, background = SingleColor(PrimaryColor))
+    data object Facebook: Network(image = R.drawable.ic_facebook, background = SingleColor(FacebookColor))
+    data object Messenger: Network(image = R.drawable.ic_messenger, background = SingleColor(MessengerColor))
+    data object XTwitter: Network(image = R.drawable.ic_twitter, background = SingleColor(TwitterColor))
+    data object Instagram: Network(image = R.drawable.ic_instagram, background = SingleColor(InstagramColor))
+    data object Phone: Network(image = R.drawable.ic_phone, background = SingleColor(PhoneColor))
+    data object Email: Network(image = R.drawable.ic_email, background = SingleColor(EmailColor))
+    data object Telegram: Network(image = R.drawable.ic_telegram, background = SingleColor(TelegramColor))
+    data object WhatsApp: Network(image = R.drawable.ic_whatsapp, background = SingleColor(WhatsappColor))
+    data object Linkedin: Network(image = R.drawable.ic_linkedin, background = SingleColor(LinkedinColor))
+    data object Bitcoin: Network(image = R.drawable.ic_bitcoin, background = Gradient(
+        colors = listOf(Color(0xFFF7931A), Color(0xFFFFE81C)),
+        startOffset = Offset(-75f, 100f),
+        endOffset = Offset(200f, -100f)
+    )
+    )
+    data object Ethereum: Network(image = R.drawable.ic_ethereum, background = Gradient(
+        colors = listOf(Color.Black, Color.White),
+        startOffset = Offset(-75f, 100f),
+        endOffset = Offset(200f, -100f)
+    ))
+    data object Skype: Network(image = R.drawable.ic_skype, background = SingleColor(SkypeColor))
+    data object Tiktok: Network(image = R.drawable.ic_tiktok, background = SingleColor(TiktokColor))
 }
 
 data class ExternalProfileViewState(
@@ -410,7 +466,7 @@ data class ExternalProfileViewState(
     val otherEmail: String? = null,
     val address: String? = null,
     val photoUri: String? = null,
-    val isFavorite: Boolean = false
+    val isFavorite: Boolean = false,
 )
 
 sealed class ExternalProfileViewEvent {
@@ -476,6 +532,7 @@ sealed class ExternalProfileViewEvent {
     data object EmailButtonClick: ExternalProfileViewEvent()
     data object ClearViewEffect: ExternalProfileViewEvent()
     data object ClearNavigationEffect: ExternalProfileViewEvent()
+    data class RequestNetworkClick(val cellId: Int, val network: Network, val changeScale: ChangeScale): ExternalProfileViewEvent()
 }
 
 sealed class ExternalProfileViewEffect: ViewEffect() {
@@ -493,4 +550,5 @@ sealed class ExternalProfileViewEffect: ViewEffect() {
     data class CallPhoneNumber(val phoneNumber: String): ExternalProfileViewEffect()
     data class WriteEmail(val emailAddress: String): ExternalProfileViewEffect()
     data object ContactUpdated: ExternalProfileViewEffect()
+    data class FocusGrid(val changeScale: ChangeScale): ExternalProfileViewEffect()
 }

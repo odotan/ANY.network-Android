@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "616107156319",
+    "project_id": "any-network",
+    "storage_bucket": "any-network.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:616107156319:android:9a594669b8e212ca410cea",
+        "android_client_info": {
+          "package_name": "com.anynetwork.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC0jH11_aSBqrcRyKQuL9_A2cYFhY9s1j8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

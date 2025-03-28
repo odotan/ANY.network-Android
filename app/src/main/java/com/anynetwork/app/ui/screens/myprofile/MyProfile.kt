@@ -86,6 +86,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -176,15 +177,23 @@ import com.anynetwork.app.ui.utils.log
 import com.anynetwork.app.ui.utils.xdph
 import com.anynetwork.app.ui.utils.xdpv
 import com.google.accompanist.insets.ExperimentalAnimatedInsets
+import com.google.firebase.auth.ActionCodeSettings
+import com.google.firebase.auth.FirebaseAuth
 import com.yalantis.ucrop.UCrop
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.io.File
 import java.util.UUID
+import javax.inject.Inject
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
@@ -193,7 +202,8 @@ fun MyProfileRoot(
     navController: NavHostController,
     onContactUpdated: () -> Unit,
     isEnterAnimationFinished: Boolean = true,
-    onBackPress: @Composable () -> Unit
+    onBackPress: @Composable () -> Unit,
+    emailSignInLink: String?
 ) {
     val viewModel: MyProfileViewModel = hiltViewModel<MyProfileViewModel>()
         .apply {
@@ -211,6 +221,7 @@ fun MyProfileRoot(
             }
             onViewEvent(MyProfileViewEvent.ClearViewEffect)
         }
+
     MyProfile(
         viewModel = viewModel,
         isEnterAnimationFinished = isEnterAnimationFinished,
@@ -218,6 +229,12 @@ fun MyProfileRoot(
             navController.popBackStack(Route.Home, inclusive = false)
         }
     )
+
+    LaunchedEffect(emailSignInLink) {
+        if (!emailSignInLink.isNullOrEmpty()) {
+            viewModel.verifyEmail(emailSignInLink)
+        }
+    }
 }
 
 sealed class MyProfileMode {
@@ -913,6 +930,9 @@ private fun MyProfile(
                             contentDescription = "Email",
                             image = VectorResource(id = R.drawable.ic_email),
                             isShakable = true,
+                            onClick = {
+                                viewModel.onViewEvent(MyProfileViewEvent.EmailCellClick)
+                            },
                             overlay = if (mode is MyProfileMode.Edit) {
                                 {
                                     DeleteButton(
@@ -1044,13 +1064,13 @@ private fun MyProfile(
                 rowSize = gridColumns,
                 columnSize = gridRows,
                 minScale = scale,
-                onCellPositionCalculated = { index, offset, width, height ->
+                onCellPositionCalculated = { index, coordinates, width, height ->
                     if (cellWidth == null) cellWidth = width
                     if (cellHeight == null) cellHeight = height
                     if (index == trailingCellPosition.getIndex()) {
-                        if (trailingCellOffset == null) trailingCellOffset = offset
+                        if (trailingCellOffset == null) trailingCellOffset = coordinates.positionInRoot()
                     } else if (index == profilePictureCellPosition.getIndex()) {
-                        if (profilePictureCellOffset == null) profilePictureCellOffset = offset
+                        if (profilePictureCellOffset == null) profilePictureCellOffset = coordinates.positionInRoot()
                     }
                 },
                 isEnterAnimationFinished = isEnterAnimationFinished,
@@ -1866,4 +1886,65 @@ fun Modifier.offsetToAvoidKeyboard(): Modifier = composed {
     }
 
     this.offset { IntOffset(0, -yOffset.roundToInt()) }  // Move field up if obscured
+}
+
+class EmailNetworkAuthentication @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
+
+    private val actionCodeSettings: ActionCodeSettings = ActionCodeSettings.newBuilder()
+        .setUrl("https://anynetwork.page.link")
+        .setHandleCodeInApp(true)
+        .setAndroidPackageName(
+            "com.anynetwork.app",
+            true,
+            null
+        )
+        .build()
+
+    private var email: String? = null
+
+    init {
+        signOut()
+    }
+
+    suspend fun sendSignInLink(toEmail: String) {
+        FirebaseAuth.getInstance().sendSignInLinkToEmail(toEmail, actionCodeSettings).await()
+        this.email = toEmail
+    }
+
+    suspend fun verifySignInLink(email: String, link: String): String {
+
+        return if (FirebaseAuth.getInstance().isSignInWithEmailLink(link)) {
+            val result = FirebaseAuth.getInstance().signInWithEmailLink(email, link).await()
+            result.user?.email ?: email
+        } else {
+            throw EmailError.Unknown
+        }
+    }
+
+    fun verifyEmail(oobCode: String) = flow {
+        emit(VerificationState.Loading)
+        try {
+            FirebaseAuth.getInstance().applyActionCode(oobCode).await()
+            emit(VerificationState.Success)
+        } catch (e: Exception) {
+            emit(VerificationState.Error(e.message ?: "Unknown error"))
+        }
+    }.flowOn(Dispatchers.IO) // Run on background thread
+
+    private fun signOut() {
+        FirebaseAuth.getInstance().signOut()
+    }
+
+    sealed class EmailError(override val message: String?) : Throwable() {
+        object MissingEmail : EmailError("Missing Email")
+        object Unknown : EmailError("Unknown Error")
+    }
+
+    sealed class VerificationState {
+        object Loading : VerificationState()  // Represents the loading state (while verification is in progress)
+        object Success : VerificationState()  // Represents success after email verification
+        data class Error(val message: String) : VerificationState()  // Represents failure with an error message
+    }
 }

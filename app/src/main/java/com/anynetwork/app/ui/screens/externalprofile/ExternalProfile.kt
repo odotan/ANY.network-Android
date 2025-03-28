@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalFoundationApi::class)
+@file:OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 
 package com.anynetwork.app.ui.screens.externalprofile
 
@@ -16,6 +16,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.exponentialDecay
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -26,22 +27,27 @@ import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.animateTo
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -52,8 +58,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -82,8 +90,13 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.boundsInParent
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -92,7 +105,10 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
@@ -101,13 +117,16 @@ import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import coil.size.Size
+import com.anynetwork.app.BuildConfig
 import com.anynetwork.app.R
+import com.anynetwork.app.model.Interaction
 import com.anynetwork.app.ui.base.NavigateBack
 import com.anynetwork.app.ui.components.HexagonTextField
 import com.anynetwork.app.ui.components.HexagonTextFieldClearTrailingIcon
 import com.anynetwork.app.ui.components.Screen
 import com.anynetwork.app.ui.components.SearchTextField
 import com.anynetwork.app.ui.components.SheetValue
+import com.anynetwork.app.ui.components.TiltedWheelPicker
 import com.anynetwork.app.ui.components.ToolbarState
 import com.anynetwork.app.ui.components.ToolbarStateTitle
 import com.anynetwork.app.ui.components.dialog.AlertDialog
@@ -128,34 +147,30 @@ import com.anynetwork.app.ui.components.hexagon.HexGridCellPosition.Neighbor.Top
 import com.anynetwork.app.ui.components.hexagon.HexagonalGrid
 import com.anynetwork.app.ui.components.hexagon.IconHexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.IconHexagonContentStyle.Image.VectorResource
+import com.anynetwork.app.ui.components.hexagon.NontransparentHexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.NontransparentHexagonContentStyle.Background.Gradient
 import com.anynetwork.app.ui.components.hexagon.NontransparentHexagonContentStyle.Background.SingleColor
 import com.anynetwork.app.ui.components.hexagon.RoundedHexagon
 import com.anynetwork.app.ui.components.hexagon.RoundedPolygonShape
-import com.anynetwork.app.ui.components.hexagon.TransparentHexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.createPolygon
 import com.anynetwork.app.ui.components.hexagon.hexCellsBackgroundColors
 import com.anynetwork.app.ui.components.textfield.ProfileTextFieldLeading
 import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.*
+import com.anynetwork.app.ui.screens.home.HomeViewEvent
+import com.anynetwork.app.ui.screens.home.HomeViewModel
 import com.anynetwork.app.ui.screens.myprofile.offsetToAvoidKeyboard
 import com.anynetwork.app.ui.theme.DarkBlue
 import com.anynetwork.app.ui.theme.EmailColor
-import com.anynetwork.app.ui.theme.FacebookColor
 import com.anynetwork.app.ui.theme.GreenColor
-import com.anynetwork.app.ui.theme.InstagramColor
-import com.anynetwork.app.ui.theme.MessengerColor
 import com.anynetwork.app.ui.theme.PhoneColor
 import com.anynetwork.app.ui.theme.PrimaryColor
-import com.anynetwork.app.ui.theme.TelegramColor
-import com.anynetwork.app.ui.theme.TiktokColor
-import com.anynetwork.app.ui.theme.TwitterColor
-import com.anynetwork.app.ui.theme.WhatsappColor
 import com.anynetwork.app.ui.theme.montserratFontFamily
 import com.anynetwork.app.ui.utils.KeyboardDismissListener
 import com.anynetwork.app.ui.utils.fdph
 import com.anynetwork.app.ui.utils.fdpv
 import com.anynetwork.app.ui.utils.fsp
 import com.anynetwork.app.ui.utils.log
+import com.anynetwork.app.ui.utils.xdph
 import com.anynetwork.app.ui.utils.xdpv
 import com.yalantis.ucrop.UCrop
 import dev.chrisbanes.haze.HazeState
@@ -163,6 +178,7 @@ import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.File
@@ -177,6 +193,7 @@ fun ExternalProfileRoot(
     id: Long?,
     input: String? = null,
     isEnterAnimationFinished: Boolean = true,
+    homeViewModel: HomeViewModel,
     onContactUpdated: () -> Unit,
     onBackPress: @Composable () -> Unit,
 ) {
@@ -226,6 +243,7 @@ fun ExternalProfileRoot(
     }
     ExternalProfile(
         viewModel = viewModel,
+        homeViewModel = homeViewModel,
         isEnterAnimationFinished = isEnterAnimationFinished
     )
 }
@@ -267,22 +285,24 @@ val bitcoinCellPosition = profilePictureCellPosition.copy(row = profilePictureCe
 val skypeCellPosition = phoneCellPosition.getNeighborPosition(Left)
 val tiktokCellPosition = phoneCellPosition.getNeighborPosition(BottomLeft)
 val linkedinCellPosition = centralCellPosition
-val ethereumCellPosition = centralCellPosition.getNeighborPosition(Right)
+val ethereumCellPosition = linkedinCellPosition.getNeighborPosition(Right)
 
 @Composable
 private fun ExternalProfile(
     viewModel: ExternalProfileViewModel,
+    homeViewModel: HomeViewModel,
     isEnterAnimationFinished: Boolean
 ) {
     isEnterAnimationFinished.log { "isEnterAnimationFinished" }
     val coroutineScope = rememberCoroutineScope()
 
-    val scale = gridColumns / 4.7f
+    val initialScale = 1f // gridColumns / 4.7f
     var cellWidth: Int? by remember { mutableStateOf(null) }
     var cellHeight: Int? by remember { mutableStateOf(null) }
     var leadingCellOffset: Offset? by remember { mutableStateOf(null) }
     var trailingCellOffset: Offset? by remember { mutableStateOf(null) }
     var profilePictureCellOffset: Offset? by remember { mutableStateOf(null) }
+    var focusedOffset: Offset? by remember { mutableStateOf(null) }
     var fieldsDialogOptions: List<DropDownDialogMenuCategory> by remember { mutableStateOf(listOf()) }
     val listState = rememberLazyListState()
 
@@ -304,6 +324,7 @@ private fun ExternalProfile(
         viewState.isFavorite.log { "isFavorite" }
     }
 
+    val screenMode by remember { derivedStateOf { viewState.mode } }
     val firstName by remember { derivedStateOf { viewState.firstName } }
     val lastName by remember { derivedStateOf { viewState.lastName } }
     val company by remember { derivedStateOf { viewState.company.log { "company" } } }
@@ -336,6 +357,9 @@ private fun ExternalProfile(
     val emailFocusRequester = remember { FocusRequester() }
     val workEmailFocusRequester = remember { FocusRequester() }
     val otherEmailFocusRequester = remember { FocusRequester() }
+
+    val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val systemBarsPadding = WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
 
     fun phoneNumberOptions(onClick: (String) -> Unit): List<DropDownDialogMenuCategory> {
         return mutableListOf<DropDownDialogMenuCategory>().apply {
@@ -481,6 +505,9 @@ private fun ExternalProfile(
             startCrop(context, cameraPhotoUri)
         }
     }
+
+    var clickPosition: Offset? by remember { mutableStateOf(null) }
+    var centerPosition: Offset? by remember { mutableStateOf(null) }
 
     var isChooseMethodEditProfilePictureDialog by remember { mutableStateOf(false) }
     if (isChooseMethodEditProfilePictureDialog) {
@@ -633,7 +660,7 @@ private fun ExternalProfile(
             titleState = ToolbarStateTitle.Custom(
                 content = {
                     when (viewState.mode) {
-                        is ExternalProfileMode.RequestNetwork -> Text(
+                        is ExternalProfileMode.RequestNetwork, is ExternalProfileMode.FocusedNetwork -> Text(
                             modifier = Modifier.fillMaxWidth(),
                             text = "Request network",
                             textAlign = TextAlign.Center,
@@ -674,8 +701,15 @@ private fun ExternalProfile(
             ),
         ),
         hexagonGrid = {
+            var focusedCellId: Int? by remember(viewState) {
+                mutableStateOf((viewState.mode as? ExternalProfileMode.FocusedNetwork)?.focusedCellId)
+            }
             var changeScale: ChangeScale? by remember {
                 mutableStateOf(null)
+            }
+
+            LaunchedEffect(screenMode) {
+                if (changeScale != null) changeScale = ChangeScale(initialScale, Offset.Zero)
             }
 
             val alpha = 1 - dragPercentage.value/100f
@@ -822,7 +856,12 @@ private fun ExternalProfile(
                             contentDescription = "Email",
                             image = VectorResource(id = R.drawable.ic_email),
                             onClick = {
-                                viewModel.onViewEvent(EmailButtonClick)
+                                homeViewModel.onViewAction(
+                                    viewAction = HomeViewEvent.CarouselContactInteractionClick(
+                                        contact = viewModel.contact.value!!,
+                                        interactionType = Interaction.Type.Email
+                                    )
+                                )
                             },
                             isShakable = true,
                             overlay = if (viewState.mode is ExternalProfileMode.Edit) {
@@ -853,7 +892,13 @@ private fun ExternalProfile(
                             contentDescription = "Phone",
                             image = VectorResource(id = R.drawable.ic_phone),
                             onClick = {
-                                viewModel.onViewEvent(PhoneButtonClick)
+//                                viewModel.onViewEvent(PhoneButtonClick)
+                                homeViewModel.onViewAction(
+                                    viewAction = HomeViewEvent.CarouselContactInteractionClick(
+                                        contact = viewModel.contact.value!!,
+                                        interactionType = Interaction.Type.Phone
+                                    )
+                                )
                             },
                             isShakable = true,
                             overlay = if (viewState.mode is ExternalProfileMode.Edit) {
@@ -920,10 +965,44 @@ private fun ExternalProfile(
                 }
             }
 
+            val viewEffect by viewModel.viewEffectFlow.collectAsState()
+
+            LaunchedEffect(viewEffect) {
+                viewEffect?.let { effect ->
+                    when (effect) {
+                        is ExternalProfileViewEffect.FocusGrid -> {
+                            changeScale = effect.changeScale
+
+                            viewModel.onViewEvent(ClearViewEffect)
+                        }
+                    }
+                }
+            }
+
             val requestNetworkItemsAlpha by animateFloatAsState(
-                targetValue = if (viewState.mode is ExternalProfileMode.RequestNetwork) 1f else 0f,
+                targetValue = when (viewState.mode) {
+                    is ExternalProfileMode.RequestNetwork -> 1f
+                    is ExternalProfileMode.FocusedNetwork -> .1f
+                    else -> 0f
+                },
                 animationSpec = tween(300)
             )
+
+            val isNetworkBeingRequesting = viewState.mode is ExternalProfileMode.FocusedNetwork
+            val requestingNetworkContentAlpha by animateFloatAsState(
+                targetValue = when {
+                    isNetworkBeingRequesting -> 1f
+                    else -> 0f
+                },
+                animationSpec = tween(300)
+            )
+
+            @Composable
+            fun getNavigationBarHeight(): Float {
+                val context = LocalContext.current
+                val resourceId = context.resources.getIdentifier("navigation_bar_height", "dimen", "android")
+                return if (resourceId > 0) context.resources.getDimensionPixelSize(resourceId).toFloat() else 0f
+            }
 
             val requestNetworkItems = List(gridRows * gridColumns) { index ->
                 val row = index / gridColumns
@@ -938,249 +1017,350 @@ private fun ExternalProfile(
 
                 val backgroundColor = hexCellsBackgroundColors[cellIndex]
 
-                when {
-                    isCenter -> remember(requestNetworkItemsAlpha) {
-                        IconHexagonContentStyle(
-                            id = cellIndex,
-                            background = SingleColor(FacebookColor.copy(alpha = requestNetworkItemsAlpha)),
-                            alpha = requestNetworkItemsAlpha,
-                            contentDescription = "LinkedIn",
-                            image = VectorResource(id = R.drawable.ic_linkedin),
-                            onClick = { offset ->
-                                val screenWidth = with(currentDensity) { currentConfig.screenWidthDp.dp.toPx() }
-                                val screenHeight = with(currentDensity) { currentConfig.screenHeightDp.dp.toPx() }
+                fun createCellContentStyle(
+                    id: Int,
+                    cellBackground: NontransparentHexagonContentStyle.Background,
+                    network: Network
+                ): CustomHexagonContentStyle {
+                    val alpha = when {
+                        isNetworkBeingRequesting -> 1f
+                        else -> requestNetworkItemsAlpha
+                    }
+                    return CustomHexagonContentStyle(
+                        id = id,
+//                        background = when {
+//                            network.background is Gradient -> network.background
+//                                .copy(colors = network.background.colors.map { it.copy(alpha = alpha) })
+//                            else -> SingleColor((network.background as SingleColor)
+//                                .value.copy(alpha = alpha))
+//                        },
+                        background = cellBackground,
+                        onClick = { coordinate ->
+                            val offset = coordinate.boundsInRoot().center
 
-                                val newScale = gridColumns.toFloat()
+                            val screenWidth = with(currentDensity) { currentConfig.screenWidthDp.dp.toPx() }
+                            val screenHeight = with(currentDensity) { currentConfig.screenHeightDp.dp.toPx() }.log { "screenHeight" }
 
-                                // Convert the clicked position into the zoomed coordinate system
-                                val newOffsetX = (screenWidth / 2 - offset.x) * (newScale / scale)
-                                val newOffsetY = (screenHeight / 2 - offset.y) * (newScale / scale)
+                            val newScale = gridColumns.toFloat() * 1.1f
 
-                                changeScale = ChangeScale(
-                                    scale = newScale,
-                                    position = Offset(newOffsetX, newOffsetY)
+                            // Find the center of the grid in the current scale
+                            val gridCenterX = screenWidth / 2f
+                            val gridCenterY = screenHeight / 2f
+                            centerPosition = Offset(gridCenterX, gridCenterY)
+
+                            // Adjusted offset calculation to be more precise
+                            val newOffsetX = (gridCenterX - offset.x) * (newScale / initialScale)
+                            val newOffsetY = (gridCenterY - offset.y) * (newScale / initialScale)// + with(currentDensity) { 123.dp.toPx() }
+                            clickPosition = Offset(offset.x, offset.y)
+
+                            viewModel.onViewEvent(
+                                event = RequestNetworkClick(
+                                    cellId = cellIndex,
+                                    network = network,
+                                    changeScale = ChangeScale(
+                                        scale = newScale,
+                                        position = Offset(newOffsetX, newOffsetY)
+                                    )
+                                )
+                            )
+                        },
+                        overlay = if (viewState.mode is ExternalProfileMode.Edit) {
+                            {
+                                DeleteButton(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(top = 17.31.fdpv, end = 1.fdpv)
+                                        .size(24.fdpv * (LocalConfiguration.current.screenWidthDp.dp / gridColumns / 79.93f.fdpv))
+                                        .alpha(alpha),
+                                    onClick = {
+
+                                    }
                                 )
                             }
+                        } else null,
+                        isShakable = true,
+                        content = {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .then(when (network.background) {
+                                        is SingleColor -> Modifier.background(network.background.value.copy(alpha = alpha))
+                                        is Gradient -> Modifier.background(
+                                            Brush.linearGradient(
+                                                colors = network.background.colors.map { it.copy(alpha = alpha) },
+                                                start = network.background.startOffset,
+                                                end = network.background.endOffset
+                                            )
+                                        )
+                                    })
+                                    .align(Alignment.Center),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    modifier = Modifier
+                                        .alpha(alpha * (1 - requestingNetworkContentAlpha)),
+                                    painter = rememberAsyncImagePainter(
+                                        model = ImageRequest.Builder(LocalContext.current)
+                                            .data(network.image)
+                                            .size(Size.ORIGINAL)
+                                            .build(),
+                                    ),
+                                    contentDescription = network.toString(),
+                                )
+
+//                                if (isNetworkBeingRequesting) Column(
+//                                    modifier = Modifier
+//                                        .fillMaxSize()
+//                                        .alpha(requestingNetworkContentAlpha),
+//                                    horizontalAlignment = Alignment.CenterHorizontally
+//                                ) {
+//                                    fun Dp.zoomAware() = this / gridColumns / 1.2f
+//                                    fun TextUnit.zoomAware() = this / gridColumns / 1.2f
+//
+//                                    Image(
+//                                        modifier = Modifier
+//                                            .padding(top = 53.fdph.zoomAware())
+//                                            .height(71.fdph.zoomAware()),
+//                                        painter = rememberAsyncImagePainter(
+//                                            model = ImageRequest.Builder(LocalContext.current)
+//                                                .data(network.image)
+//                                                .size(Size.ORIGINAL)
+//                                                .build(),
+//                                        ),
+//                                        contentDescription = network.toString(),
+//                                    )
+//
+//                                    Text(
+//                                        modifier = Modifier
+//                                            .padding(top = 14.fdph.zoomAware()),
+//                                        text = "Request For",
+//                                        fontSize = 14.fsp.zoomAware(),
+//                                        style = TextStyle(
+//                                            fontFamily = montserratFontFamily,
+//                                            fontWeight = FontWeight.SemiBold,
+//                                            color = Color.White
+//                                        ),
+//                                    )
+//
+//                                    Text(
+//                                        modifier = Modifier
+//                                            .padding(top = 5.fdph.zoomAware()),
+//                                        text = network.toString(),
+//                                        fontSize = 24.fsp.zoomAware(),
+//                                        style = TextStyle(
+//                                            fontFamily = montserratFontFamily,
+//                                            fontWeight = FontWeight.Bold,
+//                                            color = Color.White
+//                                        ),
+//                                    )
+//
+//                                    Text(
+//                                        modifier = Modifier
+//                                            .padding(top = 17.fdph.zoomAware())
+//                                            .width(289.fdpv.zoomAware()),
+//                                        text = "Request to view ${viewState.firstName}’s $network. you can add points to the request",
+//                                        textAlign = TextAlign.Center,
+//                                        fontSize = 14.fsp.zoomAware(),
+//                                        style = TextStyle(
+//                                            fontFamily = montserratFontFamily,
+//                                            fontWeight = FontWeight.Normal,
+//                                            color = Color.White
+//                                        ),
+//                                    )
+//
+//                                    Text(
+//                                        modifier = Modifier
+//                                            .padding(top = 30.fdph.zoomAware()),
+//                                        text = "Add Points",
+//                                        fontSize = 16.fsp.zoomAware(),
+//                                        style = TextStyle(
+//                                            fontFamily = montserratFontFamily,
+//                                            fontWeight = FontWeight.SemiBold,
+//                                            color = Color.White
+//                                        ),
+//                                    )
+//
+////                                    TiltedWheelPicker(
+////                                        options = (1..10).map { it.toString() },
+////                                        selectedIndex = 0,
+////                                        onSelectedChange = { newSelected -> }
+////                                    )
+//
+//                                    Column(
+//                                        modifier = Modifier
+//                                            .weight(1f),
+//                                        verticalArrangement = Arrangement.Bottom
+//                                    ) {
+//                                        Card(
+//                                            modifier = Modifier
+//                                                .padding(bottom = 84.fdpv.zoomAware())
+//                                                .width(68.fdph.zoomAware())
+//                                                .height(46.fdpv.zoomAware()),
+//                                            colors = CardColors(Color.Transparent, Color.Transparent, Color.Transparent, Color.Transparent),
+//                                            shape = RoundedCornerShape(
+//                                                topStart = 24.fdph.zoomAware(),
+//                                                topEnd = 24.fdph.zoomAware(),
+//                                                bottomEnd = 24.fdph.zoomAware(),
+//                                                bottomStart = 24.fdph.zoomAware()
+//                                            )
+//                                        ) {
+//                                            Box(
+//                                                modifier = Modifier.fillMaxSize(),
+//                                                contentAlignment = Alignment.Center
+//                                            ) {
+//                                                IconButton(
+//                                                    modifier = Modifier
+//                                                        .width(68.fdph.zoomAware())
+//                                                        .height(46.fdpv.zoomAware())
+//                                                        .pointerInput(Unit) {
+//                                                            detectTapGestures { println("Clicked!") }
+//                                                        },
+//                                                    onClick = {
+//
+//                                                    }
+//                                                ) {
+//                                                    Box(
+//                                                        modifier = Modifier.fillMaxSize()
+//                                                            .background(Color.White.copy(alpha = 0.1f)),
+//                                                        contentAlignment = Alignment.Center
+//                                                    ) {
+//                                                        Image(
+//                                                            modifier = Modifier
+//                                                                .padding(vertical = 16.fdpv.zoomAware())
+//                                                                .fillMaxSize(),
+//                                                            painter = painterResource(R.drawable.ic_detail_arrow_2),
+//                                                            colorFilter = ColorFilter.tint(Color.White),
+//                                                            contentDescription = "back button",
+//                                                        )
+//                                                    }
+//                                                }
+//                                            }
+//                                        }
+//                                    }
+//                                }
+                            }
+                        }
+                    )
+                }
+                when {
+                    isCenter -> remember(requestNetworkItemsAlpha, screenMode) {
+                        val network = Network.Linkedin
+                        createCellContentStyle(
+                            id = cellIndex,
+                            cellBackground = SingleColor(backgroundColor),
+                            network = network
                         )
                     }
                     linkCellPosition.isSame(column, row) -> remember(requestNetworkItemsAlpha) {
-                        IconHexagonContentStyle(
+                        val network = Network.Link
+                        createCellContentStyle(
                             id = cellIndex,
-                            background = SingleColor(PrimaryColor.copy(alpha = requestNetworkItemsAlpha)),
-                            alpha = requestNetworkItemsAlpha,
-                            contentDescription = "Link",
-                            image = VectorResource(id = R.drawable.ic_link),
-                            onClick = { offset ->
-                                val screenWidth = with(currentDensity) { currentConfig.screenWidthDp.dp.toPx() }
-                                val screenHeight = with(currentDensity) { currentConfig.screenHeightDp.dp.toPx() }
-
-                                val newScale = gridColumns.toFloat()
-
-                                // Convert the clicked position into the zoomed coordinate system
-                                val newOffsetX = (screenWidth / 2 - offset.x) * (newScale / scale)
-                                val newOffsetY = (screenHeight / 2 - offset.y) * (newScale / scale)
-
-                                changeScale = ChangeScale(
-                                    scale = newScale,
-                                    position = Offset(newOffsetX, newOffsetY)
-                                )
-                            }
+                            cellBackground = SingleColor(backgroundColor),
+                            network = network
                         )
                     }
                     bitcoinCellPosition.isSame(column, row) -> remember(requestNetworkItemsAlpha) {
-                        IconHexagonContentStyle(
+                        val network = Network.Bitcoin
+                        createCellContentStyle(
                             id = cellIndex,
-                            background = Gradient(
-                                colors = listOf(
-                                    Color(0xFFF7931A).copy(alpha = requestNetworkItemsAlpha),
-                                    Color(0xFFFFE81C).copy(alpha = requestNetworkItemsAlpha)
-                                ),
-                                startOffset = Offset(-75f, 100f),
-                                endOffset = Offset(200f, -100f)
-                            ),
-                            alpha = requestNetworkItemsAlpha,
-                            contentDescription = "Bitcoin",
-                            image = VectorResource(id = R.drawable.ic_bitcoin),
-                            onClick = { offset ->
-                                val screenWidth = with(currentDensity) { currentConfig.screenWidthDp.dp.toPx() }
-                                val screenHeight = with(currentDensity) { currentConfig.screenHeightDp.dp.toPx() }
-
-                                val newScale = gridColumns.toFloat()
-
-                                // Convert the clicked position into the zoomed coordinate system
-                                val newOffsetX = (screenWidth / 2 - offset.x) * (newScale / scale)
-                                val newOffsetY = (screenHeight / 2 - offset.y) * (newScale / scale)
-
-                                changeScale = ChangeScale(
-                                    scale = newScale,
-                                    position = Offset(newOffsetX, newOffsetY)
-                                )
-                            }
+                            cellBackground = SingleColor(backgroundColor),
+                            network = network
                         )
                     }
                     facebookCellPosition.isSame(column, row) -> remember(requestNetworkItemsAlpha) {
-                        IconHexagonContentStyle(
+                        val network = Network.Facebook
+                        createCellContentStyle(
                             id = cellIndex,
-                            background = SingleColor(FacebookColor.copy(alpha = requestNetworkItemsAlpha)),
-                            alpha = requestNetworkItemsAlpha,
-                            contentDescription = "Facebook",
-                            image = VectorResource(id = R.drawable.ic_facebook)
+                            cellBackground = SingleColor(backgroundColor),
+                            network = network
                         )
                     }
                     messengerCellPosition.isSame(column, row) -> remember(requestNetworkItemsAlpha) {
-                        IconHexagonContentStyle(
+                        val network = Network.Messenger
+                        createCellContentStyle(
                             id = cellIndex,
-                            background = SingleColor(MessengerColor.copy(alpha = requestNetworkItemsAlpha)),
-                            alpha = requestNetworkItemsAlpha,
-                            contentDescription = "Messenger",
-                            image = VectorResource(id = R.drawable.ic_messenger)
+                            cellBackground = SingleColor(backgroundColor),
+                            network = network
                         )
                     }
                     instagramCellPosition.isSame(column, row) -> remember(requestNetworkItemsAlpha) {
-                        IconHexagonContentStyle(
+                        val network = Network.Instagram
+                        createCellContentStyle(
                             id = cellIndex,
-                            background = SingleColor(InstagramColor.copy(alpha = requestNetworkItemsAlpha)),
-                            alpha = requestNetworkItemsAlpha,
-                            contentDescription = "Instagram",
-                            image = VectorResource(id = R.drawable.ic_instagram),
-                            onClick = { offset ->
-
-                                val screenWidth = with(currentDensity) { currentConfig.screenWidthDp.dp.toPx() }
-                                val screenHeight = with(currentDensity) { currentConfig.screenHeightDp.dp.toPx() }
-
-                                val newScale = gridColumns.toFloat()
-
-                                // Convert the clicked position into the zoomed coordinate system
-                                val newOffsetX = (screenWidth / 2 - offset.x) * (newScale / scale)
-                                val newOffsetY = (screenHeight / 2 - offset.y) * (newScale / scale)
-
-                                changeScale = ChangeScale(
-                                    scale = newScale,
-                                    position = Offset(newOffsetX, newOffsetY)
-                                )
-                            }
+                            cellBackground = SingleColor(backgroundColor),
+                            network = network
                         )
                     }
 
                     emailCellPosition.isSame(column, row) -> remember(requestNetworkItemsAlpha) {
-                        IconHexagonContentStyle(
+                        val network = Network.Email
+                        createCellContentStyle(
                             id = cellIndex,
-                            background = SingleColor(EmailColor.copy(alpha = requestNetworkItemsAlpha)),
-                            alpha = requestNetworkItemsAlpha,
-                            contentDescription = "Email",
-                            image = VectorResource(id = R.drawable.ic_email)
+                            cellBackground = SingleColor(backgroundColor),
+                            network = network
                         )
                     }
 
                     phoneCellPosition.isSame(column, row) -> remember(requestNetworkItemsAlpha) {
-                        IconHexagonContentStyle(
+                        val network = Network.Phone
+                        createCellContentStyle(
                             id = cellIndex,
-                            background = SingleColor(PhoneColor.copy(alpha = requestNetworkItemsAlpha)),
-                            alpha = requestNetworkItemsAlpha,
-                            contentDescription = "Phone",
-                            image = VectorResource(id = R.drawable.ic_phone),
-                            onClick = {
-//                    val number = Uri.parse("tel:123456789")
-//                    val callIntent = Intent(Intent.ACTION_DIAL, number)
-//                    context.startActivity(callIntent)
-                            }
+                            cellBackground = SingleColor(backgroundColor),
+                            network = network
                         )
                     }
 
                     twitterCellPosition.isSame(column, row) -> remember(requestNetworkItemsAlpha) {
-                        IconHexagonContentStyle(
+                        val network = Network.XTwitter
+                        createCellContentStyle(
                             id = cellIndex,
-                            background = SingleColor(TwitterColor.copy(alpha = requestNetworkItemsAlpha)),
-                            alpha = requestNetworkItemsAlpha,
-                            contentDescription = "Twitter",
-                            image = VectorResource(id = R.drawable.ic_twitter)
+                            cellBackground = SingleColor(backgroundColor),
+                            network = network
                         )
                     }
 
                     whatsappCellPosition.isSame(column, row) -> remember(requestNetworkItemsAlpha) {
-                        IconHexagonContentStyle(
+                        val network = Network.WhatsApp
+                        createCellContentStyle(
                             id = cellIndex,
-                            background = SingleColor(WhatsappColor.copy(alpha = requestNetworkItemsAlpha)),
-                            alpha = requestNetworkItemsAlpha,
-                            contentDescription = "Whatsapp",
-                            image = VectorResource(id = R.drawable.ic_whatsapp),
-                            onClick = { offset ->
-                                val screenWidth = with(currentDensity) { currentConfig.screenWidthDp.dp.toPx() }
-                                val screenHeight = with(currentDensity) { currentConfig.screenHeightDp.dp.toPx() }
-
-                                val newScale = gridColumns.toFloat()
-
-                                // Convert the clicked position into the zoomed coordinate system
-                                val newOffsetX = (screenWidth / 2 - offset.x) * (newScale / scale)
-                                val newOffsetY = (screenHeight / 2 - offset.y) * (newScale / scale)
-
-                                changeScale = ChangeScale(
-                                    scale = newScale,
-                                    position = Offset(newOffsetX, newOffsetY)
-                                )
-                            }
+                            cellBackground = SingleColor(backgroundColor),
+                            network = network
                         )
                     }
 
                     telegramCellPosition.isSame(column, row) -> remember(requestNetworkItemsAlpha) {
-                        IconHexagonContentStyle(
+                        val network = Network.Telegram
+                        createCellContentStyle(
                             id = cellIndex,
-                            background = SingleColor(TelegramColor.copy(alpha = requestNetworkItemsAlpha)),
-                            alpha = requestNetworkItemsAlpha,
-                            contentDescription = "Telegram",
-                            image = VectorResource(id = R.drawable.ic_telegram)
+                            cellBackground = SingleColor(backgroundColor),
+                            network = network
                         )
                     }
 
                     skypeCellPosition.isSame(column, row) -> remember(requestNetworkItemsAlpha) {
-                        IconHexagonContentStyle(
+                        val network = Network.Skype
+                        createCellContentStyle(
                             id = cellIndex,
-                            background = SingleColor(TelegramColor.copy(alpha = requestNetworkItemsAlpha)),
-                            alpha = requestNetworkItemsAlpha,
-                            contentDescription = "Skype",
-                            image = VectorResource(id = R.drawable.ic_skype),
-                            onClick = { offset ->
-                                val screenWidth = with(currentDensity) { currentConfig.screenWidthDp.dp.toPx() }
-                                val screenHeight = with(currentDensity) { currentConfig.screenHeightDp.dp.toPx() }
-
-                                val newScale = gridColumns.toFloat()
-
-                                // Convert the clicked position into the zoomed coordinate system
-                                val newOffsetX = (screenWidth / 2 - offset.x) * (newScale / scale)
-                                val newOffsetY = (screenHeight / 2 - offset.y) * (newScale / scale)
-
-                                changeScale = ChangeScale(
-                                    scale = newScale,
-                                    position = Offset(newOffsetX, newOffsetY)
-                                )
-                            }
+                            cellBackground = SingleColor(backgroundColor),
+                            network = network
                         )
                     }
 
                     tiktokCellPosition.isSame(column, row) -> remember(requestNetworkItemsAlpha) {
-                        IconHexagonContentStyle(
+                        val network = Network.Tiktok
+                        createCellContentStyle(
                             id = cellIndex,
-                            background = SingleColor(TiktokColor.copy(alpha = requestNetworkItemsAlpha)),
-                            alpha = requestNetworkItemsAlpha,
-                            contentDescription = "TikTok",
-                            image = VectorResource(id = R.drawable.ic_tiktok)
+                            cellBackground = SingleColor(backgroundColor),
+                            network = network
                         )
                     }
 
                     ethereumCellPosition.isSame(column, row) -> remember(requestNetworkItemsAlpha) {
-                        IconHexagonContentStyle(
+                        val network = Network.Ethereum
+                        createCellContentStyle(
                             id = cellIndex,
-                            background = Gradient(
-                                colors = listOf(
-                                    Color.Black.copy(alpha = requestNetworkItemsAlpha),
-                                    Color.White.copy(alpha = requestNetworkItemsAlpha)
-                                ),
-                                startOffset = Offset(-75f, 100f),
-                                endOffset = Offset(200f, -100f)
-                            ),
-                            alpha = requestNetworkItemsAlpha,
-                            contentDescription = "Ethereum",
-                            image = VectorResource(id = R.drawable.ic_ethereum)
+                            cellBackground = SingleColor(backgroundColor),
+                            network = network
                         )
                     }
 
@@ -1199,24 +1379,30 @@ private fun ExternalProfile(
                     .alpha(if (viewState.mode is ExternalProfileMode.NewContact) 0f else 1f),
                 itemsList = items,
                 rowSize = gridColumns,
-                initialScale = scale,
+                maxScale = gridColumns * 1.2f,
+                initialScale = initialScale,
                 changeScale = changeScale,
-                onCellPositionCalculated = { index, offset, width, height ->
+                onCellPositionCalculated = { index, coordinates, width, height ->
                     Timber.i("onCellPositionCalculated for index: $index")
                     if (isEnterAnimationFinished) {
                         if (cellWidth == null) cellWidth = width
                         if (cellHeight == null) cellHeight = height
                         if (index == leadingCellPosition.getIndex()) {
-                            if (leadingCellOffset == null) leadingCellOffset = offset
+                            if (leadingCellOffset == null) leadingCellOffset = coordinates.positionInRoot()
                         } else if (index == trailingCellPosition.getIndex()) {
-                            if (trailingCellOffset == null) trailingCellOffset = offset
+                            if (trailingCellOffset == null) trailingCellOffset = coordinates.positionInRoot()
                         } else if (index == profilePictureCellPosition.getIndex()) {
-                            if (profilePictureCellOffset == null) profilePictureCellOffset = offset.log { "profilePictureCellOffset" }
+                            if (profilePictureCellOffset == null) profilePictureCellOffset = coordinates.positionInRoot().log { "profilePictureCellOffset" }
                         } else if (index == whatsappCellPosition.getIndex()) {
-                            offset.log { "whatsappCellPosition" }
+                            coordinates.positionInRoot().log { "whatsappCellPosition" }
                         }
                     }
+                    if (focusedCellId == index) {
+                        coordinates.log { "focusedCellId offset" }
+                        focusedOffset = coordinates.boundsInRoot().topLeft
+                    }
                 },
+                focusedCellId = focusedCellId,
                 onZoom = { zoom, offset ->
                     Timber.i("onZoom offset: ${offset}")
                     viewModel.onGridZoomChange(zoom = zoom)
@@ -1233,6 +1419,176 @@ private fun ExternalProfile(
                 gridScaling = 1f
             )
 
+            val screenWidth = with(currentDensity) { currentConfig.screenWidthDp.dp.toPx() }
+            val screenHeight = with(currentDensity) { currentConfig.screenHeightDp.dp.toPx() }
+
+            val newScale = gridColumns.toFloat() * 1.1f
+
+            // Find the center of the grid in the current scale
+            val gridCenterX = screenWidth / 2f
+            val gridCenterY = screenHeight / 2f
+
+            val cellSize = LocalConfiguration.current.screenWidthDp.dp / gridColumns
+
+            var isShowing = remember(screenMode) { screenMode is ExternalProfileMode.FocusedNetwork }
+            val requestNetworkAlpha by animateFloatAsState(
+                targetValue = if (isShowing) 1f else 0f,
+                animationSpec = tween(300)
+            )
+
+            val offsetInDp = with(LocalDensity.current) {
+                DpOffset(0.dp, gridCenterY.toDp() - (screenWidth * 96.99f/86.93f / 2f).toDp())
+            }
+
+            val polygon = remember { createPolygon() }
+            val roundedPolygonShape = remember { RoundedPolygonShape(polygon) }
+
+            val verticalBorder = (cellSize * 0.04403f).log { "verticalBorder" }
+            val horizontalBorder = (cellSize * 89.99f/79.93f * 0.0395f).log { "horizontalBorder" }
+
+            val network = (viewState.mode as? ExternalProfileMode.FocusedNetwork)?.network
+            Box(
+                modifier = Modifier
+                    .offset(offsetInDp.x, offsetInDp.y)
+                    .border(1.dp, Color.Yellow)
+                    .width(cellSize * gridColumns * 1.1f)
+                    .padding(
+                        vertical = verticalBorder,
+                        horizontal = horizontalBorder
+                    )
+                    .aspectRatio(79.93.xdph / 89.99.xdpv)
+                    .alpha(requestNetworkAlpha),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .align(Alignment.Center),
+                    contentAlignment = Alignment.Center
+                ) {
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+
+                        if (network != null) Image(
+                            modifier = Modifier
+                                .padding(top = 53.fdph)
+                                .height(71.fdph),
+                            painter = rememberAsyncImagePainter(
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(network.image)
+                                    .size(Size.ORIGINAL)
+                                    .build(),
+                            ),
+                            contentDescription = network.toString(),
+                        )
+
+                        Text(
+                            modifier = Modifier
+                                .padding(top = 14.fdph),
+                            text = "Request For",
+                            fontSize = 14.fsp,
+                            style = TextStyle(
+                                fontFamily = montserratFontFamily,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White
+                            ),
+                        )
+
+                        Text(
+                            modifier = Modifier
+                                .padding(top = 5.fdph),
+                            text = network.toString(),
+                            fontSize = 24.fsp,
+                            style = TextStyle(
+                                fontFamily = montserratFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            ),
+                        )
+
+                        Text(
+                            modifier = Modifier
+                                .padding(top = 17.fdph)
+                                .width(289.fdpv),
+                            text = "Request to view ${viewState.firstName}’s $network. you can add points to the request",
+                            textAlign = TextAlign.Center,
+                            fontSize = 14.fsp,
+                            style = TextStyle(
+                                fontFamily = montserratFontFamily,
+                                fontWeight = FontWeight.Normal,
+                                color = Color.White
+                            ),
+                        )
+
+                        Text(
+                            modifier = Modifier
+                                .padding(top = 30.fdph),
+                            text = "Add Points",
+                            fontSize = 16.fsp,
+                            style = TextStyle(
+                                fontFamily = montserratFontFamily,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White
+                            ),
+                        )
+
+//                        TiltedWheelPicker(
+//                            options = (1..10).map { it.toString() },
+//                            selectedIndex = 0,
+//                            onSelectedChange = { newSelected -> }
+//                        )
+
+                        Column(
+                            modifier = Modifier
+                                .weight(1f),
+                            verticalArrangement = Arrangement.Bottom
+                        ) {
+                            Card(
+                                modifier = Modifier
+                                    .padding(bottom = 84.fdpv)
+                                    .width(68.fdph)
+                                    .height(46.fdpv),
+                                colors = CardColors(Color.Transparent, Color.Transparent, Color.Transparent, Color.Transparent),
+                                shape = RoundedCornerShape(
+                                    topStart = 24.fdph,
+                                    topEnd = 24.fdph,
+                                    bottomEnd = 24.fdph,
+                                    bottomStart = 24.fdph
+                                )
+                            ) {
+                                IconButton(
+                                    modifier = Modifier.fillMaxSize(),
+                                    onClick = {}
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .width(68.fdph)
+                                            .height(46.fdpv),
+                                    ) {
+                                        Box(
+                                            modifier = Modifier.fillMaxSize()
+                                                .background(Color.White.copy(alpha = 0.1f)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Image(
+                                                modifier = Modifier
+                                                    .padding(vertical = 16.fdpv)
+                                                    .fillMaxSize(),
+                                                painter = painterResource(R.drawable.ic_detail_arrow_2),
+                                                colorFilter = ColorFilter.tint(Color.White),
+                                                contentDescription = "back button",
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             /*leadingCellOffset?.let {
                 val centralOffsetInDp = with(LocalDensity.current) {
                     DpOffset(it.x.toDp(), it.y.toDp())
@@ -2124,7 +2480,7 @@ private fun ExternalProfile(
                                             modifier = Modifier
                                                 .align(Alignment.BottomCenter)
                                                 .padding(bottom = 7.8.fdpv)
-                                                .size(24.fdpv * ((with(LocalDensity.current) { cellWidth!!.toDp() } * scale) / 79.93f.fdpv))
+                                                .size(24.fdpv * ((with(LocalDensity.current) { cellWidth!!.toDp() } * initialScale) / 79.93f.fdpv))
                                                 .clip(CircleShape)
                                                 .background(PrimaryColor)
                                                 .border(
@@ -2297,6 +2653,7 @@ private fun ExternalProfile(
                             modifier = Modifier,
                             onClick = {
                                 viewModel.onViewEvent(FavoriteButtonClick)
+                                homeViewModel.onViewAction(HomeViewEvent.FavoriteContact(viewModel.contact.value!!))
                             }
                         ) {
                             val favoriteButtonAlpha by animateFloatAsState(
@@ -2410,6 +2767,35 @@ private fun ExternalProfile(
 //                    }
 //                }
 //            }
+        }
+    }
+
+    if (BuildConfig.DEBUG) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Your existing FlowRow and hex grid...
+
+            // DEBUG: Draw a dot at the calculated offset
+            Canvas(
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                drawCircle(
+                    color = Color.Red,
+                    radius = 15f,
+                    center = clickPosition ?: Offset.Zero
+                )
+            }
+
+            Canvas(
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                drawCircle(
+                    color = Color.Blue,
+                    radius = 15f,
+                    center = centerPosition ?: Offset.Zero
+                )
+            }
         }
     }
 }

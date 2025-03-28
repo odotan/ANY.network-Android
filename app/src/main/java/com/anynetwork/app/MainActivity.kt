@@ -5,6 +5,7 @@
 package com.anynetwork.app
 
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -68,7 +69,6 @@ class MainActivity : ComponentActivity() {
 
         WindowCompat.setDecorFitsSystemWindows(window, false) // Ensures the window doesn't resize on keyboard appearance
 
-
         // Set window flags for fullscreen mode
         setContent {
             ANYnetworkTheme {
@@ -76,6 +76,14 @@ class MainActivity : ComponentActivity() {
                 val homeNavController = rememberNavController()
 
                 val homeViewModel = hiltViewModel<HomeViewModel>()
+
+                fun handleDeepLink(deepLink: Uri) {
+                    homeNavController.navigate(Route.MyProfile(
+                        offsetX = 0f,
+                        offsetY = 0f,
+                        emailSignInLink = deepLink.toString()
+                    ))
+                }
 
                 NavHost(
                     navController = navController,
@@ -140,6 +148,7 @@ class MainActivity : ComponentActivity() {
                         ExternalProfileRoot(
                             navController = homeNavController,
                             id = it.toRoute<Route.ExternalProfileNotExploding>().id,
+                            homeViewModel = homeViewModel,
                             onContactUpdated = {
                                 homeViewModel.reloadData()
                             },
@@ -153,6 +162,7 @@ class MainActivity : ComponentActivity() {
                         val transitionDuration = 400 // Duration of the explosion animation
                         val x = it.toRoute<Route.MyProfile>().offsetX
                         val y = it.toRoute<Route.MyProfile>().offsetY
+                        val emailSignInLink = it.toRoute<Route.MyProfile>().emailSignInLink
 
                         val currentConfig = LocalConfiguration.current
                         val width = with(LocalDensity.current) { currentConfig.screenWidthDp.dp.toPx() }
@@ -220,6 +230,7 @@ class MainActivity : ComponentActivity() {
                         ) {
                             MyProfileRoot(
                                 navController = homeNavController,
+                                emailSignInLink = emailSignInLink,
                                 onContactUpdated = {
                                     homeViewModel.loadProfile()
                                 },
@@ -237,7 +248,8 @@ class MainActivity : ComponentActivity() {
                                         delay(transitionDuration.toLong()) // Wait for animation to complete
                                         homeNavController.popBackStack(Route.Home, inclusive = false)
                                     }
-                                }
+                                },
+
                             )
                         }
                     }
@@ -316,6 +328,7 @@ class MainActivity : ComponentActivity() {
                                 onContactUpdated = {
                                     homeViewModel.reloadData()
                                 },
+                                homeViewModel = homeViewModel,
                                 onBackPress = {
                                     // Trigger exit animation
                                     scaleX = 0.01f
@@ -342,11 +355,17 @@ class MainActivity : ComponentActivity() {
                             onContactUpdated = {
                                 homeViewModel.reloadData()
                             },
+                            homeViewModel = homeViewModel,
                             onBackPress = {
                                 homeNavController.popBackStack(Route.Home, inclusive = false)
                             },
                         )
                     }
+                }
+
+                val deepLink = intent?.data
+                deepLink?.let {
+                    handleDeepLink(it)
                 }
             }
         }

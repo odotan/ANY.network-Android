@@ -236,7 +236,7 @@ class ZoomState(
     ) = coroutineScope {
         val newScale = targetScale?.coerceIn(1f, maxScale) ?: scale
         val newBounds = calculateNewBounds(newScale)
-        Timber.i("animateToPosition(targetScale:$targetScale, position:$position)")
+        Timber.i("animateToPosition(targetScale:$newScale, position:$position)")
 
         val x = position.x.coerceIn(newBounds.left, newBounds.right)
         launch {

@@ -25,6 +25,7 @@ object Route {
     data class MyProfile(
         val offsetX: Float,
         val offsetY: Float,
+        val emailSignInLink: String? = null
     )
 
     @Serializable
