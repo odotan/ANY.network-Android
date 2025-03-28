@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.hiltPlugin)
     alias(libs.plugins.kotlin.serialization)
     id("kotlin-parcelize")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -33,7 +34,7 @@ android {
             )
         }
         debug {
-            applicationIdSuffix = ".debug"
+
         }
     }
 
@@ -95,6 +96,10 @@ dependencies {
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
 
+    // firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+
     // other
     implementation(libs.timber)
     implementation(libs.kotlinx.serialization.json)
@@ -110,5 +115,4 @@ dependencies {
     implementation(libs.ucrop)
     implementation(libs.lazytable)
 //    implementation(libs.zoomable)
-
 }

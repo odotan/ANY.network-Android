@@ -50,6 +50,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.positionOnScreen
@@ -106,7 +107,8 @@ fun HexagonalGrid(
     initialScale: Float = minScale,
     initialOffset: Offset = Offset.Zero,
     onPlacesSwap: ((Int, Int) -> Unit)? = null,
-    onCellPositionCalculated: ((Int, Offset, Int, Int) -> Unit)? = null,
+    focusedCellId: Int? = null,
+    onCellPositionCalculated: ((Int, LayoutCoordinates, Int, Int) -> Unit)? = null,
     onZoom: ((zoom: Float, offset: Offset) -> Unit)? = null,
     isScrollEnabled: Boolean = true,
     offsetY: Int = 0,
@@ -129,7 +131,7 @@ fun HexagonalGrid(
         val calculatedHeight = calculatedWidth * 96.99f/86.93f
         calculatedWidth to calculatedHeight
     }
-    val horizontalOffset = remember { ((cellWidth) / 2) }
+    val horizontalOffset = remember { cellWidth / 2 }
 
     val (verticalBorder, horizontalBorder) = remember(cellWidth, cellHeight) {
         cellWidth * 0.04403f to cellHeight * 0.0395f
@@ -152,10 +154,13 @@ fun HexagonalGrid(
     )
 
     LaunchedEffect(changeScale) {
-        if (changeScale != null) zoomState.animateToPosition(
-            targetScale = changeScale.scale,
-            position = changeScale.position
-        )
+        changeScale?.scale.log { "changeScale scale" }
+        if (changeScale != null) {
+            zoomState.animateToPosition(
+                targetScale = changeScale.scale,
+                position = changeScale.position
+            )
+        }
     }
 
     val verticalSpacing = remember { (-(96.99f * cellWidth / 86.93f) * 0.2333333f) }
@@ -265,15 +270,20 @@ fun HexagonalGrid(
                             applyOffset -> cellModifierWithOffset
                             else -> cellModifier
                         }
-                            .then(if (cellPositions[index] == null && isEnterAnimationFinished)
+                            .then(if ((cellPositions[index] == null || focusedCellId == contentStyle.id) && isEnterAnimationFinished)
                                 Modifier.onGloballyPositioned { coordinates ->
+
+                                    if (index == 0) {
+                                        val offset = coordinates.positionOnScreen().y
+                                        offset.log { "topCenter.y" }
+                                    }
 
                                     val height = coordinates.size.height
                                     val width = coordinates.size.width
 
                                     onCellPositionCalculated?.invoke(
                                         index,
-                                        coordinates.positionInRoot(),
+                                        coordinates,
                                         width,
                                         height
                                     )
@@ -300,7 +310,7 @@ fun HexagonalGrid(
                                 )
 
                                 is CustomHexagonContentStyle -> contentStyle.onClick.invoke(
-                                    cellPosition.boundsInRoot().center
+                                    cellPosition
 //                                cellPosition.positionOnScreen()
                                 )
 

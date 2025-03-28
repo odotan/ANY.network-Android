@@ -596,6 +596,21 @@ class HomeViewModel @Inject constructor(
             HomeViewEvent.ClearViewEffect -> _viewEffectFlow.value = null
 
             HomeViewEvent.ClearNavigationEffect -> _viewEffectFlow.value = null
+
+            is HomeViewEvent.FavoriteContact -> {
+                val contact = viewAction.contact
+                viewModelScope.launch {
+                    val order = addAtRandomGridPlace(
+                        itemType = Order.Type.FAVORITE_CONTACT,
+                        itemId = contact.id
+                    )
+                    gridOrder = gridOrder.apply {
+                        toMutableList().add(order)
+                    }
+                    val newGridItems = processContactsForGrid(contacts.value, _interactions.value)
+                    updateHexGridItems(newGridItems)
+                }
+            }
         }
     }
 }
@@ -632,6 +647,7 @@ sealed class HomeViewEvent {
     data class SwapGridItems(val target: GridItem, val targetNewIndex: Int, val destination: GridItem, val destinationNewIndex: Int): HomeViewEvent()
     data class CarouselContactInteractionClick(val contact: Contact, val interactionType: Int): HomeViewEvent()
     data class BadgeInteractionClick(val contact: Contact, val interactionType: Int): HomeViewEvent()
+    data class FavoriteContact(val contact: Contact): HomeViewEvent()
     data object ClearViewEffect: HomeViewEvent()
     data object ClearNavigationEffect: HomeViewEvent()
 }

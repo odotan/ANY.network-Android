@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -226,6 +227,7 @@ private fun Onboarding(navController: NavHostController) {
         sharedPreferences.edit().putBoolean("onboardingCompleted", true).apply()
 
         showHomeCover = false
+
         navController.navigate(Route.Home)
     }
 
@@ -729,13 +731,13 @@ private fun Onboarding(navController: NavHostController) {
                 rowSize = gridColumns,
                 columnSize = gridRows,
                 minScale = scale,
-                onCellPositionCalculated = { index, offset, width, height ->
+                onCellPositionCalculated = { index, coordinates, width, height ->
                     if (index == centralIndex) {
-                        centralOffset = offset
+                        centralOffset = coordinates.positionInRoot()
                         centralWidth = width
                         centralHeight = height
                     } else if (index == 44) {
-                        markHamlinCellOffset = offset
+                        markHamlinCellOffset = coordinates.positionInRoot()
                     }
                 },
                 isScrollEnabled = false,

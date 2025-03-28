@@ -20,8 +20,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
-import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -45,9 +43,8 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -58,7 +55,6 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.Cubic
 import androidx.graphics.shapes.RoundedPolygon
@@ -69,11 +65,9 @@ import com.anynetwork.app.R
 import com.anynetwork.app.model.Contact
 import com.anynetwork.app.ui.components.text.AutoSizeText
 import com.anynetwork.app.ui.screens.home.GridItem
-import com.anynetwork.app.ui.theme.montserratFontFamily
 import com.anynetwork.app.ui.utils.fdph
 import com.anynetwork.app.ui.utils.fdpv
 import com.anynetwork.app.ui.utils.fsp
-import kotlin.reflect.typeOf
 
 class RemovableStrategy(val onRemove: () -> Unit)
 
@@ -202,7 +196,7 @@ class CustomHexagonContentStyle(
     isHoverable: Boolean = true,
     removableStrategy: RemovableStrategy? = null,
     val content: @Composable (BoxScope.(scale: Float) -> Unit),
-    val onClick: ((Offset) -> Unit) = { _ -> },
+    val onClick: ((LayoutCoordinates) -> Unit) = { _ -> },
     val onLongClick: (() -> Unit) = {},
     val overlay: @Composable (BoxScope.() -> Unit)? = null,
     val isShakable: Boolean = false,

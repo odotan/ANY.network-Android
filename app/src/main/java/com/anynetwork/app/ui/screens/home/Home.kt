@@ -76,6 +76,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -838,7 +839,7 @@ private fun Home(
                 initialOffset = initialOffset,
                 onCellPositionCalculated = remember {{ index, offset, width, height ->
                     if (index == centralIndex) {
-                        if (centralOffset == null) centralOffset = offset
+                        if (centralOffset == null) centralOffset = offset.positionInRoot()
                         centralHeight = height
                         Timber.i("home start animation cell position calculated for central cell")
                     }
