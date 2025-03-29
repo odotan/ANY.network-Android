@@ -53,7 +53,6 @@ fun TiltedWheelPicker(
         modifier = Modifier
             .height(itemHeight * visibleItems)  // Ensure only 3 items are visible
             .width(100.dp)
-            .background(Color.Blue, shape = RoundedCornerShape(8.dp))
             .clip(RoundedCornerShape(8.dp))
     ) {
         LazyColumn(

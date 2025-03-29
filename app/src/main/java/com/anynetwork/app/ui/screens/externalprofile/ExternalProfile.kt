@@ -47,8 +47,10 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -95,6 +97,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalConfiguration
@@ -107,6 +110,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.Velocity
@@ -121,14 +125,19 @@ import com.anynetwork.app.BuildConfig
 import com.anynetwork.app.R
 import com.anynetwork.app.model.Interaction
 import com.anynetwork.app.ui.base.NavigateBack
+import com.anynetwork.app.ui.components.DefaultSelectorProperties
 import com.anynetwork.app.ui.components.HexagonTextField
 import com.anynetwork.app.ui.components.HexagonTextFieldClearTrailingIcon
 import com.anynetwork.app.ui.components.Screen
 import com.anynetwork.app.ui.components.SearchTextField
+import com.anynetwork.app.ui.components.SelectorProperties
 import com.anynetwork.app.ui.components.SheetValue
 import com.anynetwork.app.ui.components.TiltedWheelPicker
 import com.anynetwork.app.ui.components.ToolbarState
 import com.anynetwork.app.ui.components.ToolbarStateTitle
+import com.anynetwork.app.ui.components.WheelPicker
+import com.anynetwork.app.ui.components.WheelPickerDefaults
+import com.anynetwork.app.ui.components.WheelTextPicker
 import com.anynetwork.app.ui.components.dialog.AlertDialog
 import com.anynetwork.app.ui.components.dialog.AlertDialogButtonState
 import com.anynetwork.app.ui.components.dialog.DropDownDialogMenuCategory
@@ -296,7 +305,7 @@ private fun ExternalProfile(
     isEnterAnimationFinished.log { "isEnterAnimationFinished" }
     val coroutineScope = rememberCoroutineScope()
 
-    val initialScale = 1f // gridColumns / 4.7f
+    val initialScale = gridColumns / 4.7f
     var cellWidth: Int? by remember { mutableStateOf(null) }
     var cellHeight: Int? by remember { mutableStateOf(null) }
     var leadingCellOffset: Offset? by remember { mutableStateOf(null) }
@@ -718,6 +727,9 @@ private fun ExternalProfile(
                 animationSpec = tween(300)
             )
 
+            var gridTopPadding by remember { mutableStateOf<Float?>(null) }
+            var gridHeight by remember { mutableStateOf<Int?>(null) }
+
             val normalHexItems = List(gridRows * gridColumns) { index ->
                 val row = index / gridColumns
                 val column = index % gridColumns
@@ -997,6 +1009,10 @@ private fun ExternalProfile(
                 animationSpec = tween(300)
             )
 
+            val statusBarHeight = with(LocalDensity.current) {
+                WindowInsets.statusBars.asPaddingValues().calculateTopPadding().toPx()
+            }
+
             @Composable
             fun getNavigationBarHeight(): Float {
                 val context = LocalContext.current
@@ -1036,22 +1052,24 @@ private fun ExternalProfile(
 //                        },
                         background = cellBackground,
                         onClick = { coordinate ->
-                            val offset = coordinate.boundsInRoot().center
+                            if (gridTopPadding == null || gridHeight == null) return@CustomHexagonContentStyle
+
+                            val offset = coordinate.boundsInWindow().center
 
                             val screenWidth = with(currentDensity) { currentConfig.screenWidthDp.dp.toPx() }
                             val screenHeight = with(currentDensity) { currentConfig.screenHeightDp.dp.toPx() }.log { "screenHeight" }
 
-                            val newScale = gridColumns.toFloat() * 1.1f
+                            val newScale = gridColumns.toFloat() * 1.4f
 
                             // Find the center of the grid in the current scale
                             val gridCenterX = screenWidth / 2f
-                            val gridCenterY = screenHeight / 2f
+                            val gridCenterY = gridTopPadding!! + gridHeight!! / 2f
                             centerPosition = Offset(gridCenterX, gridCenterY)
 
                             // Adjusted offset calculation to be more precise
                             val newOffsetX = (gridCenterX - offset.x) * (newScale / initialScale)
-                            val newOffsetY = (gridCenterY - offset.y) * (newScale / initialScale)// + with(currentDensity) { 123.dp.toPx() }
-                            clickPosition = Offset(offset.x, offset.y)
+                            val newOffsetY = (gridCenterY - offset.y) * (newScale / initialScale)
+                            clickPosition = Offset(newOffsetX, newOffsetY)
 
                             viewModel.onViewEvent(
                                 event = RequestNetworkClick(
@@ -1376,10 +1394,14 @@ private fun ExternalProfile(
 //            val isEnterAnimationFinished by remember(isEnterAnimationFinished) { mutableStateOf(isEnterAnimationFinished) }.log { "triggerRecalculation" }
             HexagonalGrid(
                 modifier = Modifier
-                    .alpha(if (viewState.mode is ExternalProfileMode.NewContact) 0f else 1f),
+                    .alpha(if (viewState.mode is ExternalProfileMode.NewContact) 0f else 1f)
+                    .onGloballyPositioned { coordinates ->
+                        gridHeight = coordinates.size.height.log { "hexagonalGrid height" }
+                        gridTopPadding = coordinates.boundsInParent().topLeft.y.log { "coordinates.boundsInParent().topCenter.y" }
+                    },
                 itemsList = items,
                 rowSize = gridColumns,
-                maxScale = gridColumns * 1.2f,
+                maxScale = gridColumns * 1.6f,
                 initialScale = initialScale,
                 changeScale = changeScale,
                 onCellPositionCalculated = { index, coordinates, width, height ->
@@ -1407,7 +1429,7 @@ private fun ExternalProfile(
                     Timber.i("onZoom offset: ${offset}")
                     viewModel.onGridZoomChange(zoom = zoom)
                 },
-                isScrollEnabled = true,
+                isScrollEnabled = false,
                 isEnterAnimationFinished = isEnterAnimationFinished,
                 offsetY = when {
                     profilePictureCellOffset == null -> 0f
@@ -1447,34 +1469,33 @@ private fun ExternalProfile(
             val horizontalBorder = (cellSize * 89.99f/79.93f * 0.0395f).log { "horizontalBorder" }
 
             val network = (viewState.mode as? ExternalProfileMode.FocusedNetwork)?.network
-            Box(
+            if (requestNetworkAlpha > 0f) Box(
                 modifier = Modifier
-                    .offset(offsetInDp.x, offsetInDp.y)
-                    .border(1.dp, Color.Yellow)
-                    .width(cellSize * gridColumns * 1.1f)
-                    .padding(
-                        vertical = verticalBorder,
-                        horizontal = horizontalBorder
-                    )
-                    .aspectRatio(79.93.xdph / 89.99.xdpv)
-                    .alpha(requestNetworkAlpha),
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
                 Box(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .align(Alignment.Center),
+                        .width(cellSize * gridColumns * 1.1f)
+                        .height(621.fdpv)
+                        .padding(
+                            vertical = verticalBorder,
+                            horizontal = horizontalBorder
+                        )
+                        .alpha(requestNetworkAlpha),
                     contentAlignment = Alignment.Center
                 ) {
 
                     Column(
                         modifier = Modifier
-                            .fillMaxSize(),
+                            .fillMaxWidth()
+                            .wrapContentHeight(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
 
                         if (network != null) Image(
                             modifier = Modifier
-                                .padding(top = 53.fdph)
+                                .padding(top = 54.fdpv)
                                 .height(71.fdph),
                             painter = rememberAsyncImagePainter(
                                 model = ImageRequest.Builder(LocalContext.current)
@@ -1482,6 +1503,7 @@ private fun ExternalProfile(
                                     .size(Size.ORIGINAL)
                                     .build(),
                             ),
+                            contentScale = ContentScale.FillHeight,
                             contentDescription = network.toString(),
                         )
 
@@ -1535,23 +1557,30 @@ private fun ExternalProfile(
                             ),
                         )
 
-//                        TiltedWheelPicker(
-//                            options = (1..10).map { it.toString() },
-//                            selectedIndex = 0,
-//                            onSelectedChange = { newSelected -> }
-//                        )
+                        WheelTextPicker(
+                            size = DpSize(128.fdph, 170.fdpv),
+                            texts = (1..10).map { it.toString() },
+                            rowCount = 3,
+                            color = Color.White,
+                            style = TextStyle(
+                                fontFamily = montserratFontFamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 50.fsp,
+                            ),
+                            selectorProperties = WheelPickerDefaults.selectorProperties(enabled = false),
+                            onScrollFinished = { null }
+                        )
 
                         Column(
                             modifier = Modifier
                                 .weight(1f),
-                            verticalArrangement = Arrangement.Bottom
+                            verticalArrangement = Arrangement.Center
                         ) {
                             Card(
                                 modifier = Modifier
-                                    .padding(bottom = 84.fdpv)
                                     .width(68.fdph)
                                     .height(46.fdpv),
-                                colors = CardColors(Color.Transparent, Color.Transparent, Color.Transparent, Color.Transparent),
+                                colors = CardColors(Color.White.copy(0.1f), Color.Transparent, Color.Transparent, Color.Transparent),
                                 shape = RoundedCornerShape(
                                     topStart = 24.fdph,
                                     topEnd = 24.fdph,
@@ -2767,35 +2796,6 @@ private fun ExternalProfile(
 //                    }
 //                }
 //            }
-        }
-    }
-
-    if (BuildConfig.DEBUG) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            // Your existing FlowRow and hex grid...
-
-            // DEBUG: Draw a dot at the calculated offset
-            Canvas(
-                modifier = Modifier
-                    .fillMaxSize()
-            ) {
-                drawCircle(
-                    color = Color.Red,
-                    radius = 15f,
-                    center = clickPosition ?: Offset.Zero
-                )
-            }
-
-            Canvas(
-                modifier = Modifier
-                    .fillMaxSize()
-            ) {
-                drawCircle(
-                    color = Color.Blue,
-                    radius = 15f,
-                    center = centerPosition ?: Offset.Zero
-                )
-            }
         }
     }
 }

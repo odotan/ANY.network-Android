@@ -293,8 +293,8 @@ fun HexagonalGrid(
                                         cellPositions[index] = coordinates
                                     }
                                 } else if (isRotating) {
-                                Modifier.rotate(rotation.value)
-                            } else Modifier
+                                    Modifier.rotate(rotation.value)
+                                } else Modifier
                             ),
                         hexModifier = hexModifier,
                         shape = roundedPolygonShape,
