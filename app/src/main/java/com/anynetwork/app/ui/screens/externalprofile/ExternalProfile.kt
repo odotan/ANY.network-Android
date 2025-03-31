@@ -1452,23 +1452,29 @@ private fun ExternalProfile(
 
             val cellSize = LocalConfiguration.current.screenWidthDp.dp / gridColumns
 
-            var isShowing = remember(screenMode) { screenMode is ExternalProfileMode.FocusedNetwork }
+            val isShowing = remember(screenMode) { screenMode is ExternalProfileMode.FocusedNetwork }
             val requestNetworkAlpha by animateFloatAsState(
                 targetValue = if (isShowing) 1f else 0f,
-                animationSpec = tween(300)
+                animationSpec = tween(100)
             )
 
             val offsetInDp = with(LocalDensity.current) {
                 DpOffset(0.dp, gridCenterY.toDp() - (screenWidth * 96.99f/86.93f / 2f).toDp())
             }
 
-            val polygon = remember { createPolygon() }
-            val roundedPolygonShape = remember { RoundedPolygonShape(polygon) }
-
             val verticalBorder = (cellSize * 0.04403f).log { "verticalBorder" }
             val horizontalBorder = (cellSize * 89.99f/79.93f * 0.0395f).log { "horizontalBorder" }
 
             val network = (viewState.mode as? ExternalProfileMode.FocusedNetwork)?.network
+            val lastNetwork = remember { mutableStateOf<Network?>(null) }
+
+            // Update only when network is not null
+            if (network != null) {
+                lastNetwork.value = network
+            }
+
+            // Use the remembered network instead of the current one if it's null
+            val displayNetwork = lastNetwork.value
             if (requestNetworkAlpha > 0f) Box(
                 modifier = Modifier
                     .fillMaxSize(),
@@ -1493,18 +1499,18 @@ private fun ExternalProfile(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
 
-                        if (network != null) Image(
+                        if (displayNetwork != null) Image(
                             modifier = Modifier
                                 .padding(top = 54.fdpv)
                                 .height(71.fdph),
                             painter = rememberAsyncImagePainter(
                                 model = ImageRequest.Builder(LocalContext.current)
-                                    .data(network.image)
+                                    .data(displayNetwork.image)
                                     .size(Size.ORIGINAL)
                                     .build(),
                             ),
                             contentScale = ContentScale.FillHeight,
-                            contentDescription = network.toString(),
+                            contentDescription = displayNetwork.toString(),
                         )
 
                         Text(
@@ -1522,7 +1528,7 @@ private fun ExternalProfile(
                         Text(
                             modifier = Modifier
                                 .padding(top = 5.fdph),
-                            text = network.toString(),
+                            text = displayNetwork.toString(),
                             fontSize = 24.fsp,
                             style = TextStyle(
                                 fontFamily = montserratFontFamily,
@@ -1535,7 +1541,7 @@ private fun ExternalProfile(
                             modifier = Modifier
                                 .padding(top = 17.fdph)
                                 .width(289.fdpv),
-                            text = "Request to view ${viewState.firstName}’s $network. you can add points to the request",
+                            text = "Request to view ${viewState.firstName}’s $displayNetwork. you can add points to the request",
                             textAlign = TextAlign.Center,
                             fontSize = 14.fsp,
                             style = TextStyle(
