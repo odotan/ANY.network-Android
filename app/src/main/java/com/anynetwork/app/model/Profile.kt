@@ -1,6 +1,6 @@
 package com.anynetwork.app.model
 
-class Profile(
+data class Profile(
     val firstName: String,
     val lastName: String,
     val mobilePhone: String? = null,

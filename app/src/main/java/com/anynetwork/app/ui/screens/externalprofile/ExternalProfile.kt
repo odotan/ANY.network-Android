@@ -16,7 +16,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.exponentialDecay
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -27,7 +26,6 @@ import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.animateTo
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -47,7 +45,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -63,7 +60,6 @@ import androidx.compose.material3.CardColors
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -92,7 +88,6 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.boundsInRoot
@@ -108,11 +103,8 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
@@ -121,21 +113,16 @@ import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import coil.size.Size
-import com.anynetwork.app.BuildConfig
 import com.anynetwork.app.R
 import com.anynetwork.app.model.Interaction
 import com.anynetwork.app.ui.base.NavigateBack
-import com.anynetwork.app.ui.components.DefaultSelectorProperties
 import com.anynetwork.app.ui.components.HexagonTextField
 import com.anynetwork.app.ui.components.HexagonTextFieldClearTrailingIcon
 import com.anynetwork.app.ui.components.Screen
 import com.anynetwork.app.ui.components.SearchTextField
-import com.anynetwork.app.ui.components.SelectorProperties
 import com.anynetwork.app.ui.components.SheetValue
-import com.anynetwork.app.ui.components.TiltedWheelPicker
 import com.anynetwork.app.ui.components.ToolbarState
 import com.anynetwork.app.ui.components.ToolbarStateTitle
-import com.anynetwork.app.ui.components.WheelPicker
 import com.anynetwork.app.ui.components.WheelPickerDefaults
 import com.anynetwork.app.ui.components.WheelTextPicker
 import com.anynetwork.app.ui.components.dialog.AlertDialog
@@ -164,7 +151,31 @@ import com.anynetwork.app.ui.components.hexagon.RoundedPolygonShape
 import com.anynetwork.app.ui.components.hexagon.createPolygon
 import com.anynetwork.app.ui.components.hexagon.hexCellsBackgroundColors
 import com.anynetwork.app.ui.components.textfield.ProfileTextFieldLeading
-import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.*
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.BackButtonClick
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.ClearNavigationEffect
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.ClearViewEffect
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.EditButtonClick
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.FavoriteButtonClick
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.RemoveProfilePicture
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.RequestNetworkButtonClick
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.RequestNetworkClick
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.SaveButtonClick
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateAddress
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateCompany
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateEmail
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateFirstName
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateHomeFax
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateHomePhone
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateLastName
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateMainPhone
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateMobilePhone
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateOtherEmail
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateOtherPhone
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdatePager
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdatePhotoUri
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateWorkEmail
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateWorkFax
+import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileViewEvent.UpdateWorkPhone
 import com.anynetwork.app.ui.screens.home.HomeViewEvent
 import com.anynetwork.app.ui.screens.home.HomeViewModel
 import com.anynetwork.app.ui.screens.myprofile.offsetToAvoidKeyboard
@@ -179,7 +190,6 @@ import com.anynetwork.app.ui.utils.fdph
 import com.anynetwork.app.ui.utils.fdpv
 import com.anynetwork.app.ui.utils.fsp
 import com.anynetwork.app.ui.utils.log
-import com.anynetwork.app.ui.utils.xdph
 import com.anynetwork.app.ui.utils.xdpv
 import com.yalantis.ucrop.UCrop
 import dev.chrisbanes.haze.HazeState
@@ -187,7 +197,6 @@ import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.File
@@ -668,30 +677,20 @@ private fun ExternalProfile(
         topBar = ToolbarState.Shown(
             titleState = ToolbarStateTitle.Custom(
                 content = {
-                    when (viewState.mode) {
-                        is ExternalProfileMode.RequestNetwork, is ExternalProfileMode.FocusedNetwork -> Text(
-                            modifier = Modifier.fillMaxWidth(),
-                            text = "Request network",
-                            textAlign = TextAlign.Center,
-                            color = Color.White,
-                            style = TextStyle(
-                                fontFamily = montserratFontFamily,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 20.fsp,
-                            )
+                    Text(
+                        modifier = Modifier.fillMaxWidth(),
+                        text = when (viewState.mode) {
+                            is ExternalProfileMode.RequestNetwork, is ExternalProfileMode.FocusedNetwork -> "Request network"
+                            else -> "$firstName $lastName"
+                        },
+                        textAlign = TextAlign.Center,
+                        color = Color.White,
+                        style = TextStyle(
+                            fontFamily = montserratFontFamily,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 20.fsp,
                         )
-                        else -> Text(
-                            modifier = Modifier.fillMaxWidth(),
-                            text = "$firstName $lastName",
-                            textAlign = TextAlign.Center,
-                            color = Color.White,
-                            style = TextStyle(
-                                fontFamily = montserratFontFamily,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 20.fsp,
-                            )
-                        )
-                    }
+                    )
                     Text(
                         modifier = Modifier.fillMaxWidth(),
                         text = when (viewState.mode) {
@@ -1009,17 +1008,6 @@ private fun ExternalProfile(
                 animationSpec = tween(300)
             )
 
-            val statusBarHeight = with(LocalDensity.current) {
-                WindowInsets.statusBars.asPaddingValues().calculateTopPadding().toPx()
-            }
-
-            @Composable
-            fun getNavigationBarHeight(): Float {
-                val context = LocalContext.current
-                val resourceId = context.resources.getIdentifier("navigation_bar_height", "dimen", "android")
-                return if (resourceId > 0) context.resources.getDimensionPixelSize(resourceId).toFloat() else 0f
-            }
-
             val requestNetworkItems = List(gridRows * gridColumns) { index ->
                 val row = index / gridColumns
                 val column = index % gridColumns
@@ -1042,6 +1030,7 @@ private fun ExternalProfile(
                         isNetworkBeingRequesting -> 1f
                         else -> requestNetworkItemsAlpha
                     }
+
                     return CustomHexagonContentStyle(
                         id = id,
 //                        background = when {
@@ -1050,7 +1039,11 @@ private fun ExternalProfile(
 //                            else -> SingleColor((network.background as SingleColor)
 //                                .value.copy(alpha = alpha))
 //                        },
-                        background = cellBackground,
+                        background =
+                            when (cellBackground) {
+                                is SingleColor -> SingleColor(cellBackground.value.copy(alpha = cellBackground.value.alpha))
+                                is Gradient -> cellBackground.copy(colors = cellBackground.colors.map { it })
+                            },
                         onClick = { coordinate ->
                             if (gridTopPadding == null || gridHeight == null) return@CustomHexagonContentStyle
 
@@ -1071,16 +1064,18 @@ private fun ExternalProfile(
                             val newOffsetY = (gridCenterY - offset.y) * (newScale / initialScale)
                             clickPosition = Offset(newOffsetX, newOffsetY)
 
-                            viewModel.onViewEvent(
-                                event = RequestNetworkClick(
-                                    cellId = cellIndex,
-                                    network = network,
-                                    changeScale = ChangeScale(
-                                        scale = newScale,
-                                        position = Offset(newOffsetX, newOffsetY)
+                            if (screenMode !is ExternalProfileMode.FocusedNetwork) {
+                                viewModel.onViewEvent(
+                                    event = RequestNetworkClick(
+                                        cellId = cellIndex,
+                                        network = network,
+                                        changeScale = ChangeScale(
+                                            scale = newScale,
+                                            position = Offset(newOffsetX, newOffsetY)
+                                        )
                                     )
                                 )
-                            )
+                            }
                         },
                         overlay = if (viewState.mode is ExternalProfileMode.Edit) {
                             {
@@ -1125,137 +1120,6 @@ private fun ExternalProfile(
                                     ),
                                     contentDescription = network.toString(),
                                 )
-
-//                                if (isNetworkBeingRequesting) Column(
-//                                    modifier = Modifier
-//                                        .fillMaxSize()
-//                                        .alpha(requestingNetworkContentAlpha),
-//                                    horizontalAlignment = Alignment.CenterHorizontally
-//                                ) {
-//                                    fun Dp.zoomAware() = this / gridColumns / 1.2f
-//                                    fun TextUnit.zoomAware() = this / gridColumns / 1.2f
-//
-//                                    Image(
-//                                        modifier = Modifier
-//                                            .padding(top = 53.fdph.zoomAware())
-//                                            .height(71.fdph.zoomAware()),
-//                                        painter = rememberAsyncImagePainter(
-//                                            model = ImageRequest.Builder(LocalContext.current)
-//                                                .data(network.image)
-//                                                .size(Size.ORIGINAL)
-//                                                .build(),
-//                                        ),
-//                                        contentDescription = network.toString(),
-//                                    )
-//
-//                                    Text(
-//                                        modifier = Modifier
-//                                            .padding(top = 14.fdph.zoomAware()),
-//                                        text = "Request For",
-//                                        fontSize = 14.fsp.zoomAware(),
-//                                        style = TextStyle(
-//                                            fontFamily = montserratFontFamily,
-//                                            fontWeight = FontWeight.SemiBold,
-//                                            color = Color.White
-//                                        ),
-//                                    )
-//
-//                                    Text(
-//                                        modifier = Modifier
-//                                            .padding(top = 5.fdph.zoomAware()),
-//                                        text = network.toString(),
-//                                        fontSize = 24.fsp.zoomAware(),
-//                                        style = TextStyle(
-//                                            fontFamily = montserratFontFamily,
-//                                            fontWeight = FontWeight.Bold,
-//                                            color = Color.White
-//                                        ),
-//                                    )
-//
-//                                    Text(
-//                                        modifier = Modifier
-//                                            .padding(top = 17.fdph.zoomAware())
-//                                            .width(289.fdpv.zoomAware()),
-//                                        text = "Request to view ${viewState.firstName}’s $network. you can add points to the request",
-//                                        textAlign = TextAlign.Center,
-//                                        fontSize = 14.fsp.zoomAware(),
-//                                        style = TextStyle(
-//                                            fontFamily = montserratFontFamily,
-//                                            fontWeight = FontWeight.Normal,
-//                                            color = Color.White
-//                                        ),
-//                                    )
-//
-//                                    Text(
-//                                        modifier = Modifier
-//                                            .padding(top = 30.fdph.zoomAware()),
-//                                        text = "Add Points",
-//                                        fontSize = 16.fsp.zoomAware(),
-//                                        style = TextStyle(
-//                                            fontFamily = montserratFontFamily,
-//                                            fontWeight = FontWeight.SemiBold,
-//                                            color = Color.White
-//                                        ),
-//                                    )
-//
-////                                    TiltedWheelPicker(
-////                                        options = (1..10).map { it.toString() },
-////                                        selectedIndex = 0,
-////                                        onSelectedChange = { newSelected -> }
-////                                    )
-//
-//                                    Column(
-//                                        modifier = Modifier
-//                                            .weight(1f),
-//                                        verticalArrangement = Arrangement.Bottom
-//                                    ) {
-//                                        Card(
-//                                            modifier = Modifier
-//                                                .padding(bottom = 84.fdpv.zoomAware())
-//                                                .width(68.fdph.zoomAware())
-//                                                .height(46.fdpv.zoomAware()),
-//                                            colors = CardColors(Color.Transparent, Color.Transparent, Color.Transparent, Color.Transparent),
-//                                            shape = RoundedCornerShape(
-//                                                topStart = 24.fdph.zoomAware(),
-//                                                topEnd = 24.fdph.zoomAware(),
-//                                                bottomEnd = 24.fdph.zoomAware(),
-//                                                bottomStart = 24.fdph.zoomAware()
-//                                            )
-//                                        ) {
-//                                            Box(
-//                                                modifier = Modifier.fillMaxSize(),
-//                                                contentAlignment = Alignment.Center
-//                                            ) {
-//                                                IconButton(
-//                                                    modifier = Modifier
-//                                                        .width(68.fdph.zoomAware())
-//                                                        .height(46.fdpv.zoomAware())
-//                                                        .pointerInput(Unit) {
-//                                                            detectTapGestures { println("Clicked!") }
-//                                                        },
-//                                                    onClick = {
-//
-//                                                    }
-//                                                ) {
-//                                                    Box(
-//                                                        modifier = Modifier.fillMaxSize()
-//                                                            .background(Color.White.copy(alpha = 0.1f)),
-//                                                        contentAlignment = Alignment.Center
-//                                                    ) {
-//                                                        Image(
-//                                                            modifier = Modifier
-//                                                                .padding(vertical = 16.fdpv.zoomAware())
-//                                                                .fillMaxSize(),
-//                                                            painter = painterResource(R.drawable.ic_detail_arrow_2),
-//                                                            colorFilter = ColorFilter.tint(Color.White),
-//                                                            contentDescription = "back button",
-//                                                        )
-//                                                    }
-//                                                }
-//                                            }
-//                                        }
-//                                    }
-//                                }
                             }
                         }
                     )
@@ -1458,335 +1322,12 @@ private fun ExternalProfile(
                 animationSpec = tween(100)
             )
 
-            val offsetInDp = with(LocalDensity.current) {
-                DpOffset(0.dp, gridCenterY.toDp() - (screenWidth * 96.99f/86.93f / 2f).toDp())
-            }
-
-            val verticalBorder = (cellSize * 0.04403f).log { "verticalBorder" }
-            val horizontalBorder = (cellSize * 89.99f/79.93f * 0.0395f).log { "horizontalBorder" }
-
-            val network = (viewState.mode as? ExternalProfileMode.FocusedNetwork)?.network
-            val lastNetwork = remember { mutableStateOf<Network?>(null) }
-
-            // Update only when network is not null
-            if (network != null) {
-                lastNetwork.value = network
-            }
-
-            // Use the remembered network instead of the current one if it's null
-            val displayNetwork = lastNetwork.value
-            if (requestNetworkAlpha > 0f) Box(
-                modifier = Modifier
-                    .fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Box(
-                    modifier = Modifier
-                        .width(cellSize * gridColumns * 1.1f)
-                        .height(621.fdpv)
-                        .padding(
-                            vertical = verticalBorder,
-                            horizontal = horizontalBorder
-                        )
-                        .alpha(requestNetworkAlpha),
-                    contentAlignment = Alignment.Center
-                ) {
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentHeight(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-
-                        if (displayNetwork != null) Image(
-                            modifier = Modifier
-                                .padding(top = 54.fdpv)
-                                .height(71.fdph),
-                            painter = rememberAsyncImagePainter(
-                                model = ImageRequest.Builder(LocalContext.current)
-                                    .data(displayNetwork.image)
-                                    .size(Size.ORIGINAL)
-                                    .build(),
-                            ),
-                            contentScale = ContentScale.FillHeight,
-                            contentDescription = displayNetwork.toString(),
-                        )
-
-                        Text(
-                            modifier = Modifier
-                                .padding(top = 14.fdph),
-                            text = "Request For",
-                            fontSize = 14.fsp,
-                            style = TextStyle(
-                                fontFamily = montserratFontFamily,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color.White
-                            ),
-                        )
-
-                        Text(
-                            modifier = Modifier
-                                .padding(top = 5.fdph),
-                            text = displayNetwork.toString(),
-                            fontSize = 24.fsp,
-                            style = TextStyle(
-                                fontFamily = montserratFontFamily,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            ),
-                        )
-
-                        Text(
-                            modifier = Modifier
-                                .padding(top = 17.fdph)
-                                .width(289.fdpv),
-                            text = "Request to view ${viewState.firstName}’s $displayNetwork. you can add points to the request",
-                            textAlign = TextAlign.Center,
-                            fontSize = 14.fsp,
-                            style = TextStyle(
-                                fontFamily = montserratFontFamily,
-                                fontWeight = FontWeight.Normal,
-                                color = Color.White
-                            ),
-                        )
-
-                        Text(
-                            modifier = Modifier
-                                .padding(top = 30.fdph),
-                            text = "Add Points",
-                            fontSize = 16.fsp,
-                            style = TextStyle(
-                                fontFamily = montserratFontFamily,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color.White
-                            ),
-                        )
-
-                        WheelTextPicker(
-                            size = DpSize(128.fdph, 170.fdpv),
-                            texts = (1..10).map { it.toString() },
-                            rowCount = 3,
-                            color = Color.White,
-                            style = TextStyle(
-                                fontFamily = montserratFontFamily,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 50.fsp,
-                            ),
-                            selectorProperties = WheelPickerDefaults.selectorProperties(enabled = false),
-                            onScrollFinished = { null }
-                        )
-
-                        Column(
-                            modifier = Modifier
-                                .weight(1f),
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Card(
-                                modifier = Modifier
-                                    .width(68.fdph)
-                                    .height(46.fdpv),
-                                colors = CardColors(Color.White.copy(0.1f), Color.Transparent, Color.Transparent, Color.Transparent),
-                                shape = RoundedCornerShape(
-                                    topStart = 24.fdph,
-                                    topEnd = 24.fdph,
-                                    bottomEnd = 24.fdph,
-                                    bottomStart = 24.fdph
-                                )
-                            ) {
-                                IconButton(
-                                    modifier = Modifier.fillMaxSize(),
-                                    onClick = {}
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .width(68.fdph)
-                                            .height(46.fdpv),
-                                    ) {
-                                        Box(
-                                            modifier = Modifier.fillMaxSize()
-                                                .background(Color.White.copy(alpha = 0.1f)),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Image(
-                                                modifier = Modifier
-                                                    .padding(vertical = 16.fdpv)
-                                                    .fillMaxSize(),
-                                                painter = painterResource(R.drawable.ic_detail_arrow_2),
-                                                colorFilter = ColorFilter.tint(Color.White),
-                                                contentDescription = "back button",
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            /*leadingCellOffset?.let {
-                val centralOffsetInDp = with(LocalDensity.current) {
-                    DpOffset(it.x.toDp(), it.y.toDp())
-                }
-
-                val polygon = remember { createPolygon() }
-                val roundedPolygonShape = remember { RoundedPolygonShape(polygon) }
-
-                val alpha by animateFloatAsState(
-                    targetValue = if (viewState.mode == ExternalProfileMode.Normal) 1f else 0f,
-                    animationSpec = tween(500)
-                )
-
-                val searchAlpha by animateFloatAsState(
-                    targetValue = if (viewState.mode is ExternalProfileMode.RequestNetwork
-                        && !(viewState.mode as ExternalProfileMode.RequestNetwork).isSearching) 1f else 0f,
-                    animationSpec = tween(500)
-                )
-                val cellSize = LocalConfiguration.current.screenWidthDp.dp / gridColumns
-                val verticalBorder = (cellSize * 0.04403f).log { "verticalBorder" }
-                val horizontalBorder = (cellSize * 89.99f/79.93f * 0.0395f).log { "horizontalBorder" }
-
-                RoundedHexagon(
-                    modifier = Modifier
-                        .offset(centralOffsetInDp.x, centralOffsetInDp.y)
-                        .width(with(LocalDensity.current) { cellWidth!!.toDp() } * scale)
-                        .padding(
-                            vertical = verticalBorder,
-                            horizontal = horizontalBorder
-                        )
-                        .aspectRatio(79.93.xdph / 89.99.xdpv)
-                        .alpha(alpha)
-//                            .zIndex(if (alpha == 1f) 1f else 0f) // Bring to front when alpha is 1
-                        .then(Modifier.graphicsLayer {
-                            this.shadowElevation = shadowElevation
-                            clip = true
-                            shape = roundedPolygonShape
-                        }),
-                    onClick = {
-                        if (alpha > 0.5f) {
-                            viewModel.onViewEvent(RequestNetworkButtonClick())
-                        }
-                    },
-                    contentStyle = IconHexagonContentStyle(
-                        id = 0,
-                        background = SingleColor(Color(0xFF302C3D)),
-                        contentDescription = "Add",
-                        image = VectorResource(id = R.drawable.ic_plus)
-                    ),
-                )
-
-                val searchHexagonPolygon = remember { createPolygon() }
-                val searchHexagonRoundedPolygonShape = remember { RoundedPolygonShape(searchHexagonPolygon) }
-
-                RoundedHexagon(
-                    modifier = Modifier
-                        .offset(centralOffsetInDp.x, centralOffsetInDp.y)
-                        .width(with(LocalDensity.current) { cellWidth!!.toDp() } * scale)
-                        .padding(
-                            vertical = verticalBorder,
-                            horizontal = horizontalBorder
-                        )
-                        .aspectRatio(79.93.xdph / 89.99.xdpv)
-                        .alpha(searchAlpha)
-                        .zIndex(if (searchAlpha == 1f) 1f else 0f) // Bring to front when alpha is 1
-                        .then(Modifier.graphicsLayer {
-                            this.shadowElevation = shadowElevation
-                            clip = true
-                            shape = searchHexagonRoundedPolygonShape
-                        }),
-                    onClick = {
-                        if (searchAlpha > 0.5f) {
-                            viewModel.onViewEvent(
-                                RequestNetworkButtonClick(
-                                    isSearching = true
-                                )
-                            )
-                        }
-                    },
-                    contentStyle = IconHexagonContentStyle(
-                        id = 0,
-                        background = SingleColor(Color(0xFF302C3D)),
-                        contentDescription = "Search",
-                        image = VectorResource(id = R.drawable.ic_search)
-                    )
-                )
-
-            }
-
-            trailingCellOffset?.let {
-                trailingCellOffset?.log { "trailingCellOffset" }
-                if (viewState.mode == ExternalProfileMode.Normal) {
-                    val centralOffsetInDp = with(LocalDensity.current) {
-                        DpOffset(it.x.toDp(), it.y.toDp())
-                    }
-                    val polygon = remember { createPolygon() }
-                    val roundedPolygonShape = remember { RoundedPolygonShape(polygon) }
-                    val cellSize = LocalConfiguration.current.screenWidthDp.dp / gridColumns
-                    val verticalBorder = (cellSize * 0.04403f).log { "verticalBorder" }
-                    val horizontalBorder = (cellSize * 89.99f/79.93f * 0.0395f).log { "horizontalBorder" }
-
-                    val favoriteButtonAlpha by animateFloatAsState(
-                        targetValue = if (viewState.isFavorite) 0f else 1f,
-                        animationSpec = tween(300)
-                    )
-
-                    RoundedHexagon(
-                        modifier = Modifier
-                            .offset(centralOffsetInDp.x, centralOffsetInDp.y)
-                            .width(with(LocalDensity.current) { cellWidth!!.toDp() } * scale)
-                            .padding(
-                                vertical = verticalBorder,
-                                horizontal = horizontalBorder
-                            )
-                            .aspectRatio(79.93.xdph / 89.99.xdpv)
-                            .alpha(favoriteButtonAlpha * itemAlpha)
-                            .then(Modifier.graphicsLayer {
-                                this.shadowElevation = shadowElevation
-                                clip = true
-                                shape = roundedPolygonShape
-                            }),
-                        contentStyle = IconHexagonContentStyle(
-                            id = 0,
-                            background = SingleColor(Color(0xFF302C3D).copy(alpha = itemAlpha)),
-                            contentDescription = "",
-                            image = VectorResource(id = R.drawable.ic_star),
-                            tintColor = YellowColor,
-                        ),
-                        onClick = {
-                            viewModel.onViewEvent(FavoriteButtonClick)
-                        }
-                    )
-
-
-                    val polygon2 = remember { createPolygon() }
-                    val roundedPolygonShape2 = remember { RoundedPolygonShape(polygon2) }
-                    RoundedHexagon(
-                        modifier = Modifier
-                            .offset(centralOffsetInDp.x, centralOffsetInDp.y)
-                            .width(with(LocalDensity.current) { cellWidth!!.toDp() } * scale)
-                            .padding(
-                                vertical = verticalBorder,
-                                horizontal = horizontalBorder
-                            )
-                            .aspectRatio(79.93.xdph / 89.99.xdpv)
-                            .alpha((1 - favoriteButtonAlpha) * itemAlpha)
-                            .then(Modifier.graphicsLayer {
-                                clip = true
-                                shape = roundedPolygonShape2
-                            }),
-                        contentStyle = IconHexagonContentStyle(
-                            id = 0,
-                            background = SingleColor(YellowColor.copy(alpha = itemAlpha)),
-                            contentDescription = "",
-                            image = VectorResource(id = R.drawable.ic_star_filled),
-                            tintColor = Color.White,
-                        ),
-                        onClick = {
-                            viewModel.onViewEvent(FavoriteButtonClick)
-                        }
-                    )
-                }
-            }*/
+            NetworkRequestDialog(
+                network = (viewState.mode as? ExternalProfileMode.FocusedNetwork)?.network,
+                requestNetworkAlpha = requestNetworkAlpha,
+                firstName = viewState.firstName,
+                gridColumns = gridColumns
+            )
         },
         content = {
             val density = LocalDensity.current
@@ -2666,19 +2207,6 @@ private fun ExternalProfile(
                             )
                         }
 
-//                    VerticalLine()
-//
-//                    IconButton(
-//                        modifier = Modifier,
-//                        onClick = {}
-//                    ) {
-//                        Image(
-//                            modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
-//                            painter = painterResource(R.drawable.ic_other_profile_trailing_2),
-//                            contentDescription = "back button",
-//                        )
-//                    }
-
                         VerticalLine()
 
                     }
@@ -2769,105 +2297,9 @@ private fun ExternalProfile(
                     }
                 }
             }
-
-//            Card(
-//                modifier = Modifier
-//                    .fillMaxHeight()
-//                    .width(46.fdph)
-//                    .align(Alignment.CenterEnd),
-//                colors = CardColors(Color.Transparent, Color.Transparent, Color.Transparent, Color.Transparent),
-//                shape = RoundedCornerShape(
-//                    topStart = 24.fdph,
-//                    topEnd = 0.dp,
-//                    bottomEnd = 0.dp,
-//                    bottomStart = 24.fdph
-//                )
-//            ) {
-//                Box(modifier = Modifier.fillMaxSize()
-//                    .hazeChild(
-//                        state = hazeState,
-//                        style = hazeStyle
-//                    )
-//                ) {
-//                    IconButton(
-//                        modifier = Modifier
-//                            .align(Alignment.Center),
-//                        onClick = {}
-//                    ) {
-//                        Image(
-//                            modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
-//                            painter = painterResource(R.drawable.ic_rounded_plus_2),
-//                            contentDescription = "back button",
-//                        )
-//                    }
-//                }
-//            }
         }
     }
 }
-
-//fun buildCustomIconItem(cellIndex: Int, onClick: (Offset) -> Unit) {
-//    CustomHexagonContentStyle(
-//        id = cellIndex,
-//        content = {
-//            Box(
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .align(Alignment.Center),
-//                contentAlignment = Alignment.Center
-//            ) {
-//                Image(
-//                    modifier = Modifier
-//                        .alpha(contentStyle.alpha),
-//                    painter = rememberAsyncImagePainter(
-//                        model = ImageRequest.Builder(LocalContext.current)
-//                            .data(contentStyle.image.id)
-//                            .size(coil.size.Size.ORIGINAL) // Load the image at its original resolution
-//                            .build(),
-//                    ),
-//                    contentDescription = contentStyle.contentDescription,
-//                    colorFilter = when {
-//                        contentStyle.tintColor != null -> ColorFilter.tint(contentStyle.tintColor)
-//                        else -> null
-//                    }
-//                )
-//            }
-//            Box(
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .align(Alignment.Center)
-//                    .background(Color(0xFF6E4CD4))
-//            ) {
-//                if (photoUri == null) {
-//                    Image(
-//                        modifier = Modifier
-//                            .align(Alignment.Center)
-//                            .fillMaxSize(0.335f),
-//                        painter = rememberAsyncImagePainter(
-//                            model = ImageRequest.Builder(LocalContext.current)
-//                                .data(R.drawable.ic_profile)
-//                                .size(Size(580, 660))
-//                                .build()
-//                        ),
-//                        contentDescription = null,
-//                    )
-//                } else {
-//                    Image(
-//                        modifier = Modifier
-//                            .fillMaxSize(),
-//                        painter = rememberAsyncImagePainter(photoUri),
-//                        contentScale = ContentScale.Crop,
-//                        contentDescription = null,
-//                    )
-//                }
-//            }
-//        },
-//        isShakable = true,
-//        onClick = { offset ->
-//            onClick.invoke(offset)
-//        },
-//    )
-//}
 
 @Composable
 fun VerticalLine() {
@@ -2887,3 +2319,153 @@ private fun createCellPosition(row: Int, column: Int) = HexGridCellPosition(
     row = row,
     gridRows = gridRows,
     gridColumns = gridColumns)
+
+@Composable
+fun NetworkRequestDialog(
+    network: Network?,
+    requestNetworkAlpha: Float,
+    firstName: String,
+    gridColumns: Int
+) {
+    // Remember last non-null network
+    val lastNetwork = remember { mutableStateOf<Network?>(null) }
+    if (network != null) {
+        lastNetwork.value = network
+    }
+    val displayNetwork = lastNetwork.value
+
+    if (requestNetworkAlpha > 0f && displayNetwork != null) {
+        val cellSize = LocalConfiguration.current.screenWidthDp.dp / gridColumns
+        val verticalBorder = (cellSize * 0.04403f)
+        val horizontalBorder = (cellSize * 89.99f / 79.93f * 0.0395f)
+
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(cellSize * gridColumns * 1.1f)
+                    .height(621.fdpv)
+                    .padding(vertical = verticalBorder, horizontal = horizontalBorder)
+                    .alpha(requestNetworkAlpha),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().wrapContentHeight(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Image(
+                        modifier = Modifier.padding(top = 54.fdpv).height(71.fdph),
+                        painter = rememberAsyncImagePainter(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(displayNetwork.image)
+                                .size(Size.ORIGINAL)
+                                .build(),
+                        ),
+                        contentScale = ContentScale.FillHeight,
+                        contentDescription = displayNetwork.toString(),
+                    )
+
+                    Text(
+                        modifier = Modifier.padding(top = 14.fdph),
+                        text = "Request For",
+                        fontSize = 14.fsp,
+                        style = TextStyle(
+                            fontFamily = montserratFontFamily,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White
+                        ),
+                    )
+
+                    Text(
+                        modifier = Modifier.padding(top = 5.fdph),
+                        text = displayNetwork.toString(),
+                        fontSize = 24.fsp,
+                        style = TextStyle(
+                            fontFamily = montserratFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        ),
+                    )
+
+                    Text(
+                        modifier = Modifier.padding(top = 17.fdph).width(289.fdpv),
+                        text = "Request to view ${firstName}’s $displayNetwork. You can add points to the request",
+                        textAlign = TextAlign.Center,
+                        fontSize = 14.fsp,
+                        style = TextStyle(
+                            fontFamily = montserratFontFamily,
+                            fontWeight = FontWeight.Normal,
+                            color = Color.White
+                        ),
+                    )
+
+                    Text(
+                        modifier = Modifier.padding(top = 30.fdph),
+                        text = "Add Points",
+                        fontSize = 16.fsp,
+                        style = TextStyle(
+                            fontFamily = montserratFontFamily,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White
+                        ),
+                    )
+
+                    WheelTextPicker(
+                        size = DpSize(128.fdph, 170.fdpv),
+                        texts = (1..10).map { it.toString() },
+                        rowCount = 3,
+                        color = Color.White,
+                        style = TextStyle(
+                            fontFamily = montserratFontFamily,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 50.fsp,
+                        ),
+                        selectorProperties = WheelPickerDefaults.selectorProperties(enabled = false),
+                        onScrollFinished = { null }
+                    )
+
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Card(
+                            modifier = Modifier.width(68.fdph).height(46.fdpv),
+                            colors = CardColors(
+                                Color.White.copy(0.1f),
+                                Color.Transparent,
+                                Color.Transparent,
+                                Color.Transparent
+                            ),
+                            shape = RoundedCornerShape(24.fdph)
+                        ) {
+                            IconButton(
+                                modifier = Modifier.fillMaxSize(),
+                                onClick = {}
+                            ) {
+                                Box(
+                                    modifier = Modifier.width(68.fdph).height(46.fdpv),
+                                ) {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize()
+                                            .background(Color.White.copy(alpha = 0.1f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Image(
+                                            modifier = Modifier.padding(vertical = 16.fdpv)
+                                                .fillMaxSize(),
+                                            painter = painterResource(R.drawable.ic_detail_arrow_2),
+                                            colorFilter = ColorFilter.tint(Color.White),
+                                            contentDescription = "back button",
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

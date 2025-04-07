@@ -114,5 +114,6 @@ dependencies {
     implementation(libs.permissions)
     implementation(libs.ucrop)
     implementation(libs.lazytable)
-//    implementation(libs.zoomable)
+    implementation(libs.okhttp)
+    implementation(libs.gson)
 }

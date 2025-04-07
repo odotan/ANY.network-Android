@@ -177,23 +177,15 @@ import com.anynetwork.app.ui.utils.log
 import com.anynetwork.app.ui.utils.xdph
 import com.anynetwork.app.ui.utils.xdpv
 import com.google.accompanist.insets.ExperimentalAnimatedInsets
-import com.google.firebase.auth.ActionCodeSettings
-import com.google.firebase.auth.FirebaseAuth
 import com.yalantis.ucrop.UCrop
-import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import java.io.File
 import java.util.UUID
-import javax.inject.Inject
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
@@ -203,7 +195,6 @@ fun MyProfileRoot(
     onContactUpdated: () -> Unit,
     isEnterAnimationFinished: Boolean = true,
     onBackPress: @Composable () -> Unit,
-    emailSignInLink: String?
 ) {
     val viewModel: MyProfileViewModel = hiltViewModel<MyProfileViewModel>()
         .apply {
@@ -211,12 +202,10 @@ fun MyProfileRoot(
             val viewEffect by viewEffectFlow.collectAsState()
             viewEffect.log { "viewEffect" }
             when (viewEffect) {
-                is NavigateBack -> {
-                    onBackPress.invoke()
-                }
-                is ProfileUpdated -> {
-                    onContactUpdated.invoke()
-                }
+                is NavigateBack -> onBackPress.invoke()
+                is ProfileUpdated -> onContactUpdated.invoke()
+                is NavigateToConnect ->
+                    navController.navigate(Route.Connect(mode = (viewEffect as NavigateToConnect).mode))
                 else -> {}
             }
             onViewEvent(MyProfileViewEvent.ClearViewEffect)
@@ -229,17 +218,12 @@ fun MyProfileRoot(
             navController.popBackStack(Route.Home, inclusive = false)
         }
     )
-
-    LaunchedEffect(emailSignInLink) {
-        if (!emailSignInLink.isNullOrEmpty()) {
-            viewModel.verifyEmail(emailSignInLink)
-        }
-    }
 }
 
 sealed class MyProfileMode {
     data object Normal: MyProfileMode()
     data class Edit(val isCanceling: Boolean = false): MyProfileMode()
+    data object Connect: MyProfileMode()
 }
 
 @Composable
@@ -256,7 +240,7 @@ private fun MyProfile(
     var cellHeight: Int? by remember { mutableStateOf(null) }
     var trailingCellOffset: Offset? by remember { mutableStateOf(null) }
     var profilePictureCellOffset: Offset? by remember { mutableStateOf(null) }
-    var mode: MyProfileMode by remember { mutableStateOf(MyProfileMode.Normal) }
+
     var layoutHeight: Int = 0
     var collapsedOffset by remember { mutableStateOf(0f) }
     var expandedOffset by remember { mutableStateOf(0f) }
@@ -267,6 +251,7 @@ private fun MyProfile(
     val listState = rememberLazyListState()
 
     val viewState by viewModel.viewState.collectAsState()
+    val mode: MyProfileMode by remember { derivedStateOf { viewState.mode } }
     val firstName by remember { derivedStateOf { viewState.firstName } }
     val lastName by remember { derivedStateOf { viewState.lastName } }
     val company by remember { derivedStateOf { viewState.company } }
@@ -300,11 +285,7 @@ private fun MyProfile(
     val otherEmailFocusRequester = remember { FocusRequester() }
 
     BackHandler {
-        if (mode is MyProfileMode.Edit) {
-            mode = MyProfileMode.Edit(isCanceling = true)
-        } else {
-            viewModel.onViewEvent(MyProfileViewEvent.BackButtonClick)
-        }
+        viewModel.onViewEvent(MyProfileViewEvent.BackButtonClick)
     }
 
     fun phoneNumberOptions(onClick: (String) -> Unit): List<DropDownDialogMenuCategory> {
@@ -668,6 +649,13 @@ private fun MyProfile(
         }
     }
 
+
+    val alphaAnimationDuration = 700
+    val connectHeaderAlpha by animateFloatAsState(
+        targetValue = if (mode is MyProfileMode.Connect) 1f else 0f,
+        animationSpec = tween(alphaAnimationDuration)
+    )
+
     Screen(
         modifier = Modifier.blur(animatedBlur)
             .haze(state = hazeState),
@@ -678,7 +666,6 @@ private fun MyProfile(
                         modifier = Modifier.align(Alignment.CenterVertically),
                         contentAlignment = Alignment.Center
                     ) {
-                        val alphaAnimationDuration = 700
                         val editHeaderAlpha by animateFloatAsState(
                             targetValue = if (mode is MyProfileMode.Edit) 1f else 0f,
                             animationSpec = tween(alphaAnimationDuration)
@@ -695,8 +682,20 @@ private fun MyProfile(
                             ),
                         )
 
+                        Text(
+                            modifier = Modifier.alpha(connectHeaderAlpha),
+                            text = "Connect",
+                            textAlign = TextAlign.Center,
+                            color = Color(0xFFFFFFFF),
+                            style = TextStyle(
+                                fontFamily = montserratFontFamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 20.fsp,
+                            ),
+                        )
+
                         Image(
-                            modifier = Modifier.alpha(1 - editHeaderAlpha),
+                            modifier = Modifier.alpha(1 - editHeaderAlpha - connectHeaderAlpha),
                             painter = painterResource(R.drawable.ic_any_network),
                             contentDescription = "notifications action icon",
                         )
@@ -738,7 +737,7 @@ private fun MyProfile(
             val telegramCellPosition = centralCellPosition.getNeighborPosition(BottomLeft)
 
             val itemAlpha by animateFloatAsState(
-                targetValue = if (mode is MyProfileMode.Edit) .3f else 1f,
+                targetValue = if (mode is MyProfileMode.Edit || mode is MyProfileMode.Connect) .3f else 1f,
                 animationSpec = tween(300)
             )
 
@@ -780,27 +779,55 @@ private fun MyProfile(
                                         .align(Alignment.Center)
                                         .background(Color(0xFF6E4CD4))
                                 ) {
-                                    if (photoUri == null) {
-                                        Image(
-                                            modifier = Modifier
-                                                .align(Alignment.Center)
-                                                .fillMaxSize(0.335f),
-                                            painter = rememberAsyncImagePainter(
-                                                model = ImageRequest.Builder(LocalContext.current)
-                                                    .data(R.drawable.ic_profile)
-                                                    .size(Size(580, 660))
-                                                    .build()
-                                            ),
-                                            contentDescription = null,
-                                        )
+                                    if (mode is MyProfileMode.Connect) {
+                                        Column(modifier = Modifier.align(Alignment.Center)) {
+                                            Text(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                text = "12",
+                                                textAlign = TextAlign.Center,
+                                                color = Color(0xFFFFFFFF),
+                                                style = TextStyle(
+                                                    fontFamily = montserratFontFamily,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 18.fsp,
+                                                )
+                                            )
+
+                                            Text(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                text = "Words",
+                                                textAlign = TextAlign.Center,
+                                                color = Color(0xFFFFFFFF),
+                                                style = TextStyle(
+                                                    fontFamily = montserratFontFamily,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    fontSize = 12.fsp,
+                                                )
+                                            )
+                                        }
                                     } else {
-                                        Image(
-                                            modifier = Modifier
-                                                .fillMaxSize(),
-                                            painter = rememberAsyncImagePainter(photoUri),
-                                            contentScale = ContentScale.Crop,
-                                            contentDescription = null,
-                                        )
+                                        if (photoUri == null) {
+                                            Image(
+                                                modifier = Modifier
+                                                    .align(Alignment.Center)
+                                                    .fillMaxSize(0.335f),
+                                                painter = rememberAsyncImagePainter(
+                                                    model = ImageRequest.Builder(LocalContext.current)
+                                                        .data(R.drawable.ic_profile)
+                                                        .size(Size(580, 660))
+                                                        .build()
+                                                ),
+                                                contentDescription = null,
+                                            )
+                                        } else {
+                                            Image(
+                                                modifier = Modifier
+                                                    .fillMaxSize(),
+                                                painter = rememberAsyncImagePainter(photoUri),
+                                                contentScale = ContentScale.Crop,
+                                                contentDescription = null,
+                                            )
+                                        }
                                     }
                                 }
                             },
@@ -923,6 +950,10 @@ private fun MyProfile(
                         )
                     }
                     emailCellPosition.isSame(column, row) -> remember(mode, itemAlpha, alpha) {
+                        val itemAlpha = when {
+                            mode == MyProfileMode.Connect -> 1f
+                            else -> itemAlpha
+                        }
                         IconHexagonContentStyle(
                             id = cellIndex,
                             background = SingleColor(EmailColor.copy(alpha = itemAlpha * alpha)),
@@ -950,6 +981,10 @@ private fun MyProfile(
                         )
                     }
                     phoneCellPosition.isSame(column, row) -> remember(mode, itemAlpha, alpha) {
+                        val itemAlpha = when {
+                            mode == MyProfileMode.Connect -> 1f
+                            else -> itemAlpha
+                        }
                         IconHexagonContentStyle(
                             id = cellIndex,
                             background = SingleColor(PhoneColor.copy(alpha = itemAlpha * alpha)),
@@ -957,6 +992,9 @@ private fun MyProfile(
                             contentDescription = "Phone",
                             image = VectorResource(id = R.drawable.ic_phone),
                             isShakable = true,
+                            onClick = {
+                                viewModel.onViewEvent(MyProfileViewEvent.PhoneCellClick)
+                            },
                             overlay = if (mode is MyProfileMode.Edit) {
                                 {
                                     DeleteButton(
@@ -1022,6 +1060,10 @@ private fun MyProfile(
                         )
                     }
                     telegramCellPosition.isSame(column, row) -> remember(mode, itemAlpha, alpha) {
+                        val itemAlpha = when {
+                            mode == MyProfileMode.Connect -> 1f
+                            else -> itemAlpha
+                        }
                         IconHexagonContentStyle(
                             id = cellIndex,
                             background = SingleColor(TelegramColor.copy(alpha = itemAlpha * alpha)),
@@ -1029,6 +1071,9 @@ private fun MyProfile(
                             contentDescription = "Telegram",
                             image = VectorResource(id = R.drawable.ic_telegram),
                             isShakable = true,
+                            onClick = {
+                                viewModel.onViewEvent(MyProfileViewEvent.TelegramCellClick)
+                            },
                             overlay = if (mode is MyProfileMode.Edit) {
                                 {
                                     DeleteButton(
@@ -1658,9 +1703,24 @@ private fun MyProfile(
                     }
                 }
             }
+            else if (mode is MyProfileMode.Connect) {
+                Text(
+                    modifier = Modifier.alpha(connectHeaderAlpha)
+                        .fillMaxWidth()
+                        .align(Alignment.TopCenter)
+                        .padding(top = 100.fdpv),
+                    text = "Sign in or sign up with any network below",
+                    textAlign = TextAlign.Center,
+                    color = Color(0xFFCCCCCC),
+                    style = TextStyle(
+                        fontFamily = montserratFontFamily,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 14.fsp,
+                    ),
+                )
+            }
         }
     )
-
 
     val polygon = remember { createPolygon() }
     val roundedPolygonShape = remember { RoundedPolygonShape(polygon) }
@@ -1683,7 +1743,7 @@ private fun MyProfile(
         .let { baseModifier ->
             if (mode is MyProfileMode.Edit && (mode as MyProfileMode.Edit).isCanceling) {
                 baseModifier.clickable {
-                    mode = MyProfileMode.Edit(isCanceling = false)
+                    viewModel.onViewEvent(MyProfileViewEvent.DiscardProfileEditDialogDismiss)
                 }
             } else {
                 baseModifier
@@ -1716,7 +1776,7 @@ private fun MyProfile(
 //                                    anchors!!,
 //                                    SheetValue.PartiallyExpanded
 //                                )
-                                mode = MyProfileMode.Normal
+                                viewModel.onViewEvent(MyProfileViewEvent.DiscardProfileEditDialogYesOptionClick)
                                 currentOffset = 0f
                                 anchoredDraggableState.animateTo(SheetValue.Collapsed)
                             }
@@ -1726,7 +1786,7 @@ private fun MyProfile(
                         title = "No",
                         message = "Keep Editing",
                         onClick = {
-                            mode = MyProfileMode.Edit()
+                            viewModel.onViewEvent(MyProfileViewEvent.DiscardProfileEditDialogNoOptionClick)
                         }
                     )
                 )
@@ -1773,11 +1833,7 @@ private fun MyProfile(
                         modifier = Modifier
                             .align(Alignment.Center),
                         onClick = {
-                            if (mode is MyProfileMode.Edit) {
-                                mode = MyProfileMode.Edit(isCanceling = true)
-                            } else {
-                                viewModel.onViewEvent(MyProfileViewEvent.BackButtonClick)
-                            }
+                            viewModel.onViewEvent(MyProfileViewEvent.BackButtonClick)
                         }
                     ) {
                         Image(
@@ -1789,7 +1845,7 @@ private fun MyProfile(
                 }
             }
 
-            Card(
+            if (mode !is MyProfileMode.Connect) Card(
                 modifier = Modifier
                     .fillMaxHeight()
                     .align(Alignment.Center),
@@ -1812,7 +1868,9 @@ private fun MyProfile(
                 ) {
                     IconButton(
                         modifier = Modifier,
-                        onClick = {}
+                        onClick = {
+                            viewModel.onViewEvent(MyProfileViewEvent.ConnectButtonClick)
+                        }
                     ) {
                         Image(
                             modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
@@ -1827,11 +1885,10 @@ private fun MyProfile(
                         modifier = Modifier,
                         onClick = {
                             if (mode !is MyProfileMode.Edit) {
-                                mode = MyProfileMode.Edit()
+                                viewModel.onViewEvent(MyProfileViewEvent.EditButtonClick)
                             } else if (mode is MyProfileMode.Edit) {
                                 if (!hasReadPhoneStatePermission) {
                                     viewModel.onViewEvent(SaveButtonClick)
-                                    mode = MyProfileMode.Normal
                                 }
                             }
                         }
@@ -1886,65 +1943,4 @@ fun Modifier.offsetToAvoidKeyboard(): Modifier = composed {
     }
 
     this.offset { IntOffset(0, -yOffset.roundToInt()) }  // Move field up if obscured
-}
-
-class EmailNetworkAuthentication @Inject constructor(
-    @ApplicationContext private val context: Context
-) {
-
-    private val actionCodeSettings: ActionCodeSettings = ActionCodeSettings.newBuilder()
-        .setUrl("https://anynetwork.page.link")
-        .setHandleCodeInApp(true)
-        .setAndroidPackageName(
-            "com.anynetwork.app",
-            true,
-            null
-        )
-        .build()
-
-    private var email: String? = null
-
-    init {
-        signOut()
-    }
-
-    suspend fun sendSignInLink(toEmail: String) {
-        FirebaseAuth.getInstance().sendSignInLinkToEmail(toEmail, actionCodeSettings).await()
-        this.email = toEmail
-    }
-
-    suspend fun verifySignInLink(email: String, link: String): String {
-
-        return if (FirebaseAuth.getInstance().isSignInWithEmailLink(link)) {
-            val result = FirebaseAuth.getInstance().signInWithEmailLink(email, link).await()
-            result.user?.email ?: email
-        } else {
-            throw EmailError.Unknown
-        }
-    }
-
-    fun verifyEmail(oobCode: String) = flow {
-        emit(VerificationState.Loading)
-        try {
-            FirebaseAuth.getInstance().applyActionCode(oobCode).await()
-            emit(VerificationState.Success)
-        } catch (e: Exception) {
-            emit(VerificationState.Error(e.message ?: "Unknown error"))
-        }
-    }.flowOn(Dispatchers.IO) // Run on background thread
-
-    private fun signOut() {
-        FirebaseAuth.getInstance().signOut()
-    }
-
-    sealed class EmailError(override val message: String?) : Throwable() {
-        object MissingEmail : EmailError("Missing Email")
-        object Unknown : EmailError("Unknown Error")
-    }
-
-    sealed class VerificationState {
-        object Loading : VerificationState()  // Represents the loading state (while verification is in progress)
-        object Success : VerificationState()  // Represents success after email verification
-        data class Error(val message: String) : VerificationState()  // Represents failure with an error message
-    }
 }

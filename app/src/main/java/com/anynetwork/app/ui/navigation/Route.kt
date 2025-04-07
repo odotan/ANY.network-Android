@@ -13,7 +13,15 @@ object Route {
     object Onboarding
 
     @Serializable
-    object Connect
+    data class Connect(
+        val mode: String,
+        val emailSignInLink: String? = null
+    )
+
+    @Serializable
+    data class ConnectSuccess(
+        val mode: String
+    )
 
     @Serializable
     object ContactsPermissions
@@ -24,8 +32,7 @@ object Route {
     @Serializable
     data class MyProfile(
         val offsetX: Float,
-        val offsetY: Float,
-        val emailSignInLink: String? = null
+        val offsetY: Float
     )
 
     @Serializable

@@ -3,23 +3,17 @@ package com.anynetwork.app.ui.screens.myprofile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.anynetwork.app.data.profile.ProfileRepository
-import com.anynetwork.app.domain.SendSignInLinkUseCase
-import com.anynetwork.app.domain.VerifyEmailSignInUseCase
 import com.anynetwork.app.model.Profile
-import com.anynetwork.app.ui.screens.myprofile.EmailNetworkAuthentication.EmailError
 import com.anynetwork.app.ui.screens.myprofile.MyProfileViewEvent.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
 class MyProfileViewModel @Inject constructor(
-    val profileRepository: ProfileRepository,
-    val sendSignInLinkUseCase: SendSignInLinkUseCase,
-    val verifyEmailSignInUseCase: VerifyEmailSignInUseCase
+    val profileRepository: ProfileRepository
 ): ViewModel() {
 
     private val _viewState = MutableStateFlow(MyProfileViewState())
@@ -51,19 +45,6 @@ class MyProfileViewModel @Inject constructor(
         }
     }
 
-    fun verifyEmail(emailSignInLink: String) {
-        viewModelScope.launch {
-            Timber.i("verifyEmail - emailSignInLink: $emailSignInLink")
-            try {
-                Timber.i("verifyEmail - success")
-                verifyEmailSignInUseCase("talkappdanny@gmail.com", emailSignInLink)
-            } catch (e: EmailError.Unknown) {
-                e.printStackTrace()
-                Timber.i("verifyEmail - error")
-            }
-        }
-    }
-
     fun onViewEvent(event: MyProfileViewEvent) {
         when (event) {
             SaveButtonClick -> viewModelScope.launch {
@@ -85,6 +66,8 @@ class MyProfileViewModel @Inject constructor(
                         avatarUri = _viewState.value.photoUri
                     )
                 )
+                _viewState.value =
+                    _viewState.value.copy(mode = MyProfileMode.Normal)
                 _viewEffectFlow.value = MyProfileViewEffect.ProfileUpdated
             }
             is UpdateAddress -> _viewState.value =
@@ -164,20 +147,59 @@ class MyProfileViewModel @Inject constructor(
                 _viewState.value = _viewState.value.copy(photoUri = null)
             }
             is BackButtonClick -> {
-                _viewEffectFlow.value = MyProfileViewEffect.NavigateBack
+                if (viewState.value.mode is MyProfileMode.Edit) {
+                    _viewState.value = _viewState.value.copy(mode = MyProfileMode.Edit(isCanceling = true))
+                } else if (viewState.value.mode is MyProfileMode.Connect) {
+                    _viewState.value = _viewState.value.copy(mode = MyProfileMode.Normal)
+                } else {
+                    _viewEffectFlow.value = MyProfileViewEffect.NavigateBack
+                }
             }
             is ClearViewEffect -> {
                 _viewEffectFlow.value = null
             }
 
             EmailCellClick -> viewModelScope.launch {
-                sendSignInLinkUseCase.execute("talkappdanny@gmail.com")
+                if (viewState.value.mode == MyProfileMode.Connect) {
+                    _viewEffectFlow.value = MyProfileViewEffect.NavigateToConnect(mode = "email")
+                }
+            }
+            PhoneCellClick -> viewModelScope.launch {
+                if (viewState.value.mode == MyProfileMode.Connect) {
+                    _viewEffectFlow.value = MyProfileViewEffect.NavigateToConnect(mode = "phone")
+                }
+            }
+            TelegramCellClick -> viewModelScope.launch {
+                if (viewState.value.mode == MyProfileMode.Connect) {
+                    _viewEffectFlow.value = MyProfileViewEffect.NavigateToConnect(mode = "telegram")
+                }
+            }
+
+            ConnectButtonClick -> viewModelScope.launch {
+                _viewState.value = _viewState.value.copy(mode = MyProfileMode.Connect)
+            }
+
+            EditButtonClick -> viewModelScope.launch {
+                _viewState.value = _viewState.value.copy(mode = MyProfileMode.Edit())
+            }
+
+            DiscardProfileEditDialogDismiss -> viewModelScope.launch {
+                _viewState.value = _viewState.value.copy(mode = MyProfileMode.Edit(isCanceling = false))
+            }
+
+            DiscardProfileEditDialogYesOptionClick -> viewModelScope.launch {
+                _viewState.value = _viewState.value.copy(mode = MyProfileMode.Normal)
+            }
+
+            DiscardProfileEditDialogNoOptionClick -> viewModelScope.launch {
+                _viewState.value = _viewState.value.copy(mode = MyProfileMode.Edit())
             }
         }
     }
 }
 
 data class MyProfileViewState(
+    val mode: MyProfileMode = MyProfileMode.Normal,
     val firstName: String = "",
     val lastName: String = "",
     val company: String = "",
@@ -251,9 +273,16 @@ sealed class MyProfileViewEvent {
     ): MyProfileViewEvent()
     data class UpdatePhotoUri(val photoUri: String): MyProfileViewEvent()
     data object EmailCellClick: MyProfileViewEvent()
+    data object PhoneCellClick: MyProfileViewEvent()
+    data object TelegramCellClick: MyProfileViewEvent()
     data object RemoveProfilePicture: MyProfileViewEvent()
     data object BackButtonClick: MyProfileViewEvent()
-    data object ClearViewEffect : MyProfileViewEvent()
+    data object ClearViewEffect: MyProfileViewEvent()
+    data object ConnectButtonClick: MyProfileViewEvent()
+    data object EditButtonClick: MyProfileViewEvent()
+    data object DiscardProfileEditDialogDismiss: MyProfileViewEvent()
+    data object DiscardProfileEditDialogYesOptionClick: MyProfileViewEvent()
+    data object DiscardProfileEditDialogNoOptionClick: MyProfileViewEvent()
 }
 
 sealed class MyProfileViewEffect {
@@ -270,4 +299,5 @@ sealed class MyProfileViewEffect {
     data object RequestFocusOnOtherEmailTextField: MyProfileViewEffect()
     data object NavigateBack: MyProfileViewEffect()
     data object ProfileUpdated: MyProfileViewEffect()
+    data class NavigateToConnect(val mode: String): MyProfileViewEffect()
 }

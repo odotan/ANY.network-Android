@@ -63,7 +63,8 @@ fun HexagonTextField(
     onValueChange: (String?) -> Unit,
     placeholder: String? = null,
     leadingIcon: @Composable (() -> Unit)? = null,
-    trailingIcon: @Composable (() -> Unit)? = null
+    trailingIcon: @Composable (() -> Unit)? = null,
+    addTrailingClearIcon: Boolean = false
 ) {
     val clipShape = remember {
         HexButtonShape(polygon)
@@ -126,7 +127,7 @@ fun HexagonTextField(
                     )
                 },
                 trailingIcon = {
-                    if (value.isNotEmpty()) HexagonTextFieldClearTrailingIcon {
+                    if (value.isNotEmpty() && addTrailingClearIcon) HexagonTextFieldClearTrailingIcon {
                         onValueChange.invoke(null)
                     }
                 }
@@ -167,48 +168,3 @@ fun HexagonTextFieldClearTrailingIcon(onClick: () -> Unit) {
         )
     }
 }
-
-//@Preview
-//@Composable
-//private fun HexagonTextFieldPreview() {
-//    var value by remember { mutableStateOf("") }
-//    HexagonTextField(
-//        modifier = Modifier.height(54.fdpv),
-//        value = value,
-//        onValueChange = { newValue ->
-//            value = newValue
-//        },
-//        placeholder = "First Name"
-//    )
-//}
-//
-//@Preview
-//@Composable
-//private fun HexagonTextFieldComparePreview() {
-//    var value by remember { mutableStateOf("") }
-//    var showCustom by remember { mutableStateOf(true) }
-//    Column {
-//        Box() {
-//            if (showCustom) HexagonTextField(
-//                modifier = Modifier
-//                    .width(173.54.fdph)
-//                    .height(54.fdpv),
-//                value = value,
-//                onValueChange = { newValue ->
-//                    value = newValue
-//                },
-//                placeholder = "First Name"
-//            )
-//            if (!showCustom) Image(
-//                modifier = Modifier
-//                    .width(173.54.fdph)
-//                    .height(54.fdpv),
-//                painter = painterResource(id = R.drawable.group_323),
-//                contentDescription = "Mobile detail arrow",
-//            )
-//        }
-//        Text(modifier = Modifier
-//            .padding(20.dp)
-//            .clickable { showCustom = !showCustom }, text = "Change")
-//    }
-//}

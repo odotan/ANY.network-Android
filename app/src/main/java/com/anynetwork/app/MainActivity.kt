@@ -39,6 +39,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.anynetwork.app.ui.navigation.Route
 import com.anynetwork.app.ui.screens.connect.ConnectRoot
+import com.anynetwork.app.ui.screens.connectsuccess.ConnectSuccessScreenRoot
 import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileRoot
 import com.anynetwork.app.ui.screens.home.HomeRoot
 import com.anynetwork.app.ui.screens.home.HomeViewModel
@@ -78,11 +79,14 @@ class MainActivity : ComponentActivity() {
                 val homeViewModel = hiltViewModel<HomeViewModel>()
 
                 fun handleDeepLink(deepLink: Uri) {
-                    homeNavController.navigate(Route.MyProfile(
-                        offsetX = 0f,
-                        offsetY = 0f,
-                        emailSignInLink = deepLink.toString()
-                    ))
+                    if (deepLink.toString().contains("oobCode") && deepLink.toString().contains("mode=signIn")) {
+                        homeNavController.navigate(
+                            Route.Connect(
+                                mode = "email",
+                                emailSignInLink = deepLink.toString()
+                            )
+                        )
+                    }
                 }
 
                 NavHost(
@@ -106,8 +110,6 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable<Route.Onboarding> { OnboardingRoot(navController) }
-
-                    composable<Route.Connect> { ConnectRoot() }
 
                     composable<Route.Home>(
                         enterTransition = {
@@ -162,7 +164,6 @@ class MainActivity : ComponentActivity() {
                         val transitionDuration = 400 // Duration of the explosion animation
                         val x = it.toRoute<Route.MyProfile>().offsetX
                         val y = it.toRoute<Route.MyProfile>().offsetY
-                        val emailSignInLink = it.toRoute<Route.MyProfile>().emailSignInLink
 
                         val currentConfig = LocalConfiguration.current
                         val width = with(LocalDensity.current) { currentConfig.screenWidthDp.dp.toPx() }
@@ -230,7 +231,6 @@ class MainActivity : ComponentActivity() {
                         ) {
                             MyProfileRoot(
                                 navController = homeNavController,
-                                emailSignInLink = emailSignInLink,
                                 onContactUpdated = {
                                     homeViewModel.loadProfile()
                                 },
@@ -256,8 +256,8 @@ class MainActivity : ComponentActivity() {
 
                     composable<Route.ExternalProfile> {
                         val transitionDuration = 400 // Duration of the explosion animation
-                        val x = it.toRoute<Route.MyProfile>().offsetX
-                        val y = it.toRoute<Route.MyProfile>().offsetY
+                        val x = it.toRoute<Route.ExternalProfile>().offsetX
+                        val y = it.toRoute<Route.ExternalProfile>().offsetY
 
                         val currentConfig = LocalConfiguration.current
                         val width = with(LocalDensity.current) { currentConfig.screenWidthDp.dp.toPx() }
@@ -359,6 +359,22 @@ class MainActivity : ComponentActivity() {
                             onBackPress = {
                                 homeNavController.popBackStack(Route.Home, inclusive = false)
                             },
+                        )
+                    }
+
+                    composable<Route.Connect> {
+                        val emailSignInLink = it.toRoute<Route.Connect>().emailSignInLink
+                        ConnectRoot(
+                            navController = homeNavController,
+                            emailSignInLink = emailSignInLink,
+                            mode = it.toRoute<Route.Connect>().mode
+                        )
+                    }
+
+                    composable<Route.ConnectSuccess> {
+                        ConnectSuccessScreenRoot(
+                            navController = homeNavController,
+                            mode = it.toRoute<Route.ConnectSuccess>().mode
                         )
                     }
                 }

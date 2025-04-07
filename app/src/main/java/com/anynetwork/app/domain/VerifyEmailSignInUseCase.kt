@@ -1,6 +1,6 @@
 package com.anynetwork.app.domain
 
-import com.anynetwork.app.ui.screens.myprofile.EmailNetworkAuthentication
+import com.anynetwork.app.data.networkAuth.EmailNetworkAuthentication
 import javax.inject.Inject
 
 class VerifyEmailSignInUseCase @Inject constructor(
