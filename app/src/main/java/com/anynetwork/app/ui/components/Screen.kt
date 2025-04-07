@@ -6,6 +6,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -19,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import com.anynetwork.app.ui.components.button.BackButton
 import com.anynetwork.app.ui.components.text.Header
 import com.anynetwork.app.ui.utils.fdph
+import com.anynetwork.app.ui.utils.fdpv
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -27,6 +31,7 @@ fun Screen(
     modifier: Modifier = Modifier,
     containerColor: Color = MaterialTheme.colorScheme.background,
     topBar: ToolbarState = ToolbarState.Hidden,
+    pinButtons: @Composable (BoxScope.() -> Unit)? = null,
     hexagonGrid: @Composable (() -> Unit)? = null,
     applyInnerPaddingToContent: Boolean = true,
     content: @Composable (BoxScope.() -> Unit)? = null,
@@ -102,6 +107,21 @@ fun Screen(
                     }
                 ) {
                     content?.invoke(this)
+
+                    pinButtons?.let {
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .padding(bottom = 31.fdpv)
+                                    .navigationBarsPadding()
+                                    .fillMaxWidth()
+                                    .height(48.fdpv)
+                            ) {
+                                pinButtons.invoke(this)
+                            }
+                        }
+                    }
                 }
         }
     )
