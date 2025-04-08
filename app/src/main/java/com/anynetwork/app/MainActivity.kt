@@ -33,10 +33,12 @@ import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHost
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.anynetwork.app.ui.navigation.MyProfileRoute
 import com.anynetwork.app.ui.navigation.Route
 import com.anynetwork.app.ui.screens.connect.ConnectRoot
 import com.anynetwork.app.ui.screens.connectsuccess.ConnectSuccessScreenRoot
@@ -47,6 +49,7 @@ import com.anynetwork.app.ui.screens.myprofile.MyProfileRoot
 import com.anynetwork.app.ui.screens.onboarding.OnboardingRoot
 import com.anynetwork.app.ui.screens.splash.SplashRoot
 import com.anynetwork.app.ui.screens.testing.GridPlaygroundScreen
+import com.anynetwork.app.ui.screens.words.ShowMyPhraseScreenRoot
 import com.anynetwork.app.ui.theme.ANYnetworkTheme
 import com.anynetwork.app.ui.utils.log
 import dagger.hilt.android.AndroidEntryPoint
@@ -75,13 +78,14 @@ class MainActivity : ComponentActivity() {
             ANYnetworkTheme {
                 val navController = rememberNavController()
                 val homeNavController = rememberNavController()
+                val myProfileNavController = rememberNavController()
 
                 val homeViewModel = hiltViewModel<HomeViewModel>()
 
                 fun handleDeepLink(deepLink: Uri) {
                     if (deepLink.toString().contains("oobCode") && deepLink.toString().contains("mode=signIn")) {
-                        homeNavController.navigate(
-                            Route.Connect(
+                        myProfileNavController.navigate(
+                            MyProfileRoute.Connect(
                                 mode = "email",
                                 emailSignInLink = deepLink.toString()
                             )
@@ -230,7 +234,7 @@ class MainActivity : ComponentActivity() {
                             contentAlignment = Alignment.Center
                         ) {
                             MyProfileRoot(
-                                navController = homeNavController,
+                                navController = myProfileNavController,
                                 onContactUpdated = {
                                     homeViewModel.loadProfile()
                                 },
@@ -361,20 +365,31 @@ class MainActivity : ComponentActivity() {
                             },
                         )
                     }
+                }
 
-                    composable<Route.Connect> {
-                        val emailSignInLink = it.toRoute<Route.Connect>().emailSignInLink
+                NavHost(
+                    navController = myProfileNavController,
+                    startDestination = MyProfileRoute.MyProfile
+                ) {
+                    composable<MyProfileRoute.MyProfile> {  }
+
+                    composable<MyProfileRoute.ShowMyPhrase> {
+                        ShowMyPhraseScreenRoot(myProfileNavController)
+                    }
+
+                    composable<MyProfileRoute.Connect> {
+                        val emailSignInLink = it.toRoute<MyProfileRoute.Connect>().emailSignInLink
                         ConnectRoot(
-                            navController = homeNavController,
+                            navController = myProfileNavController,
                             emailSignInLink = emailSignInLink,
-                            mode = it.toRoute<Route.Connect>().mode
+                            mode = it.toRoute<MyProfileRoute.Connect>().mode
                         )
                     }
 
-                    composable<Route.ConnectSuccess> {
+                    composable<MyProfileRoute.ConnectSuccess> {
                         ConnectSuccessScreenRoot(
-                            navController = homeNavController,
-                            mode = it.toRoute<Route.ConnectSuccess>().mode
+                            navController = myProfileNavController,
+                            mode = it.toRoute<MyProfileRoute.ConnectSuccess>().mode
                         )
                     }
                 }

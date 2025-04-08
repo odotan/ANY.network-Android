@@ -136,6 +136,7 @@ import com.anynetwork.app.ui.components.hexagon.TransparentHexagonContentStyle
 import com.anynetwork.app.ui.components.hexagon.createPolygon
 import com.anynetwork.app.ui.components.hexagon.hexCellsBackgroundColors
 import com.anynetwork.app.ui.components.textfield.ProfileTextFieldLeading
+import com.anynetwork.app.ui.navigation.MyProfileRoute
 import com.anynetwork.app.ui.navigation.Route
 import com.anynetwork.app.ui.screens.externalprofile.VerticalLine
 import com.anynetwork.app.ui.screens.myprofile.MyProfileViewEffect.*
@@ -184,6 +185,7 @@ import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.io.File
 import java.util.UUID
 import kotlin.math.absoluteValue
@@ -197,26 +199,41 @@ fun MyProfileRoot(
     onBackPress: @Composable () -> Unit,
 ) {
     val viewModel: MyProfileViewModel = hiltViewModel<MyProfileViewModel>()
-        .apply {
-            loadProfile()
-            val viewEffect by viewEffectFlow.collectAsState()
-            viewEffect.log { "viewEffect" }
-            when (viewEffect) {
-                is NavigateBack -> onBackPress.invoke()
-                is ProfileUpdated -> onContactUpdated.invoke()
-                is NavigateToConnect ->
-                    navController.navigate(Route.Connect(mode = (viewEffect as NavigateToConnect).mode))
-                else -> {}
+    val viewEffect by viewModel.viewEffectFlow.collectAsState(initial = null) // Provide initial state
+    var showBackPressUi by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        viewModel.loadProfile()
+    }
+
+    // Handle navigation and other view effects in a LaunchedEffect
+    LaunchedEffect(viewEffect) { // Keyed to viewEffect
+        viewEffect.log { "viewEffect" }
+        when (val effect = viewEffect) { // Use a stable local val
+            is NavigateBack -> {
+                showBackPressUi = true // <-- Set state instead of calling directly
             }
-            onViewEvent(MyProfileViewEvent.ClearViewEffect)
+            is ProfileUpdated -> onContactUpdated.invoke()
+            is NavigateToConnect ->
+                navController.navigate(MyProfileRoute.Connect(mode = effect.mode))
+            is NavigateToShowMyPhrase ->
+                navController.navigate(MyProfileRoute.ShowMyPhrase)
+            null -> {} // Handle initial or cleared state
+            else -> {}
         }
+        // Clear the effect only after handling it
+        if (viewEffect != null) { // Avoid clearing if already null
+            viewModel.onViewEvent(MyProfileViewEvent.ClearViewEffect)
+        }
+    }
+
+    if (showBackPressUi) {
+        onBackPress()
+    }
 
     MyProfile(
         viewModel = viewModel,
         isEnterAnimationFinished = isEnterAnimationFinished,
-        onBackButtonClick = {
-            navController.popBackStack(Route.Home, inclusive = false)
-        }
     )
 }
 
@@ -229,7 +246,7 @@ sealed class MyProfileMode {
 @Composable
 private fun MyProfile(
     isEnterAnimationFinished: Boolean = true,
-    onBackButtonClick: () -> Unit, viewModel: MyProfileViewModel,
+    viewModel: MyProfileViewModel,
 ) {
     val scale = 6 / 4.7f
 
@@ -872,6 +889,8 @@ private fun MyProfile(
                             onClick = { _ ->
                                 if (mode is MyProfileMode.Edit) {
                                     isChooseMethodEditProfilePictureDialog = true
+                                } else if (mode is MyProfileMode.Connect) {
+                                    viewModel.onViewEvent(MyProfileViewEvent.TwelveWordsCellClick)
                                 }
                             },
                         )
