@@ -13,17 +13,6 @@ object Route {
     object Onboarding
 
     @Serializable
-    data class Connect(
-        val mode: String,
-        val emailSignInLink: String? = null
-    )
-
-    @Serializable
-    data class ConnectSuccess(
-        val mode: String
-    )
-
-    @Serializable
     object ContactsPermissions
 
     @Serializable

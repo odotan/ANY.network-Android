@@ -88,7 +88,6 @@ fun ConnectSuccessScreenRoot(navController: NavController, mode: String) {
 
 @Composable
 private fun ConnectSuccessScreen(viewModel: ConnectSuccessScreenViewModel) {
-
     val viewState by viewModel.viewState.collectAsState()
     val mode by remember { derivedStateOf { viewState.mode } }
     val isInformationAvailableOnMyProfile by remember { derivedStateOf { viewState.isInformationAvailableOnMyProfile } }
@@ -165,7 +164,6 @@ private fun ConnectSuccessScreen(viewModel: ConnectSuccessScreenViewModel) {
             }
         },
         content = {
-
             mode?.let { mode ->
                 Column(
                     modifier = Modifier.align(Alignment.Center),

@@ -24,7 +24,7 @@ class MyProfileViewModel @Inject constructor(
 
     fun loadProfile() = viewModelScope.launch {
         profileRepository.getOrCreateDefaultProfile().let {
-            _viewState.value = MyProfileViewState(
+            _viewState.value = viewState.value.copy(
                 firstName = it.firstName,
                 lastName = it.lastName,
                 company = it.company,
@@ -174,6 +174,9 @@ class MyProfileViewModel @Inject constructor(
                     _viewEffectFlow.value = MyProfileViewEffect.NavigateToConnect(mode = "telegram")
                 }
             }
+            TwelveWordsCellClick -> viewModelScope.launch {
+                _viewEffectFlow.value = MyProfileViewEffect.NavigateToShowMyPhrase
+            }
 
             ConnectButtonClick -> viewModelScope.launch {
                 _viewState.value = _viewState.value.copy(mode = MyProfileMode.Connect)
@@ -283,6 +286,7 @@ sealed class MyProfileViewEvent {
     data object DiscardProfileEditDialogDismiss: MyProfileViewEvent()
     data object DiscardProfileEditDialogYesOptionClick: MyProfileViewEvent()
     data object DiscardProfileEditDialogNoOptionClick: MyProfileViewEvent()
+    data object TwelveWordsCellClick: MyProfileViewEvent()
 }
 
 sealed class MyProfileViewEffect {
@@ -300,4 +304,5 @@ sealed class MyProfileViewEffect {
     data object NavigateBack: MyProfileViewEffect()
     data object ProfileUpdated: MyProfileViewEffect()
     data class NavigateToConnect(val mode: String): MyProfileViewEffect()
+    data object NavigateToShowMyPhrase: MyProfileViewEffect()
 }

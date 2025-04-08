@@ -45,6 +45,7 @@ import com.anynetwork.app.ui.components.hexagon.IconHexagonContentStyle.Image.Ve
 import com.anynetwork.app.ui.components.hexagon.RoundedHexagon
 import com.anynetwork.app.ui.components.hexagon.RoundedPolygonShape
 import com.anynetwork.app.ui.components.hexagon.createPolygon
+import com.anynetwork.app.ui.navigation.MyProfileRoute
 import com.anynetwork.app.ui.navigation.Route
 import com.anynetwork.app.ui.theme.montserratFontFamily
 import com.anynetwork.app.ui.utils.fdph
@@ -63,8 +64,8 @@ fun ConnectRoot(navController: NavController, mode: String, emailSignInLink: Str
                     navController.popBackStack()
                 }
                 is ConnectScreenViewEffect.NavigateToConnectSuccess ->
-                    navController.navigate(Route.ConnectSuccess(mode = mode)) {
-                        popUpTo(Route.Connect(
+                    navController.navigate(MyProfileRoute.ConnectSuccess(mode = mode)) {
+                        popUpTo(MyProfileRoute.Connect(
                             mode = mode,
                             emailSignInLink = emailSignInLink)
                         ) { inclusive = true }
