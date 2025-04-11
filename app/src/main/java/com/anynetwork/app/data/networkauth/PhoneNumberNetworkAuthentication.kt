@@ -1,4 +1,4 @@
-package com.anynetwork.app.data.networkAuth
+package com.anynetwork.app.data.networkauth
 
 import android.app.Activity
 import com.google.firebase.FirebaseException

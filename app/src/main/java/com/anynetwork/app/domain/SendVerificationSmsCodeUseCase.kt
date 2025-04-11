@@ -1,9 +1,8 @@
 package com.anynetwork.app.domain
 
 import android.app.Activity
-import com.anynetwork.app.data.networkAuth.EmailNetworkAuthentication
-import com.anynetwork.app.data.networkAuth.PhoneNumberNetworkAuthentication
-import com.anynetwork.app.data.networkAuth.PhoneNumberNetworkAuthenticationEvent
+import com.anynetwork.app.data.networkauth.PhoneNumberNetworkAuthentication
+import com.anynetwork.app.data.networkauth.PhoneNumberNetworkAuthenticationEvent
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 

@@ -1,6 +1,6 @@
 package com.anynetwork.app.domain
 
-import com.anynetwork.app.data.networkAuth.EmailNetworkAuthentication
+import com.anynetwork.app.data.networkauth.EmailNetworkAuthentication
 import javax.inject.Inject
 
 class SendSignInLinkUseCase @Inject constructor(

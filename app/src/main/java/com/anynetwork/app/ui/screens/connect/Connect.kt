@@ -77,7 +77,8 @@ fun ConnectRoot(navController: NavController, mode: String, emailSignInLink: Str
 
     val screenMode = remember(mode) {
         when (mode) {
-            "telegram" -> ConnectScreenMode.Telegram
+            "facebook" -> ConnectScreenMode.Facebook
+            "telegram" -> ConnectScreenMode.Telegram()
             "phone" -> ConnectScreenMode.Phone()
             else -> ConnectScreenMode.Email
         }

@@ -3,6 +3,9 @@
 package com.anynetwork.app.ui.components
 
 
+import android.content.Context
+import android.os.VibrationEffect
+import android.os.Vibrator
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -30,6 +33,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -37,6 +41,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -45,6 +50,7 @@ import dev.chrisbanes.snapper.ExperimentalSnapperApi
 import dev.chrisbanes.snapper.SnapperLayoutInfo
 import dev.chrisbanes.snapper.rememberLazyListSnapperLayoutInfo
 import dev.chrisbanes.snapper.rememberSnapperFlingBehavior
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlin.math.absoluteValue
 
 @Composable
@@ -91,6 +97,12 @@ internal fun WheelPicker(
     val lazyListState = rememberLazyListState(startIndex)
     val snapperLayoutInfo = rememberLazyListSnapperLayoutInfo(lazyListState = lazyListState)
     val isScrollInProgress = lazyListState.isScrollInProgress
+    var currentSnappedItemIndex = startIndex
+
+    val context = LocalContext.current
+
+    val vibrator =
+        context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator?
 
     LaunchedEffect(isScrollInProgress, count) {
         if(!isScrollInProgress) {
@@ -98,6 +110,25 @@ internal fun WheelPicker(
                 lazyListState.scrollToItem(it)
             }
         }
+    }
+
+    LaunchedEffect(Unit) {
+        snapshotFlow { calculateSnappedItemIndex(snapperLayoutInfo) }
+            .distinctUntilChanged()
+            .collect { newSnappedIndex ->
+                if (newSnappedIndex != null && newSnappedIndex != currentSnappedItemIndex) {
+                    currentSnappedItemIndex = newSnappedIndex
+
+                    if (vibrator != null && vibrator.hasVibrator()) {
+                        vibrator.vibrate(
+                            VibrationEffect.createOneShot(
+                                15,
+                                VibrationEffect.DEFAULT_AMPLITUDE
+                            )
+                        )
+                    }
+                }
+            }
     }
 
     Box(

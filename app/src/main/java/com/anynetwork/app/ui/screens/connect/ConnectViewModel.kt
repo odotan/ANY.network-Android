@@ -10,11 +10,16 @@ import com.anynetwork.app.domain.VerifyEmailSignInUseCase
 import com.anynetwork.app.ui.base.ViewEffect
 import com.anynetwork.app.ui.base.ViewEvent
 import com.anynetwork.app.ui.components.hexagon.NontransparentHexagonContentStyle
-import com.anynetwork.app.data.networkAuth.EmailNetworkAuthentication.EmailError
-import com.anynetwork.app.data.networkAuth.PhoneNumberNetworkAuthenticationEvent
+import com.anynetwork.app.data.networkauth.EmailNetworkAuthentication.EmailError
+import com.anynetwork.app.data.networkauth.PhoneNumberNetworkAuthenticationEvent
+import com.anynetwork.app.data.networkauth.TelegramNetworkAuthentication
+import com.anynetwork.app.domain.SendTelegramCodeToPhone
 import com.anynetwork.app.domain.SendVerificationSmsCodeUseCase
+import com.anynetwork.app.domain.VerifyFacebookUseCase
 import com.anynetwork.app.domain.VerifyPhoneUseCase
+import com.anynetwork.app.domain.VerifyTelegramCodeUseCase
 import com.anynetwork.app.ui.theme.EmailColor
+import com.anynetwork.app.ui.theme.FacebookColor
 import com.anynetwork.app.ui.theme.PhoneColor
 import com.anynetwork.app.ui.theme.TelegramColor
 import com.google.firebase.auth.PhoneAuthProvider
@@ -32,7 +37,10 @@ class ConnectViewModel @Inject constructor(
     val sendSignInLinkUseCase: SendSignInLinkUseCase,
     val verifyEmailSignInUseCase: VerifyEmailSignInUseCase,
     val sendVerificationSmsCodeUseCase: SendVerificationSmsCodeUseCase,
-    val verifyPhoneUseCase: VerifyPhoneUseCase
+    val verifyPhoneUseCase: VerifyPhoneUseCase,
+    val sendTelegramNetworkAuthentication: SendTelegramCodeToPhone,
+    val verifyTelegramCodeUseCase: VerifyTelegramCodeUseCase,
+    val verifyFacebookUseCase: VerifyFacebookUseCase
 ): ViewModel() {
 
     private val _viewState = MutableStateFlow(ConnectScreenViewState())
@@ -103,7 +111,30 @@ class ConnectViewModel @Inject constructor(
 
                         }
                     }
-                    is ConnectScreenMode.Telegram -> {
+                    is ConnectScreenMode.Telegram -> when {
+                        mode.requestId == null -> try {
+                            val requestId: String? = sendTelegramNetworkAuthentication.execute(phone = viewState.value.firstTextFieldState.value)
+                            _viewState.value = viewState.value.copy(
+                                mode = (viewState.value.mode as ConnectScreenMode.Telegram).copy(requestId = requestId as String?),
+                                secondTextFieldState = ConnectScreenViewState.TextFieldState()
+                            )
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                        else -> viewState.value.secondTextFieldState?.value?.let {
+                            try {
+                                verifyTelegramCodeUseCase.execute(code = it)
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                        }
+                    }
+                    is ConnectScreenMode.Facebook -> try {
+                        val accessToken = verifyFacebookUseCase.execute(viewEvent.activity)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                    else -> {
 
                     }
                 }
@@ -141,9 +172,21 @@ class ConnectViewModel @Inject constructor(
             )
         }
         is ConnectScreenMode.Telegram -> viewModelScope.launch {
-            val profile = profileRepository.getOrCreateDefaultProfile()
             _viewState.value = viewState.value.copy(
-                mode = mode
+                mode = mode,
+                firstTextFieldState = ConnectScreenViewState.TextFieldState(
+                    value = "",
+                    placeholder = mode.title
+                )
+            )
+        }
+        is ConnectScreenMode.Facebook -> viewModelScope.launch {
+            _viewState.value = viewState.value.copy(
+                mode = mode,
+                firstTextFieldState = ConnectScreenViewState.TextFieldState(
+                    value = "",
+                    placeholder = mode.title
+                )
             )
         }
     }
@@ -220,9 +263,17 @@ sealed class ConnectScreenMode(
         cellBackground = NontransparentHexagonContentStyle.Background.SingleColor(PhoneColor),
     )
 
-    data object Telegram: ConnectScreenMode(
+    data class Telegram(
+        val requestId: String? = null
+    ): ConnectScreenMode(
         title = "Telegram",
         imageResId = R.drawable.ic_telegram,
         cellBackground = NontransparentHexagonContentStyle.Background.SingleColor(TelegramColor),
+    )
+
+    data object Facebook: ConnectScreenMode(
+        title = "Facebook",
+        imageResId = R.drawable.ic_facebook,
+        cellBackground = NontransparentHexagonContentStyle.Background.SingleColor(FacebookColor)
     )
 }

@@ -2401,37 +2401,43 @@ fun NetworkRequestDialog(
                         ),
                     )
 
-                    Text(
-                        modifier = Modifier.padding(top = 30.fdph),
-                        text = "Add Points",
-                        fontSize = 16.fsp,
-                        style = TextStyle(
-                            fontFamily = montserratFontFamily,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color.White
-                        ),
-                    )
-
-                    WheelTextPicker(
-                        size = DpSize(128.fdph, 170.fdpv),
-                        texts = (1..10).map { it.toString() },
-                        rowCount = 3,
-                        color = Color.White,
-                        style = TextStyle(
-                            fontFamily = montserratFontFamily,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 50.fsp,
-                        ),
-                        selectorProperties = WheelPickerDefaults.selectorProperties(enabled = false),
-                        onScrollFinished = { null }
-                    )
-
                     Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.Center
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = 30.fdph),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.SpaceEvenly
                     ) {
+
+                        Text(
+                            text = "Add Points",
+                            fontSize = 16.fsp,
+                            style = TextStyle(
+                                fontFamily = montserratFontFamily,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White
+                            ),
+                        )
+
+                        WheelTextPicker(
+                            modifier = Modifier,
+                            size = DpSize(128.fdph, 170.fdpv),
+                            texts = (1..10).map { it.toString() },
+                            rowCount = 3,
+                            color = Color.White,
+                            style = TextStyle(
+                                fontFamily = montserratFontFamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 50.fsp,
+                            ),
+                            selectorProperties = WheelPickerDefaults.selectorProperties(enabled = false),
+                            onScrollFinished = { item ->
+                                item.log { "wheel text picker item selected" }
+                            }
+                        )
+
                         Card(
-                            modifier = Modifier.width(68.fdph).height(46.fdpv),
+                            modifier = Modifier.padding(bottom = 32.fdpv).width(68.fdph).height(46.fdpv),
                             colors = CardColors(
                                 Color.White.copy(0.1f),
                                 Color.Transparent,

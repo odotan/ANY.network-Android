@@ -100,6 +100,9 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
 
+    // facebook
+    implementation(libs.facebook.login)
+
     // other
     implementation(libs.timber)
     implementation(libs.kotlinx.serialization.json)
