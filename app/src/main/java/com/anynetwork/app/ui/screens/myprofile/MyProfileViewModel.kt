@@ -1,5 +1,6 @@
 package com.anynetwork.app.ui.screens.myprofile
 
+import android.media.FaceDetector.Face
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.anynetwork.app.data.profile.ProfileRepository
@@ -159,6 +160,11 @@ class MyProfileViewModel @Inject constructor(
                 _viewEffectFlow.value = null
             }
 
+            FacebookCellClick -> viewModelScope.launch {
+                if (viewState.value.mode == MyProfileMode.Connect) {
+                    _viewEffectFlow.value = MyProfileViewEffect.NavigateToConnect(mode = "facebook")
+                }
+            }
             EmailCellClick -> viewModelScope.launch {
                 if (viewState.value.mode == MyProfileMode.Connect) {
                     _viewEffectFlow.value = MyProfileViewEffect.NavigateToConnect(mode = "email")
@@ -275,6 +281,7 @@ sealed class MyProfileViewEvent {
         val shouldRequestFocus: Boolean = false
     ): MyProfileViewEvent()
     data class UpdatePhotoUri(val photoUri: String): MyProfileViewEvent()
+    data object FacebookCellClick: MyProfileViewEvent()
     data object EmailCellClick: MyProfileViewEvent()
     data object PhoneCellClick: MyProfileViewEvent()
     data object TelegramCellClick: MyProfileViewEvent()

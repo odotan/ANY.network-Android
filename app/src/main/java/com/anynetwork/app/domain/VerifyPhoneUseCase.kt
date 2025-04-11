@@ -1,7 +1,6 @@
 package com.anynetwork.app.domain
 
-import android.app.Activity
-import com.anynetwork.app.data.networkAuth.PhoneNumberNetworkAuthentication
+import com.anynetwork.app.data.networkauth.PhoneNumberNetworkAuthentication
 import javax.inject.Inject
 
 class VerifyPhoneUseCase @Inject constructor(

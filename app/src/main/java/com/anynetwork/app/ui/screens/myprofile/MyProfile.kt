@@ -896,6 +896,10 @@ private fun MyProfile(
                         )
                     }
                     facebookCellPosition.isSame(column, row) -> remember(mode, itemAlpha, alpha) {
+                        val itemAlpha = when {
+                            mode == MyProfileMode.Connect -> 1f
+                            else -> itemAlpha
+                        }
                         IconHexagonContentStyle(
                             id = cellIndex,
                             background = SingleColor(FacebookColor.copy(alpha = itemAlpha * alpha)),
@@ -903,6 +907,9 @@ private fun MyProfile(
                             contentDescription = "Facebook",
                             isShakable = true,
                             image = VectorResource(id = R.drawable.ic_facebook),
+                            onClick = {
+                                viewModel.onViewEvent(MyProfileViewEvent.FacebookCellClick)
+                            },
                             overlay =
                             if (mode is MyProfileMode.Edit) {
                                 {

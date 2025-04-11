@@ -1,4 +1,4 @@
-package com.anynetwork.app.data.networkAuth
+package com.anynetwork.app.data.networkauth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.*
@@ -7,8 +7,9 @@ import com.google.gson.reflect.TypeToken
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import timber.log.Timber
 import java.io.IOException
+import javax.inject.Inject
 
-class TelegramNetworkAuthentication {
+class TelegramNetworkAuthentication @Inject constructor() {
 
     private val baseUrl = "https://gatewayapi.telegram.org/"
     private val token = "AAE5EQAAVUstF9McmeEkOy2vbh3vjw-rPzflNDAC2C-TaA"
@@ -22,7 +23,7 @@ class TelegramNetworkAuthentication {
         .add("Content-Type", "application/json")
         .build()
 
-    suspend fun sendCode(phone: String) = withContext(Dispatchers.IO) {
+    suspend fun sendCode(phone: String): String? = withContext(Dispatchers.IO) {
         val url = "${baseUrl}sendVerificationMessage"
 
         val params = mapOf(
@@ -56,7 +57,7 @@ class TelegramNetworkAuthentication {
 
         if (json["ok"] == true) {
             val result = json["result"] as? Map<*, *>
-            requestId = result?.get("request_id") as? String
+            return@withContext result?.get("request_id") as? String
         } else {
             throw Exception(json["error"]?.toString() ?: "Unknown error")
         }

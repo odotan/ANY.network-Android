@@ -5,6 +5,11 @@
     <string name="title_skip">Skip</string>
     <string name="label_search">Type to search or add</string>
 
+    <!-- Facebook -->
+    <string name="facebook_app_id">1234</string>
+    <string name="fb_login_protocol_scheme">fb1234</string>
+    <string name="facebook_client_token">56789</string>
+
     <!-- Onboarding -->
     <string name="onboarding_screen_title">ANY network contacts re-imagined</string>
     <string name="onboarding_screen_subtitle">Create your card with all your contact methods Phone, email, Instagram, Telegram etc…\n\nany network really\n\nYour card is private by default and cannot be seen by anyone. People you share your card with can request to see any part of your card, and you can choose to show it to them You can make part or all of your card public</string>

@@ -1,4 +1,4 @@
-package com.anynetwork.app.data.networkAuth
+package com.anynetwork.app.data.networkauth
 
 import com.google.firebase.auth.ActionCodeSettings
 import com.google.firebase.auth.FirebaseAuth

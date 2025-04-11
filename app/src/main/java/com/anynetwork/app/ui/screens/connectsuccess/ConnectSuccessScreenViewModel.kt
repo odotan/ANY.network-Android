@@ -22,19 +22,16 @@ class ConnectSuccessScreenViewModel @Inject constructor(
 
     fun load(mode: ConnectScreenMode) = when (mode) {
         is ConnectScreenMode.Email -> viewModelScope.launch {
-            _viewState.value = viewState.value.copy(
-                mode = mode
-            )
+            _viewState.value = viewState.value.copy(mode = mode)
         }
         is ConnectScreenMode.Phone -> viewModelScope.launch {
-            _viewState.value = viewState.value.copy(
-                mode = mode
-            )
+            _viewState.value = viewState.value.copy(mode = mode)
         }
         is ConnectScreenMode.Telegram -> viewModelScope.launch {
-            _viewState.value = viewState.value.copy(
-                mode = mode
-            )
+            _viewState.value = viewState.value.copy(mode = mode)
+        }
+        is ConnectScreenMode.Facebook -> viewModelScope.launch {
+            _viewState.value = viewState.value.copy(mode = mode)
         }
     }
 

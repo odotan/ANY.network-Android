@@ -74,7 +74,7 @@ fun ConnectSuccessScreenRoot(navController: NavController, mode: String) {
 
     val screenMode = remember(mode) {
         when (mode) {
-            "telegram" -> ConnectScreenMode.Telegram
+            "telegram" -> ConnectScreenMode.Telegram()
             "phone" -> ConnectScreenMode.Phone()
             else -> ConnectScreenMode.Email
         }
