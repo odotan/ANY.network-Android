@@ -6,5 +6,6 @@ import javax.inject.Inject
 class VerifyTelegramCodeUseCase @Inject constructor(
     private val telegramNetworkAuthentication: TelegramNetworkAuthentication
 ) {
-    suspend fun execute(code: String) = telegramNetworkAuthentication.verify(code)
+    suspend fun execute(code: String, requestId: String) =
+        telegramNetworkAuthentication.verify(code, requestId = requestId)
 }
