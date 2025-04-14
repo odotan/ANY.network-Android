@@ -12,8 +12,7 @@ import javax.inject.Inject
 class TelegramNetworkAuthentication @Inject constructor() {
 
     private val baseUrl = "https://gatewayapi.telegram.org/"
-    private val token = "AAE5EQAAVUstF9McmeEkOy2vbh3vjw-rPzflNDAC2C-TaA"
-    private var requestId: String? = null
+    private val token = "AAEFFgAATO8mQF-nt7GVNmWSey3HV5RkMDT6HpAWpOsxJA"
 
     private val client = OkHttpClient()
     private val gson = Gson()
@@ -63,7 +62,7 @@ class TelegramNetworkAuthentication @Inject constructor() {
         }
     }
 
-    suspend fun verify(code: String): Boolean = withContext(Dispatchers.IO) {
+    suspend fun verify(code: String, requestId: String): Boolean = withContext(Dispatchers.IO) {
         val url = "${baseUrl}checkVerificationStatus"
 
         val currentRequestId = requestId ?: throw MissingRequestIdException()

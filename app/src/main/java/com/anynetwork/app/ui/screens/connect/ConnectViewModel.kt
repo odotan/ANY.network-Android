@@ -12,7 +12,6 @@ import com.anynetwork.app.ui.base.ViewEvent
 import com.anynetwork.app.ui.components.hexagon.NontransparentHexagonContentStyle
 import com.anynetwork.app.data.networkauth.EmailNetworkAuthentication.EmailError
 import com.anynetwork.app.data.networkauth.PhoneNumberNetworkAuthenticationEvent
-import com.anynetwork.app.data.networkauth.TelegramNetworkAuthentication
 import com.anynetwork.app.domain.SendTelegramCodeToPhone
 import com.anynetwork.app.domain.SendVerificationSmsCodeUseCase
 import com.anynetwork.app.domain.VerifyFacebookUseCase
@@ -123,7 +122,8 @@ class ConnectViewModel @Inject constructor(
                         }
                         else -> viewState.value.secondTextFieldState?.value?.let {
                             try {
-                                verifyTelegramCodeUseCase.execute(code = it)
+                                verifyTelegramCodeUseCase.execute(code = it, requestId = mode.requestId)
+                                _viewEffectFlow.value = ConnectScreenViewEffect.NavigateToConnectSuccess
                             } catch (e: Exception) {
                                 e.printStackTrace()
                             }

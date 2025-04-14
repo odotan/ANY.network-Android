@@ -125,7 +125,6 @@ import com.anynetwork.app.ui.components.hexagon.calculateLayersForElements
 import com.anynetwork.app.ui.components.hexagon.createPolygon
 import com.anynetwork.app.ui.components.hexagon.generateHexagonColors
 import com.anynetwork.app.ui.components.hexagon.hexCellsBackgroundColorsGrid
-import com.anynetwork.app.ui.components.text.roundToPx
 import com.anynetwork.app.ui.navigation.Route
 import com.anynetwork.app.ui.screens.externalprofile.VerticalLine
 import com.anynetwork.app.ui.screens.home.HomeViewEvent.BadgeInteractionClick
@@ -159,10 +158,8 @@ import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import round
 import timber.log.Timber
 import kotlin.math.absoluteValue
-import kotlin.math.exp
 import kotlin.math.roundToInt
 
 

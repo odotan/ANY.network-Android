@@ -100,29 +100,29 @@ fun Screen(
             )
         },
         content = { innerPadding ->
-                hexagonGrid?.invoke()
-                Box(
-                    modifier = Modifier.apply {
-                        if (applyInnerPaddingToContent) padding(innerPadding)
-                    }
-                ) {
-                    content?.invoke(this)
+            hexagonGrid?.invoke()
+            Box(
+                modifier = Modifier.apply {
+                    if (applyInnerPaddingToContent) padding(innerPadding)
+                }
+            ) {
+                content?.invoke(this)
 
-                    pinButtons?.let {
-                        Box(modifier = Modifier.fillMaxSize()) {
-                            Box(
-                                modifier = Modifier
-                                    .align(Alignment.BottomCenter)
-                                    .padding(bottom = 31.fdpv)
-                                    .navigationBarsPadding()
-                                    .fillMaxWidth()
-                                    .height(48.fdpv)
-                            ) {
-                                pinButtons.invoke(this)
-                            }
+                pinButtons?.let {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 31.fdpv)
+                                .navigationBarsPadding()
+                                .fillMaxWidth()
+                                .height(48.fdpv)
+                        ) {
+                            pinButtons.invoke(this)
                         }
                     }
                 }
+            }
         }
     )
 }

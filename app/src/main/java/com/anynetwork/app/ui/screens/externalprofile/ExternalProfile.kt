@@ -455,7 +455,7 @@ private fun ExternalProfile(
     val hazeStyle = HazeStyle(
         backgroundColor = DarkBlue,
         tints = listOf(HazeTint(Color.White.copy(alpha = .10f))),
-        blurRadius = 8.dp,
+        blurRadius = 30.dp,
     )
 
     val targetBlur = if (viewState.mode is ExternalProfileMode.Edit || viewState.mode is ExternalProfileMode.NewContact) 20.dp else 0.dp
@@ -2216,7 +2216,7 @@ private fun ExternalProfile(
                             modifier = Modifier,
                             onClick = {
                                 viewModel.onViewEvent(FavoriteButtonClick)
-                                homeViewModel.onViewAction(HomeViewEvent.FavoriteContact(viewModel.contact.value!!))
+//                                homeViewModel.onViewAction(HomeViewEvent.FavoriteContact(viewModel.contact.value!!))
                             }
                         ) {
                             val favoriteButtonAlpha by animateFloatAsState(

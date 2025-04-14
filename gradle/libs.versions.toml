@@ -1,6 +1,7 @@
 [versions]
 accompanistInsets = "0.27.0"
 agp = "8.3.2"
+blurview = "version-2.0.6"
 coilCompose = "2.7.0"
 composeshadowsplus = "1.0.4"
 constraintlayoutCompose = "1.0.1"
@@ -48,6 +49,7 @@ androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-com
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomRuntime" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomCompiler" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntime" }
+blurview = { module = "com.github.Dimezis:BlurView", version.ref = "blurview" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
 composeshadowsplus = { module = "com.github.GIGAMOLE:ComposeShadowsPlus", version.ref = "composeshadowsplus" }
 core = { module = "com.github.vestrel00.contacts-android:core", version.ref = "core" }
