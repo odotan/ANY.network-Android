@@ -11,12 +11,15 @@ import android.provider.MediaStore
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.exponentialDecay
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -1828,120 +1831,136 @@ private fun MyProfile(
         )
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 31.fdpv)
-                .navigationBarsPadding()
-                .fillMaxWidth()
-                .height(48.fdpv)
-        ) {
-            Card(
+    AnimatedVisibility(
+        visible = isEnterAnimationFinished,
+        enter = fadeIn(animationSpec = tween(durationMillis = 300)),
+        exit = fadeOut()) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Box(
                 modifier = Modifier
-                    .fillMaxHeight()
-                    .width(46.fdph),
-                colors = CardColors(Color.Transparent, Color.Transparent, Color.Transparent, Color.Transparent),
-                shape = RoundedCornerShape(
-                    topStart = 0.dp,
-                    topEnd = 24.fdph,
-                    bottomEnd = 24.fdph,
-                    bottomStart = 0.dp
-                )
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 31.fdpv)
+                    .navigationBarsPadding()
+                    .fillMaxWidth()
+                    .height(48.fdpv)
             ) {
-                Box(modifier = Modifier.fillMaxSize()
-                    .hazeChild(
-                        state = hazeState,
-                        style = hazeStyle
+                Card(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .width(46.fdph),
+                    colors = CardColors(
+                        Color.Transparent,
+                        Color.Transparent,
+                        Color.Transparent,
+                        Color.Transparent
+                    ),
+                    shape = RoundedCornerShape(
+                        topStart = 0.dp,
+                        topEnd = 24.fdph,
+                        bottomEnd = 24.fdph,
+                        bottomStart = 0.dp
                     )
                 ) {
-                    IconButton(
-                        modifier = Modifier
-                            .align(Alignment.Center),
-                        onClick = {
-                            viewModel.onViewEvent(MyProfileViewEvent.BackButtonClick)
-                        }
+                    Box(
+                        modifier = Modifier.fillMaxSize()
+                            .hazeChild(
+                                state = hazeState,
+                                style = hazeStyle
+                            )
                     ) {
-                        Image(
-                            modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
-                            painter = painterResource(R.drawable.ic_arrow_left),
-                            contentDescription = "back button",
-                        )
+                        IconButton(
+                            modifier = Modifier
+                                .align(Alignment.Center),
+                            onClick = {
+                                viewModel.onViewEvent(MyProfileViewEvent.BackButtonClick)
+                            }
+                        ) {
+                            Image(
+                                modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
+                                painter = painterResource(R.drawable.ic_arrow_left),
+                                contentDescription = "back button",
+                            )
+                        }
                     }
                 }
-            }
 
-            if (mode !is MyProfileMode.Connect) Card(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .align(Alignment.Center),
-                colors = CardColors(Color.Transparent, Color.Transparent, Color.Transparent, Color.Transparent),
-                shape = RoundedCornerShape(
-                    topStart = 24.fdph,
-                    topEnd = 24.fdph,
-                    bottomEnd = 24.fdph,
-                    bottomStart = 24.fdph
-                )
-            ) {
-                Row(
+                if (mode !is MyProfileMode.Connect) Card(
                     modifier = Modifier
-                        .hazeChild(
-                            state = hazeState,
-                            style = hazeStyle
-                        )
-                        .padding(horizontal = 9.fdph),
-                    verticalAlignment = Alignment.CenterVertically
+                        .fillMaxHeight()
+                        .align(Alignment.Center),
+                    colors = CardColors(
+                        Color.Transparent,
+                        Color.Transparent,
+                        Color.Transparent,
+                        Color.Transparent
+                    ),
+                    shape = RoundedCornerShape(
+                        topStart = 24.fdph,
+                        topEnd = 24.fdph,
+                        bottomEnd = 24.fdph,
+                        bottomStart = 24.fdph
+                    )
                 ) {
-                    IconButton(
-                        modifier = Modifier,
-                        onClick = {
-                            viewModel.onViewEvent(MyProfileViewEvent.ConnectButtonClick)
-                        }
+                    Row(
+                        modifier = Modifier
+                            .hazeChild(
+                                state = hazeState,
+                                style = hazeStyle
+                            )
+                            .padding(horizontal = 9.fdph),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Image(
-                            modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
-                            painter = painterResource(R.drawable.ic_rounded_plus_2),
-                            contentDescription = "back button",
-                        )
-                    }
+                        IconButton(
+                            modifier = Modifier,
+                            onClick = {
+                                viewModel.onViewEvent(MyProfileViewEvent.ConnectButtonClick)
+                            }
+                        ) {
+                            Image(
+                                modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
+                                painter = painterResource(R.drawable.ic_rounded_plus_2),
+                                contentDescription = "back button",
+                            )
+                        }
 
-                    VerticalLine()
+                        VerticalLine()
 
-                    IconButton(
-                        modifier = Modifier,
-                        onClick = {
-                            if (mode !is MyProfileMode.Edit) {
-                                viewModel.onViewEvent(MyProfileViewEvent.EditButtonClick)
-                            } else if (mode is MyProfileMode.Edit) {
-                                if (!hasReadPhoneStatePermission) {
-                                    viewModel.onViewEvent(SaveButtonClick)
+                        IconButton(
+                            modifier = Modifier,
+                            onClick = {
+                                if (mode !is MyProfileMode.Edit) {
+                                    viewModel.onViewEvent(MyProfileViewEvent.EditButtonClick)
+                                } else if (mode is MyProfileMode.Edit) {
+                                    if (!hasReadPhoneStatePermission) {
+                                        viewModel.onViewEvent(SaveButtonClick)
+                                    }
                                 }
                             }
-                        }
-                    ) {
-                        val alphaAnimationDuration = 300
-                        val editButtonAlpha by animateFloatAsState(
-                            targetValue = if (mode is MyProfileMode.Edit) 0f else 1f,
-                            animationSpec = tween(alphaAnimationDuration)
-                        )
-                        Image(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(vertical = 10.fdpv)
-                                .alpha(editButtonAlpha),
-                            painter = painterResource(R.drawable.ic_edit),
-                            contentDescription = "back button",
-                        )
+                        ) {
+                            val alphaAnimationDuration = 300
+                            val editButtonAlpha by animateFloatAsState(
+                                targetValue = if (mode is MyProfileMode.Edit) 0f else 1f,
+                                animationSpec = tween(alphaAnimationDuration)
+                            )
+                            Image(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(vertical = 10.fdpv)
+                                    .alpha(editButtonAlpha),
+                                painter = painterResource(R.drawable.ic_edit),
+                                contentDescription = "back button",
+                            )
 
-                        Image(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(vertical = 10.fdpv)
-                                .alpha(1- editButtonAlpha),
-                            painter = rememberVectorPainter(Icons.Outlined.Check),
-                            colorFilter = ColorFilter.tint(Color.White),
-                            contentDescription = "back button",
-                        )
+                            Image(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(vertical = 10.fdpv)
+                                    .alpha(1 - editButtonAlpha),
+                                painter = rememberVectorPainter(Icons.Outlined.Check),
+                                colorFilter = ColorFilter.tint(Color.White),
+                                contentDescription = "back button",
+                            )
+                        }
                     }
                 }
             }
