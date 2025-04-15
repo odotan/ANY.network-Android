@@ -21,6 +21,9 @@ import com.anynetwork.app.ui.theme.EmailColor
 import com.anynetwork.app.ui.theme.FacebookColor
 import com.anynetwork.app.ui.theme.PhoneColor
 import com.anynetwork.app.ui.theme.TelegramColor
+import com.facebook.FacebookException
+import com.facebook.login.LoginResult
+import com.google.firebase.auth.FacebookAuthProvider
 import com.google.firebase.auth.PhoneAuthProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -66,7 +69,7 @@ class ConnectViewModel @Inject constructor(
                 when (val mode = viewState.value.mode) {
                     is ConnectScreenMode.Email -> {
                         try {
-                            val email = viewState.value.firstTextFieldState.value
+                            val email = viewState.value.firstTextFieldState!!.value
                             sendSignInLinkUseCase.execute(email)
                         } catch (e: Exception) {
                             e.printStackTrace()
@@ -74,7 +77,7 @@ class ConnectViewModel @Inject constructor(
                     }
                     is ConnectScreenMode.Phone -> when {
                         mode.verificationId == null && mode.token == null -> sendVerificationSmsCodeUseCase.execute(
-                            phoneNumber = viewState.value.firstTextFieldState.value,
+                            phoneNumber = viewState.value.firstTextFieldState!!.value,
                             activity = viewEvent.activity
                         ).collectLatest { event: PhoneNumberNetworkAuthenticationEvent ->
                             when (event) {
@@ -112,7 +115,7 @@ class ConnectViewModel @Inject constructor(
                     }
                     is ConnectScreenMode.Telegram -> when {
                         mode.requestId == null -> try {
-                            val requestId: String? = sendTelegramNetworkAuthentication.execute(phone = viewState.value.firstTextFieldState.value)
+                            val requestId: String? = sendTelegramNetworkAuthentication.execute(phone = viewState.value.firstTextFieldState!!.value)
                             _viewState.value = viewState.value.copy(
                                 mode = (viewState.value.mode as ConnectScreenMode.Telegram).copy(requestId = requestId as String?),
                                 secondTextFieldState = ConnectScreenViewState.TextFieldState()
@@ -131,9 +134,12 @@ class ConnectViewModel @Inject constructor(
                     }
                     is ConnectScreenMode.Facebook -> try {
                         val accessToken = verifyFacebookUseCase.execute(viewEvent.activity)
+                        Timber.i("accessToken: $accessToken")
                     } catch (e: Exception) {
                         e.printStackTrace()
+                        Timber.i("facebook connect error: $e")
                     }
+
                     else -> {
 
                     }
@@ -146,6 +152,15 @@ class ConnectViewModel @Inject constructor(
                             .secondTextFieldState
                             ?.copy(value = viewEvent.value)
                     )
+            }
+            is ConnectScreenViewEvent.LoginWithFacebookSuccess -> {
+                _viewEffectFlow.value = ConnectScreenViewEffect.NavigateToConnectSuccess
+            }
+            is ConnectScreenViewEvent.LoginWithFacebookError -> {
+
+            }
+            is ConnectScreenViewEvent.LoginWithFacebookCancel -> {
+
             }
         }
     }
@@ -183,10 +198,7 @@ class ConnectViewModel @Inject constructor(
         is ConnectScreenMode.Facebook -> viewModelScope.launch {
             _viewState.value = viewState.value.copy(
                 mode = mode,
-                firstTextFieldState = ConnectScreenViewState.TextFieldState(
-                    value = "",
-                    placeholder = mode.title
-                )
+                isConnectButtonEnabled = true
             )
         }
     }
@@ -216,17 +228,21 @@ sealed class ConnectScreenViewEvent: ViewEvent() {
     data class UpdateTextField(val value: String): ConnectScreenViewEvent()
     data class UpdateSecondTextField(val value: String): ConnectScreenViewEvent()
     data class ConnectButtonClick(val activity: Activity): ConnectScreenViewEvent()
+    data class LoginWithFacebookSuccess(val loginResult: LoginResult): ConnectScreenViewEvent()
+    data class LoginWithFacebookError(val error: FacebookException): ConnectScreenViewEvent()
+    data object LoginWithFacebookCancel: ConnectScreenViewEvent()
 }
 
 sealed class ConnectScreenViewEffect: ViewEffect() {
     data object NavigateBack: ConnectScreenViewEffect()
     data object NavigateToConnectSuccess: ConnectScreenViewEffect()
+    data object LoginWithFacebook: ConnectScreenViewEffect()
 }
 
 data class ConnectScreenViewState(
     val mode: ConnectScreenMode = ConnectScreenMode.Email,
     val isConnectButtonEnabled: Boolean = false,
-    val firstTextFieldState: TextFieldState = TextFieldState(),
+    val firstTextFieldState: TextFieldState? = null,
     val secondTextFieldState: TextFieldState? = null
 ) {
     data class TextFieldState(

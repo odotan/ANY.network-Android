@@ -6,9 +6,9 @@
     <string name="label_search">Type to search or add</string>
 
     <!-- Facebook -->
-    <string name="facebook_app_id">1234</string>
-    <string name="fb_login_protocol_scheme">fb1234</string>
-    <string name="facebook_client_token">56789</string>
+    <string name="facebook_app_id">654937106919127</string>
+    <string name="fb_login_protocol_scheme">fb654937106919127</string>
+    <string name="facebook_client_token">a4a5288fa0fa33185e11afcedc4ea7fd</string>
 
     <!-- Onboarding -->
     <string name="onboarding_screen_title">ANY network contacts re-imagined</string>

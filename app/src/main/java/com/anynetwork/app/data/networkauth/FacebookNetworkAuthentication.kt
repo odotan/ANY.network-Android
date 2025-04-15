@@ -12,19 +12,25 @@ import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
+
 class FacebookNetworkAuthentication @Inject constructor() {
 
-    private val callbackManager = CallbackManager.Factory.create()
+    val callbackManager = CallbackManager.Factory.create()
 
     suspend fun signIn(activity: Activity): String = suspendCancellableCoroutine { continuation ->
-        LoginManager.getInstance().logInWithReadPermissions(
-            activity,
-            listOf("public_profile")
-        )
+        val accessToken: AccessToken? = AccessToken.getCurrentAccessToken()
+        val isLoggedIn = accessToken != null && !accessToken.isExpired
+        if (isLoggedIn) {
+            Timber.i("user already authorized")
+            val error = FacebookAuthException.UserAlreadyAuthorized
+            continuation.resumeWithException(error)
+            return@suspendCancellableCoroutine
+        }
 
         LoginManager.getInstance().registerCallback(callbackManager,
             object : FacebookCallback<LoginResult> {
                 override fun onSuccess(result: LoginResult) {
+                    Timber.i("onSuccess")
                     val accessToken = result.accessToken.token
                     val userId = result.accessToken.userId
                     Timber.i("Token: $accessToken, UserID: $userId")
@@ -48,21 +54,25 @@ class FacebookNetworkAuthentication @Inject constructor() {
                 }
 
                 override fun onCancel() {
+                    Timber.i("onCancel")
                     continuation.resumeWithException(FacebookAuthException.UserCancelled)
                 }
 
                 override fun onError(error: FacebookException) {
+                    Timber.i("onError: $error")
                     continuation.resumeWithException(error)
                 }
             }
         )
-    }
 
-    fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
-        callbackManager.onActivityResult(requestCode, resultCode, data)
+        LoginManager.getInstance().logInWithReadPermissions(
+            activity,
+            listOf("public_profile")
+        )
     }
 }
 
 sealed class FacebookAuthException(message: String) : Exception(message) {
     object UserCancelled : FacebookAuthException("User cancelled login")
+    object UserAlreadyAuthorized : FacebookAuthException("User already authorized")
 }
