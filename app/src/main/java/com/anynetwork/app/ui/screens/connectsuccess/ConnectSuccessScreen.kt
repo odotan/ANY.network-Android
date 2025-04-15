@@ -76,6 +76,7 @@ fun ConnectSuccessScreenRoot(navController: NavController, mode: String) {
         when (mode) {
             "telegram" -> ConnectScreenMode.Telegram()
             "phone" -> ConnectScreenMode.Phone()
+            "facebook" -> ConnectScreenMode.Facebook
             else -> ConnectScreenMode.Email
         }
     }

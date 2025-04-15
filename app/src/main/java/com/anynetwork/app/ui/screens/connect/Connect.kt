@@ -1,6 +1,7 @@
 package com.anynetwork.app.ui.screens.connect
 
 import androidx.activity.compose.LocalActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -52,6 +53,11 @@ import com.anynetwork.app.ui.utils.fdph
 import com.anynetwork.app.ui.utils.fdpv
 import com.anynetwork.app.ui.utils.fsp
 import com.anynetwork.app.ui.utils.log
+import com.facebook.CallbackManager
+import com.facebook.FacebookCallback
+import com.facebook.FacebookException
+import com.facebook.login.LoginManager
+import com.facebook.login.LoginResult
 
 @Composable
 fun ConnectRoot(navController: NavController, mode: String, emailSignInLink: String?) {
@@ -154,6 +160,31 @@ fun Connect(viewModel: ConnectViewModel) {
                 )
             ) {
                 val activity = LocalActivity.current!!
+
+                val callbackManager = remember {
+                    CallbackManager.Factory.create()
+                }
+                val fbLauncher = rememberLauncherForActivityResult(
+                    LoginManager.getInstance().createLogInActivityResultContract(callbackManager)
+                ) { result ->
+                    LoginManager.getInstance().onActivityResult(
+                        result.resultCode,
+                        result.data,
+                        object: FacebookCallback<LoginResult> {
+                            override fun onSuccess(result: LoginResult) {
+                                viewModel.onViewEvent(
+                                    ConnectScreenViewEvent.LoginWithFacebookSuccess(result)
+                                )
+                            }
+                            override fun onCancel() {
+                                viewModel.onViewEvent(ConnectScreenViewEvent.LoginWithFacebookCancel)
+                            }
+                            override fun onError(error: FacebookException) {
+                                viewModel.onViewEvent(ConnectScreenViewEvent.LoginWithFacebookError(error))
+                            }
+                        }
+                    )
+                }
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()
@@ -162,7 +193,15 @@ fun Connect(viewModel: ConnectViewModel) {
                         .then(
                             when {
                                 isConnectButtonEnabled -> Modifier.clickable {
-                                    viewModel.onViewEvent(ConnectScreenViewEvent.ConnectButtonClick(activity = activity))
+                                    if (mode == ConnectScreenMode.Facebook) {
+                                        fbLauncher.launch(listOf("email", "public_profile"))
+                                    } else {
+                                        viewModel.onViewEvent(
+                                            ConnectScreenViewEvent.ConnectButtonClick(
+                                                activity = activity
+                                            )
+                                        )
+                                    }
                                 }
                                 else -> Modifier
                             }),
@@ -240,20 +279,22 @@ fun Connect(viewModel: ConnectViewModel) {
                     ),
                 )
 
-                HexagonTextField(
-                    modifier = Modifier
-                        .padding(top = 32.fdpv)
-                        .padding(horizontal = 48.fdph)
-                        .height(54.fdpv),
-                    value = firstTextFieldState.value,
-                    onValueChange = { newValue ->
-                        newValue?.let {
-                            viewModel.onViewEvent(ConnectScreenViewEvent.UpdateTextField(it))
-                        }
-                    },
-                    placeholder = firstTextFieldState.placeholder,
-                    addTrailingClearIcon = false
-                )
+                firstTextFieldState?.let { firstTextFieldState ->
+                    HexagonTextField(
+                        modifier = Modifier
+                            .padding(top = 32.fdpv)
+                            .padding(horizontal = 48.fdph)
+                            .height(54.fdpv),
+                        value = firstTextFieldState.value,
+                        onValueChange = { newValue ->
+                            newValue?.let {
+                                viewModel.onViewEvent(ConnectScreenViewEvent.UpdateTextField(it))
+                            }
+                        },
+                        placeholder = firstTextFieldState.placeholder,
+                        addTrailingClearIcon = false
+                    )
+                }
 
                 secondTextFieldState?.let { secondTextFieldState ->
                     HexagonTextField(

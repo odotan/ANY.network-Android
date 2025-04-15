@@ -1,9 +1,7 @@
-@file:OptIn(ExperimentalSharedTransitionApi::class, ExperimentalSharedTransitionApi::class,
-    ExperimentalMaterial3Api::class
-)
-
 package com.anynetwork.app
 
+import android.app.ComponentCaller
+import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
@@ -38,6 +36,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.anynetwork.app.data.networkauth.FacebookNetworkAuthentication
 import com.anynetwork.app.ui.navigation.MyProfileRoute
 import com.anynetwork.app.ui.navigation.Route
 import com.anynetwork.app.ui.screens.connect.ConnectRoot
@@ -54,9 +53,14 @@ import com.anynetwork.app.ui.theme.ANYnetworkTheme
 import com.anynetwork.app.ui.utils.log
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
+import timber.log.Timber
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject
+    lateinit var facebookAuth: FacebookNetworkAuthentication
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -83,6 +87,7 @@ class MainActivity : ComponentActivity() {
                 val homeViewModel = hiltViewModel<HomeViewModel>()
 
                 fun handleDeepLink(deepLink: Uri) {
+                    Timber.i("deepLink: $deepLink")
                     if (deepLink.toString().contains("oobCode") && deepLink.toString().contains("mode=signIn")) {
                         myProfileNavController.navigate(
                             MyProfileRoute.Connect(
@@ -400,6 +405,17 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onActivityResult(
+        requestCode: Int,
+        resultCode: Int,
+        data: Intent?,
+        caller: ComponentCaller
+    ) {
+        Timber.i("onActivityResult")
+        super.onActivityResult(requestCode, resultCode, data, caller)
+        facebookAuth.callbackManager.onActivityResult(requestCode, resultCode, data)
     }
 }
 

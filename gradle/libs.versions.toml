@@ -7,7 +7,7 @@ composeshadowsplus = "1.0.4"
 constraintlayoutCompose = "1.0.1"
 core = "0.3.2"
 coreSplashscreen = "1.0.1"
-facebookLogin = "18.0.2"
+facebookLogin = "latest.release"
 firebaseBom = "33.8.0"
 foundation = "1.8.0-beta01"
 gson = "2.10.1"
@@ -38,6 +38,10 @@ graphicsShapesAndroid = "1.0.1"
 ucrop = "2.2.8"
 zoomable = "1.6.2"
 reorderable = "2.4.0"
+appcompat = "1.7.0"
+material = "1.12.0"
+activity = "1.10.1"
+constraintlayout = "2.2.1"
 
 [libraries]
 accompanist-insets = { module = "com.google.accompanist:accompanist-insets", version.ref = "accompanistInsets" }
@@ -89,6 +93,10 @@ androidx-graphics-shapes-android = { group = "androidx.graphics", name = "graphi
 ucrop = { module = "com.github.yalantis:ucrop", version.ref = "ucrop" }
 zoomable = { module = "net.engawapg.lib:zoomable", version.ref = "zoomable" }
 reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
+androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
