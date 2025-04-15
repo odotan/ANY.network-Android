@@ -170,7 +170,7 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable<Route.MyProfile> {
-                        val transitionDuration = 400 // Duration of the explosion animation
+                        val transitionDuration = 300 // Duration of the explosion animation
                         val x = it.toRoute<Route.MyProfile>().offsetX
                         val y = it.toRoute<Route.MyProfile>().offsetY
 
@@ -264,7 +264,7 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable<Route.ExternalProfile> {
-                        val transitionDuration = 400 // Duration of the explosion animation
+                        val transitionDuration = 300 // Duration of the explosion animation
                         val x = it.toRoute<Route.ExternalProfile>().offsetX
                         val y = it.toRoute<Route.ExternalProfile>().offsetY
 

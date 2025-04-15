@@ -10,12 +10,15 @@ import android.provider.MediaStore
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.exponentialDecay
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -2129,170 +2132,187 @@ private fun ExternalProfile(
         )
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 31.fdpv)
-                .navigationBarsPadding()
-                .fillMaxWidth()
-                .height(48.fdpv)
-        ) {
-            Card(
+    AnimatedVisibility(
+        visible = isEnterAnimationFinished,
+        enter = fadeIn(animationSpec = tween(durationMillis = 300)),
+        exit = fadeOut()
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Box(
                 modifier = Modifier
-                    .fillMaxHeight()
-                    .width(46.fdph),
-                colors = CardColors(Color.Transparent, Color.Transparent, Color.Transparent, Color.Transparent),
-                shape = RoundedCornerShape(
-                    topStart = 0.dp,
-                    topEnd = 24.fdph,
-                    bottomEnd = 24.fdph,
-                    bottomStart = 0.dp
-                )
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 31.fdpv)
+                    .navigationBarsPadding()
+                    .fillMaxWidth()
+                    .height(48.fdpv)
             ) {
-                Box(modifier = Modifier.fillMaxSize()
-                    .hazeChild(
-                        state = hazeState,
-                        style = hazeStyle
+                Card(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .width(46.fdph),
+                    colors = CardColors(
+                        Color.Transparent,
+                        Color.Transparent,
+                        Color.Transparent,
+                        Color.Transparent
+                    ),
+                    shape = RoundedCornerShape(
+                        topStart = 0.dp,
+                        topEnd = 24.fdph,
+                        bottomEnd = 24.fdph,
+                        bottomStart = 0.dp
                     )
                 ) {
-                    IconButton(
-                        modifier = Modifier
-                            .align(Alignment.Center),
-                        onClick = {
-                            viewModel.onViewEvent(BackButtonClick)
-                        }
+                    Box(
+                        modifier = Modifier.fillMaxSize()
+                            .hazeChild(
+                                state = hazeState,
+                                style = hazeStyle
+                            )
                     ) {
-                        Image(
-                            modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
-                            painter = painterResource(R.drawable.ic_arrow_left),
-                            contentDescription = "back button",
-                        )
-                    }
-                }
-            }
-
-            Card(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .align(Alignment.Center),
-                colors = CardColors(Color.Transparent, Color.Transparent, Color.Transparent, Color.Transparent),
-                shape = RoundedCornerShape(
-                    topStart = 24.fdph,
-                    topEnd = 24.fdph,
-                    bottomEnd = 24.fdph,
-                    bottomStart = 24.fdph
-                )
-            ) {
-                Row(
-                    modifier = Modifier
-                        .hazeChild(
-                            state = hazeState,
-                            style = hazeStyle
-                        )
-                        .padding(horizontal = 9.fdph),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (viewState.mode !is ExternalProfileMode.RequestNetwork) {
                         IconButton(
-                            modifier = Modifier,
+                            modifier = Modifier
+                                .align(Alignment.Center),
                             onClick = {
-                                viewModel.onViewEvent(RequestNetworkButtonClick())
+                                viewModel.onViewEvent(BackButtonClick)
                             }
                         ) {
                             Image(
                                 modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
-                                painter = painterResource(R.drawable.ic_rounded_plus_2),
+                                painter = painterResource(R.drawable.ic_arrow_left),
                                 contentDescription = "back button",
                             )
                         }
-
-                        VerticalLine()
-
                     }
+                }
 
-                    if (viewState.mode !is ExternalProfileMode.RequestNetwork) {
-                        IconButton(
-                            modifier = Modifier,
-                            onClick = {
-                                viewModel.onViewEvent(FavoriteButtonClick)
-//                                homeViewModel.onViewAction(HomeViewEvent.FavoriteContact(viewModel.contact.value!!))
-                            }
-                        ) {
-                            val favoriteButtonAlpha by animateFloatAsState(
-                                targetValue = if (viewState.isFavorite) 0f else 1f,
-                                animationSpec = tween(300)
+                Card(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .align(Alignment.Center),
+                    colors = CardColors(
+                        Color.Transparent,
+                        Color.Transparent,
+                        Color.Transparent,
+                        Color.Transparent
+                    ),
+                    shape = RoundedCornerShape(
+                        topStart = 24.fdph,
+                        topEnd = 24.fdph,
+                        bottomEnd = 24.fdph,
+                        bottomStart = 24.fdph
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .hazeChild(
+                                state = hazeState,
+                                style = hazeStyle
                             )
-
-                            Image(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(vertical = 10.fdpv)
-                                    .alpha(favoriteButtonAlpha),
-                                painter = painterResource(R.drawable.ic_star),
-                                contentDescription = "back button",
-                            )
-                            Image(
-                                modifier = Modifier.fillMaxSize()
-                                    .padding(vertical = 10.fdpv)
-                                    .alpha(1 - favoriteButtonAlpha),
-                                painter = painterResource(R.drawable.ic_star_filled),
-                                contentDescription = "back button",
-                            )
-                        }
-
-                        VerticalLine()
-
-                        IconButton(
-                            modifier = Modifier,
-                            onClick = {
-                                if (viewState.mode !is ExternalProfileMode.Edit && viewState.mode !is ExternalProfileMode.NewContact) {
-                                    viewModel.onViewEvent(EditButtonClick)
-                                } else {
-                                    viewModel.onViewEvent(SaveButtonClick)
+                            .padding(horizontal = 9.fdph),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (viewState.mode !is ExternalProfileMode.RequestNetwork) {
+                            IconButton(
+                                modifier = Modifier,
+                                onClick = {
+                                    viewModel.onViewEvent(RequestNetworkButtonClick())
                                 }
+                            ) {
+                                Image(
+                                    modifier = Modifier.fillMaxSize().padding(vertical = 10.fdpv),
+                                    painter = painterResource(R.drawable.ic_rounded_plus_2),
+                                    contentDescription = "back button",
+                                )
                             }
-                        ) {
-                            val alphaAnimationDuration = 300
-                            val editButtonAlpha by animateFloatAsState(
-                                targetValue = if (viewState.mode is ExternalProfileMode.Edit || viewState.mode is ExternalProfileMode.NewContact) 0f else 1f,
-                                animationSpec = tween(alphaAnimationDuration)
-                            )
-                            Image(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(vertical = 10.fdpv)
-                                    .alpha(editButtonAlpha),
-                                painter = painterResource(R.drawable.ic_edit),
-                                contentDescription = "back button",
-                            )
 
-                            Image(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(vertical = 10.fdpv)
-                                    .alpha(1 - editButtonAlpha),
-                                painter = rememberVectorPainter(Icons.Outlined.Check),
-                                colorFilter = ColorFilter.tint(Color.White),
-                                contentDescription = "back button",
-                            )
+                            VerticalLine()
+
                         }
-                    }
-                    if (viewState.mode is ExternalProfileMode.RequestNetwork) {
-                        IconButton(
-                            modifier = Modifier,
-                            onClick = {
-                                viewModel.onViewEvent(RequestNetworkButtonClick(isSearching = true))
+
+                        if (viewState.mode !is ExternalProfileMode.RequestNetwork) {
+                            IconButton(
+                                modifier = Modifier,
+                                onClick = {
+                                    viewModel.onViewEvent(FavoriteButtonClick)
+//                                homeViewModel.onViewAction(HomeViewEvent.FavoriteContact(viewModel.contact.value!!))
+                                }
+                            ) {
+                                val favoriteButtonAlpha by animateFloatAsState(
+                                    targetValue = if (viewState.isFavorite) 0f else 1f,
+                                    animationSpec = tween(300)
+                                )
+
+                                Image(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(vertical = 10.fdpv)
+                                        .alpha(favoriteButtonAlpha),
+                                    painter = painterResource(R.drawable.ic_star),
+                                    contentDescription = "back button",
+                                )
+                                Image(
+                                    modifier = Modifier.fillMaxSize()
+                                        .padding(vertical = 10.fdpv)
+                                        .alpha(1 - favoriteButtonAlpha),
+                                    painter = painterResource(R.drawable.ic_star_filled),
+                                    contentDescription = "back button",
+                                )
                             }
-                        ) {
-                            Image(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(vertical = 10.fdpv),
-                                painter = painterResource(R.drawable.ic_search),
-                                colorFilter = ColorFilter.tint(Color.White),
-                                contentDescription = "back button",
-                            )
+
+                            VerticalLine()
+
+                            IconButton(
+                                modifier = Modifier,
+                                onClick = {
+                                    if (viewState.mode !is ExternalProfileMode.Edit && viewState.mode !is ExternalProfileMode.NewContact) {
+                                        viewModel.onViewEvent(EditButtonClick)
+                                    } else {
+                                        viewModel.onViewEvent(SaveButtonClick)
+                                    }
+                                }
+                            ) {
+                                val alphaAnimationDuration = 300
+                                val editButtonAlpha by animateFloatAsState(
+                                    targetValue = if (viewState.mode is ExternalProfileMode.Edit || viewState.mode is ExternalProfileMode.NewContact) 0f else 1f,
+                                    animationSpec = tween(alphaAnimationDuration)
+                                )
+                                Image(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(vertical = 10.fdpv)
+                                        .alpha(editButtonAlpha),
+                                    painter = painterResource(R.drawable.ic_edit),
+                                    contentDescription = "back button",
+                                )
+
+                                Image(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(vertical = 10.fdpv)
+                                        .alpha(1 - editButtonAlpha),
+                                    painter = rememberVectorPainter(Icons.Outlined.Check),
+                                    colorFilter = ColorFilter.tint(Color.White),
+                                    contentDescription = "back button",
+                                )
+                            }
+                        }
+                        if (viewState.mode is ExternalProfileMode.RequestNetwork) {
+                            IconButton(
+                                modifier = Modifier,
+                                onClick = {
+                                    viewModel.onViewEvent(RequestNetworkButtonClick(isSearching = true))
+                                }
+                            ) {
+                                Image(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(vertical = 10.fdpv),
+                                    painter = painterResource(R.drawable.ic_search),
+                                    colorFilter = ColorFilter.tint(Color.White),
+                                    contentDescription = "back button",
+                                )
+                            }
                         }
                     }
                 }
