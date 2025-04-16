@@ -520,8 +520,21 @@ class HomeViewModel @Inject constructor(
                 when (viewAction.gridItem) {
                     is GridItem.InteractionGridItem ->
                         interactionRepository.deleteInteractionById(viewAction.gridItem.interactionId)
-                    is GridItem.FavoritedContactGridItem ->
-                        contactsRepository.favoriteContact(viewAction.gridItem.contact!!.id, isFavorite = false)
+                    is GridItem.FavoritedContactGridItem -> {
+                        viewAction.gridItem.contact?.let { contact ->
+                            orderRepository.removeItem(
+                                Order.Type.FAVORITE_CONTACT,
+                                contact.id
+                            )
+                            gridOrder = gridOrder.apply {
+                                toMutableList().removeIf { it.itemType == Order.Type.FAVORITE_CONTACT && it.itemId == contact.id }
+                            }
+                        }
+                        contactsRepository.favoriteContact(
+                            viewAction.gridItem.contact!!.id,
+                            isFavorite = false
+                        )
+                    }
                     else -> {}
                 }
             }
