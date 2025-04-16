@@ -2,6 +2,7 @@ package com.anynetwork.app.ui.screens.connectsuccess
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.anynetwork.app.domain.FetchFacebookProfileNameUseCase
 import com.anynetwork.app.ui.base.ViewEffect
 import com.anynetwork.app.ui.base.ViewEvent
 import com.anynetwork.app.ui.screens.connect.ConnectScreenMode
@@ -12,8 +13,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class ConnectSuccessScreenViewModel @Inject constructor(
-): ViewModel() {
+class ConnectSuccessScreenViewModel @Inject constructor(): ViewModel() {
     private val _viewEffectFlow: MutableStateFlow<ConnectSuccessScreenViewEffect?> = MutableStateFlow(null)
     val viewEffectFlow: StateFlow<ConnectSuccessScreenViewEffect?> = _viewEffectFlow
 

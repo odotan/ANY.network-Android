@@ -161,6 +161,7 @@ class MainActivity : ComponentActivity() {
                             id = it.toRoute<Route.ExternalProfileNotExploding>().id,
                             homeViewModel = homeViewModel,
                             onContactUpdated = {
+                                Timber.i("onContactUpdated")
                                 homeViewModel.reloadData()
                             },
                             onBackPress = {
@@ -241,6 +242,7 @@ class MainActivity : ComponentActivity() {
                             MyProfileRoot(
                                 navController = myProfileNavController,
                                 onContactUpdated = {
+                                    Timber.i("onContactUpdated")
                                     homeViewModel.loadProfile()
                                 },
                                 isEnterAnimationFinished = isEnterAnimationFinished,
@@ -335,6 +337,7 @@ class MainActivity : ComponentActivity() {
                                 id = it.toRoute<Route.ExternalProfile>().id,
                                 isEnterAnimationFinished = isEnterAnimationFinished,
                                 onContactUpdated = {
+                                    Timber.i("onContactUpdated")
                                     homeViewModel.reloadData()
                                 },
                                 homeViewModel = homeViewModel,

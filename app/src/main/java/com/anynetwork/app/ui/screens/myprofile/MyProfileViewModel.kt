@@ -1,10 +1,11 @@
 package com.anynetwork.app.ui.screens.myprofile
 
-import android.media.FaceDetector.Face
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.anynetwork.app.data.profile.ProfileRepository
+import com.anynetwork.app.domain.FetchFacebookProfileNameUseCase
 import com.anynetwork.app.model.Profile
+import com.anynetwork.app.ui.screens.externalprofile.facebookCellPosition
 import com.anynetwork.app.ui.screens.myprofile.MyProfileViewEvent.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,7 +15,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MyProfileViewModel @Inject constructor(
-    val profileRepository: ProfileRepository
+    val profileRepository: ProfileRepository,
+    val fetchFacebookProfileNameUseCase: FetchFacebookProfileNameUseCase
 ): ViewModel() {
 
     private val _viewState = MutableStateFlow(MyProfileViewState())
@@ -41,9 +43,16 @@ class MyProfileViewModel @Inject constructor(
                 homeEmail = it.homePhone,
                 workEmail = it.workEmail,
                 otherEmail = it.otherEmail,
-                photoUri = it.avatarUri
+                photoUri = it.avatarUri,
+                facebookProfileName = it.facebookProfileName
+
             )
         }
+
+        val facebookProfileName = fetchFacebookProfileNameUseCase.execute()
+        _viewState.value = viewState.value.copy(
+            facebookProfileName = facebookProfileName
+        )
     }
 
     fun onViewEvent(event: MyProfileViewEvent) {
@@ -64,7 +73,8 @@ class MyProfileViewModel @Inject constructor(
                         homeEmail = _viewState.value.homePhone,
                         workEmail = _viewState.value.workEmail,
                         otherEmail = _viewState.value.otherEmail,
-                        avatarUri = _viewState.value.photoUri
+                        avatarUri = _viewState.value.photoUri,
+                        facebookProfileName = _viewState.value.facebookProfileName
                     )
                 )
                 _viewState.value =
@@ -225,6 +235,7 @@ data class MyProfileViewState(
     val otherEmail: String? = null,
     val address: String? = null,
     val photoUri: String? = null,
+    val facebookProfileName: String? = null
 )
 
 sealed class MyProfileViewEvent {

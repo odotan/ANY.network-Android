@@ -18,6 +18,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.onEach
@@ -141,7 +142,8 @@ class HomeViewModel @Inject constructor(
             updateInteractions(latestInteractions)
 
             // Collect emissions from contacts repository
-            contactsRepository.getContacts().collect { emittedContacts ->
+            contactsRepository.getContacts().collectLatest { emittedContacts ->
+                Timber.i("contactsRepository.getContacts() 1")
                 _contactsFetched = true
                 updateContacts(emittedContacts)
 
@@ -169,22 +171,23 @@ class HomeViewModel @Inject constructor(
             Timber.i("updateContacts")
             _contacts.value = distinctContacts
 
-            viewModelScope.launch() {
-                distinctContacts
-                    .filter { it.isFavorite }
-                    .forEach { contact ->
-                        if (gridOrder.firstOrNull { it.itemId == contact.id && it.itemType == Order.Type.FAVORITE_CONTACT } == null) {
-                            val itemOrder = addAtRandomGridPlace(
-                                itemType = Order.Type.FAVORITE_CONTACT,
-                                itemId = contact.id
-                            )
-                            gridOrder = gridOrder.toMutableList()
-                                .apply {
-                                    add(itemOrder)
-                                }
-                        }
-                    }
-            }
+//            viewModelScope.launch() {
+//                distinctContacts
+//                    .filter { it.isFavorite }
+//                    .forEach { contact ->
+//                        if (gridOrder.firstOrNull { it.itemId == contact.id && it.itemType == Order.Type.FAVORITE_CONTACT } == null) {
+//                            Timber.i("add favorited item grid order 0")
+//                            val itemOrder = addAtRandomGridPlace(
+//                                itemType = Order.Type.FAVORITE_CONTACT,
+//                                itemId = contact.id
+//                            )
+//                            gridOrder = gridOrder.toMutableList()
+//                                .apply {
+//                                    add(itemOrder)
+//                                }
+//                        }
+//                    }
+//            }
         }
     }
 
@@ -232,18 +235,6 @@ class HomeViewModel @Inject constructor(
     private suspend fun processContactsForGrid(contacts: List<Contact>, interactions: List<Interaction>): List<GridItem> = withContext(Dispatchers.IO) {
         when (viewState.value.mode) {
             is HomeScreenMode.SearchingGrid, HomeScreenMode.SearchingList -> {
-//                val s = contacts.map { GridItem.SearchGridItem(it) }
-//                s.toMutableList().apply {
-//                    addAll(s)
-//                    addAll(s)
-//                    addAll(s)
-//                    addAll(s)
-//                    addAll(s)
-//                    addAll(s)
-//                    addAll(s)
-//                    addAll(s)
-//                    addAll(s)
-//                }
                 contacts.map { GridItem.SearchGridItem(it) }
             }
             else -> {
@@ -251,6 +242,7 @@ class HomeViewModel @Inject constructor(
                     .filter { it.isFavorite }
                     .forEach { contact ->
                         if (gridOrder.firstOrNull { it.itemId == contact.id && it.itemType == Order.Type.FAVORITE_CONTACT } == null) {
+                            Timber.i("add favorited item grid order 1")
                             viewModelScope.launch {
                                 addAtRandomGridPlace(
                                     itemType = Order.Type.FAVORITE_CONTACT,
@@ -318,7 +310,8 @@ class HomeViewModel @Inject constructor(
                 updateInteractions(latestInteractions)
 
                 // Collect emissions from contacts repository
-                contactsRepository.getContacts().collect { emittedContacts ->
+                contactsRepository.getContacts().collectLatest { emittedContacts ->
+                    Timber.i("contactsRepository.getContacts() 2")
                     viewModelScope.launch {
                         _contactsFetched = true
                         val distinctContacts = emittedContacts
@@ -334,6 +327,7 @@ class HomeViewModel @Inject constructor(
                                 .filter { it.isFavorite }
                                 .forEach { contact ->
                                     if (gridOrder.firstOrNull { it.itemId == contact.id && it.itemType == Order.Type.FAVORITE_CONTACT } == null) {
+                                        Timber.i("add favorited item grid order 2")
                                         val itemOrder = addAtRandomGridPlace(
                                             itemType = Order.Type.FAVORITE_CONTACT,
                                             itemId = contact.id
@@ -607,6 +601,7 @@ class HomeViewModel @Inject constructor(
                     gridOrder = gridOrder.apply {
                         toMutableList().add(order)
                     }
+
                     val newGridItems = processContactsForGrid(contacts.value, _interactions.value)
                     updateHexGridItems(newGridItems)
                 }
