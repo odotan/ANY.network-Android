@@ -276,8 +276,8 @@ class ExternalProfileViewModel @Inject constructor(
                             _viewState.value = _viewState.value.copy(
                                 mode = ExternalProfileMode.Normal
                             )
+                            _viewEffectFlow.value = ExternalProfileViewEffect.ContactUpdated
                         }
-                        _viewEffectFlow.value = ExternalProfileViewEffect.ContactUpdated
                     }
                 }
             }

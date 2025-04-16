@@ -48,11 +48,6 @@ class MyProfileViewModel @Inject constructor(
 
             )
         }
-
-        val facebookProfileName = fetchFacebookProfileNameUseCase.execute()
-        _viewState.value = viewState.value.copy(
-            facebookProfileName = facebookProfileName
-        )
     }
 
     fun onViewEvent(event: MyProfileViewEvent) {

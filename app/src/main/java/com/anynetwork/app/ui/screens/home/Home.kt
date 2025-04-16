@@ -654,7 +654,7 @@ private fun Home(
 
                                                 else -> viewModel.onViewAction(
                                                     GridItemClick(
-                                                        contact = gridItem.contact,
+                                                        contact = gridItem.contact.apply { it.id.log { "favorite item clicked" } },
                                                         offsetX = offset.x,
                                                         offsetY = offset.y,
                                                     )
