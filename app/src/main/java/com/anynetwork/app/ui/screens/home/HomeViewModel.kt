@@ -55,7 +55,6 @@ class HomeViewModel @Inject constructor(
 
     private val _searchContacts = MutableStateFlow<List<Contact>>(emptyList())
     val searchContacts: StateFlow<List<Contact>> = _searchContacts
-        .distinctUntilChanged { old, new -> old.size == new.size }
         .onEach { newValue ->
             newValue.size.log { "searchContacts emitted size" }
         }
@@ -142,7 +141,7 @@ class HomeViewModel @Inject constructor(
             updateInteractions(latestInteractions)
 
             // Collect emissions from contacts repository
-            contactsRepository.getContacts().collectLatest { emittedContacts ->
+            contactsRepository.getContacts().collect { emittedContacts ->
                 Timber.i("contactsRepository.getContacts() 1")
                 _contactsFetched = true
                 updateContacts(emittedContacts)

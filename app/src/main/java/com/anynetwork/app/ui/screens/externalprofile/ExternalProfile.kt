@@ -2143,6 +2143,7 @@ private fun ExternalProfile(
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 31.fdpv)
                     .navigationBarsPadding()
+                    .imePadding()
                     .fillMaxWidth()
                     .height(48.fdpv)
             ) {
