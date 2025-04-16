@@ -27,5 +27,5 @@ interface GridItemOrderDao {
     suspend fun getLastEditedOrderWithHighestOrder(): List<DbOrder>
 
     @Query("DELETE FROM grid_item_order WHERE itemType = :itemType AND itemId = :itemId")
-    suspend fun deleteOrderByItemTypeAndItemId(itemType: Int, itemId: Long?)
+    suspend fun deleteOrderByItemTypeAndItemId(itemType: Int, itemId: Long?): Int
 }

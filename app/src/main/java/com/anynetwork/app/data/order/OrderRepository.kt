@@ -29,7 +29,7 @@ class OrderRepository @Inject constructor(
     }
 
     suspend fun removeItem(itemType: Int, itemId: Long) = withContext(Dispatchers.IO) {
-        orderDao.deleteOrderByItemTypeAndItemId(itemType, itemId)
+        orderDao.deleteOrderByItemTypeAndItemId(itemType, itemId).log { "removeItem with itemType: $itemType and itemId: $itemId" }
     }
 
     suspend fun insertItemOrder(itemType: Int, itemId: Long, order: Int = 0): Order = withContext(Dispatchers.IO) {
