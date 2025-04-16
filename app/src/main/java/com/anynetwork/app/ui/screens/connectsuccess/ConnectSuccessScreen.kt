@@ -127,42 +127,6 @@ private fun ConnectSuccessScreen(viewModel: ConnectSuccessScreenViewModel) {
                     }
                 }
             }
-
-            Card(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .wrapContentWidth()
-                    .align(Alignment.Center),
-                colors = CardColors(Color.Transparent, Color.Transparent, Color.Transparent, Color.Transparent),
-                shape = RoundedCornerShape(
-                    topStart = 24.fdph,
-                    topEnd = 24.fdph,
-                    bottomEnd = 24.fdph,
-                    bottomStart = 24.fdph
-                )
-            ) {
-                val activity = LocalActivity.current!!
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .wrapContentWidth()
-                        .background(Color.White.copy(alpha = .05f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        modifier = Modifier
-                            .padding(horizontal = 16.fdph),
-                        text = "Connect",
-                        textAlign = TextAlign.Center,
-                        color = Color(0xFFCCCCCC),
-                        style = TextStyle(
-                            fontFamily = montserratFontFamily,
-                            fontWeight = FontWeight.Normal,
-                            fontSize = 14.fsp,
-                        ),
-                    )
-                }
-            }
         },
         content = {
             mode?.let { mode ->

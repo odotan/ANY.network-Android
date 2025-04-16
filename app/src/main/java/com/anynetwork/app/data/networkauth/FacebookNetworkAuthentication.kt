@@ -46,7 +46,7 @@ class FacebookNetworkAuthentication @Inject constructor() {
                         }
                     }
                     val parameters = Bundle()
-                    parameters.putString("fields", "name,link")
+                    parameters.putString("fields", "name, link")
                     request.parameters = parameters
                     request.executeAsync()
 
@@ -70,9 +70,39 @@ class FacebookNetworkAuthentication @Inject constructor() {
             listOf("public_profile")
         )
     }
+
+    suspend fun getAuthorizedUserName(): String = suspendCancellableCoroutine { continuation ->
+        val accessToken: AccessToken? = AccessToken.getCurrentAccessToken()
+        val isLoggedIn = accessToken != null && !accessToken.isExpired
+        if (!isLoggedIn) {
+            continuation.resumeWithException(FacebookAuthException.UserNotLoggedIn)
+            return@suspendCancellableCoroutine
+        }
+
+        val request = GraphRequest.newMeRequest(accessToken) { obj, _ ->
+            try {
+                val name = obj?.getString("name")
+                if (name != null) {
+                    continuation.resume(name)
+                } else {
+                    continuation.resumeWithException(FacebookAuthException.NameNotFoundInUserProfile)
+                }
+            } catch (e: JSONException) {
+                continuation.resumeWithException(e)
+            }
+        }
+
+        val parameters = Bundle().apply {
+            putString("fields", "name")
+        }
+        request.parameters = parameters
+        request.executeAsync()
+    }
 }
 
 sealed class FacebookAuthException(message: String) : Exception(message) {
     object UserCancelled : FacebookAuthException("User cancelled login")
     object UserAlreadyAuthorized : FacebookAuthException("User already authorized")
+    object UserNotLoggedIn : FacebookAuthException("User is not logged in")
+    object NameNotFoundInUserProfile : FacebookAuthException("Name not found in user profile")
 }

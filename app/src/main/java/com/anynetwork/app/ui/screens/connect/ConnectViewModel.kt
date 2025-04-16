@@ -4,26 +4,25 @@ import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.anynetwork.app.R
-import com.anynetwork.app.data.profile.ProfileRepository
-import com.anynetwork.app.domain.SendSignInLinkUseCase
-import com.anynetwork.app.domain.VerifyEmailSignInUseCase
-import com.anynetwork.app.ui.base.ViewEffect
-import com.anynetwork.app.ui.base.ViewEvent
-import com.anynetwork.app.ui.components.hexagon.NontransparentHexagonContentStyle
 import com.anynetwork.app.data.networkauth.EmailNetworkAuthentication.EmailError
 import com.anynetwork.app.data.networkauth.PhoneNumberNetworkAuthenticationEvent
+import com.anynetwork.app.data.profile.ProfileRepository
+import com.anynetwork.app.domain.SendSignInLinkUseCase
 import com.anynetwork.app.domain.SendTelegramCodeToPhone
 import com.anynetwork.app.domain.SendVerificationSmsCodeUseCase
+import com.anynetwork.app.domain.VerifyEmailSignInUseCase
 import com.anynetwork.app.domain.VerifyFacebookUseCase
 import com.anynetwork.app.domain.VerifyPhoneUseCase
 import com.anynetwork.app.domain.VerifyTelegramCodeUseCase
+import com.anynetwork.app.ui.base.ViewEffect
+import com.anynetwork.app.ui.base.ViewEvent
+import com.anynetwork.app.ui.components.hexagon.NontransparentHexagonContentStyle
 import com.anynetwork.app.ui.theme.EmailColor
 import com.anynetwork.app.ui.theme.FacebookColor
 import com.anynetwork.app.ui.theme.PhoneColor
 import com.anynetwork.app.ui.theme.TelegramColor
 import com.facebook.FacebookException
 import com.facebook.login.LoginResult
-import com.google.firebase.auth.FacebookAuthProvider
 import com.google.firebase.auth.PhoneAuthProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -134,7 +133,6 @@ class ConnectViewModel @Inject constructor(
                     }
                     is ConnectScreenMode.Facebook -> try {
                         val accessToken = verifyFacebookUseCase.execute(viewEvent.activity)
-                        Timber.i("accessToken: $accessToken")
                     } catch (e: Exception) {
                         e.printStackTrace()
                         Timber.i("facebook connect error: $e")

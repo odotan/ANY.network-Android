@@ -17,4 +17,5 @@ data class Profile(
     val company: String = "",
     val address : String = "",
     val avatarUri: String? = null,
+    val facebookProfileName: String? = null
 )
