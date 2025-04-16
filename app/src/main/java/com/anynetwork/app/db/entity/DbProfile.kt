@@ -23,7 +23,8 @@ data class DbProfile(
     val company: String = "",
     val address : String = "",
     val avatarUri: String? = null,
-    val facebookProfileName: String? = null
+    val facebookProfileName: String? = null,
+    val telegram: String? = null
 )
 
 fun DbProfile.unwrap(): Profile = Profile(
@@ -42,6 +43,8 @@ fun DbProfile.unwrap(): Profile = Profile(
     company = this.company,
     address = this.address,
     avatarUri = this.avatarUri,
+    facebookProfileName = this.facebookProfileName,
+    telegram = this.telegram
 )
 
 fun Profile.wrap(): DbProfile = DbProfile(
@@ -61,4 +64,6 @@ fun Profile.wrap(): DbProfile = DbProfile(
     company = this.company,
     address = this.address,
     avatarUri = this.avatarUri,
+    facebookProfileName = this.facebookProfileName,
+    telegram = this.telegram
 )

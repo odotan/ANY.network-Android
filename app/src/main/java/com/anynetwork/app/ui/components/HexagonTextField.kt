@@ -62,6 +62,7 @@ fun HexagonTextField(
     value: String,
     onValueChange: (String?) -> Unit,
     placeholder: String? = null,
+    readOnly: Boolean = false,
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
     addTrailingClearIcon: Boolean = false
@@ -97,6 +98,7 @@ fun HexagonTextField(
                     ),
                 value = value,
                 onValueChange = onValueChange,
+                readOnly = readOnly,
                 colors = TextFieldDefaults.colors(
                     unfocusedContainerColor = Color.Transparent,
                     focusedContainerColor = Color.Transparent,
@@ -109,7 +111,7 @@ fun HexagonTextField(
                 singleLine = true,
                 textStyle = TextStyle(
                     platformStyle = PlatformTextStyle(includeFontPadding = false),
-                    color = Color.White,
+                    color = if (readOnly) Color.LightGray else Color.White,
                     fontFamily = montserratFontFamily,
                     fontWeight = FontWeight.Normal,
                     fontSize = 14.fsp,

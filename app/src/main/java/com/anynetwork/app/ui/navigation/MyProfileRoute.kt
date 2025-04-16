@@ -17,6 +17,6 @@ object MyProfileRoute {
 
     @Serializable
     data class ConnectSuccess(
-        val mode: String
+        val mode: String,
     )
 }
