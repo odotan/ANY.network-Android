@@ -28,6 +28,10 @@ class OrderRepository @Inject constructor(
         }
     }
 
+    suspend fun removeItem(itemType: Int, itemId: Long) = withContext(Dispatchers.IO) {
+        orderDao.deleteOrderByItemTypeAndItemId(itemType, itemId)
+    }
+
     suspend fun insertItemOrder(itemType: Int, itemId: Long, order: Int = 0): Order = withContext(Dispatchers.IO) {
         Timber.i("insert item order - itemId: $itemId, order: $order")
         orderDao.deleteOrderByItemTypeAndItemId(itemType = itemType, itemId = itemId)
