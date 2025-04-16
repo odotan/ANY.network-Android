@@ -291,6 +291,7 @@ fun Connect(viewModel: ConnectViewModel) {
                                 viewModel.onViewEvent(ConnectScreenViewEvent.UpdateTextField(it))
                             }
                         },
+                        readOnly = firstTextFieldState.readOnly,
                         placeholder = firstTextFieldState.placeholder,
                         addTrailingClearIcon = false
                     )
@@ -308,6 +309,7 @@ fun Connect(viewModel: ConnectViewModel) {
                                 viewModel.onViewEvent(ConnectScreenViewEvent.UpdateSecondTextField(it))
                             }
                         },
+                        readOnly = secondTextFieldState.readOnly,
                         placeholder = secondTextFieldState.placeholder,
                         addTrailingClearIcon = false
                     )

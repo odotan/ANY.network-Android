@@ -7,6 +7,7 @@ import com.anynetwork.app.R
 import com.anynetwork.app.data.networkauth.EmailNetworkAuthentication.EmailError
 import com.anynetwork.app.data.networkauth.PhoneNumberNetworkAuthenticationEvent
 import com.anynetwork.app.data.profile.ProfileRepository
+import com.anynetwork.app.domain.FetchFacebookProfileNameUseCase
 import com.anynetwork.app.domain.SendSignInLinkUseCase
 import com.anynetwork.app.domain.SendTelegramCodeToPhone
 import com.anynetwork.app.domain.SendVerificationSmsCodeUseCase
@@ -21,6 +22,7 @@ import com.anynetwork.app.ui.theme.EmailColor
 import com.anynetwork.app.ui.theme.FacebookColor
 import com.anynetwork.app.ui.theme.PhoneColor
 import com.anynetwork.app.ui.theme.TelegramColor
+import com.anynetwork.app.ui.utils.log
 import com.facebook.FacebookException
 import com.facebook.login.LoginResult
 import com.google.firebase.auth.PhoneAuthProvider
@@ -41,7 +43,8 @@ class ConnectViewModel @Inject constructor(
     val verifyPhoneUseCase: VerifyPhoneUseCase,
     val sendTelegramNetworkAuthentication: SendTelegramCodeToPhone,
     val verifyTelegramCodeUseCase: VerifyTelegramCodeUseCase,
-    val verifyFacebookUseCase: VerifyFacebookUseCase
+    val verifyFacebookUseCase: VerifyFacebookUseCase,
+    val facebookProfileNameUseCase: FetchFacebookProfileNameUseCase
 ): ViewModel() {
 
     private val _viewState = MutableStateFlow(ConnectScreenViewState())
@@ -83,6 +86,7 @@ class ConnectViewModel @Inject constructor(
                                 is PhoneNumberNetworkAuthenticationEvent.CodeSend ->
                                     _viewState.value = viewState.value
                                         .copy(
+                                            firstTextFieldState = viewState.value.firstTextFieldState?.copy(readOnly = true),
                                             secondTextFieldState = ConnectScreenViewState.TextFieldState(
                                                 placeholder = "Enter code",
                                                 value = ""
@@ -104,6 +108,8 @@ class ConnectViewModel @Inject constructor(
 
                             result.onSuccess { authResult ->
                                 val user = authResult.user
+                                val profile = profileRepository.getOrCreateDefaultProfile()
+                                profileRepository.editProfile(profile.copy(mobilePhone = viewState.value.firstTextFieldState!!.value))
                                 _viewEffectFlow.value = ConnectScreenViewEffect.NavigateToConnectSuccess
                                 Timber.i("sign in with Firebase through phone success")
                             }.onFailure { exception ->
@@ -117,6 +123,7 @@ class ConnectViewModel @Inject constructor(
                             val requestId: String? = sendTelegramNetworkAuthentication.execute(phone = viewState.value.firstTextFieldState!!.value)
                             _viewState.value = viewState.value.copy(
                                 mode = (viewState.value.mode as ConnectScreenMode.Telegram).copy(requestId = requestId as String?),
+                                firstTextFieldState = viewState.value.firstTextFieldState?.copy(readOnly = true),
                                 secondTextFieldState = ConnectScreenViewState.TextFieldState()
                             )
                         } catch (e: Exception) {
@@ -125,6 +132,8 @@ class ConnectViewModel @Inject constructor(
                         else -> viewState.value.secondTextFieldState?.value?.let {
                             try {
                                 verifyTelegramCodeUseCase.execute(code = it, requestId = mode.requestId)
+                                val profile = profileRepository.getOrCreateDefaultProfile()
+                                profileRepository.editProfile(profile.copy(telegram = viewState.value.firstTextFieldState!!.value))
                                 _viewEffectFlow.value = ConnectScreenViewEffect.NavigateToConnectSuccess
                             } catch (e: Exception) {
                                 e.printStackTrace()
@@ -152,7 +161,13 @@ class ConnectViewModel @Inject constructor(
                     )
             }
             is ConnectScreenViewEvent.LoginWithFacebookSuccess -> {
-                _viewEffectFlow.value = ConnectScreenViewEffect.NavigateToConnectSuccess
+                viewModelScope.launch {
+                    val fbName = facebookProfileNameUseCase.execute().log { "facebook name" }
+                    val profile = profileRepository.getOrCreateDefaultProfile()
+                    profileRepository.editProfile(profile.copy(facebookProfileName = fbName))
+
+                    _viewEffectFlow.value = ConnectScreenViewEffect.NavigateToConnectSuccess
+                }
             }
             is ConnectScreenViewEvent.LoginWithFacebookError -> {
 
@@ -185,17 +200,24 @@ class ConnectViewModel @Inject constructor(
             )
         }
         is ConnectScreenMode.Telegram -> viewModelScope.launch {
+            val profile = profileRepository.getOrCreateDefaultProfile()
             _viewState.value = viewState.value.copy(
                 mode = mode,
                 firstTextFieldState = ConnectScreenViewState.TextFieldState(
-                    value = "",
+                    value = profile.telegram ?: "",
                     placeholder = mode.title
                 )
             )
         }
         is ConnectScreenMode.Facebook -> viewModelScope.launch {
+            val profile = profileRepository.getOrCreateDefaultProfile()
             _viewState.value = viewState.value.copy(
                 mode = mode,
+                firstTextFieldState = if (profile.facebookProfileName != null) ConnectScreenViewState.TextFieldState(
+                    value = profile.facebookProfileName,
+                    placeholder = mode.title,
+                    readOnly = true
+                ) else null,
                 isConnectButtonEnabled = true
             )
         }
@@ -246,6 +268,7 @@ data class ConnectScreenViewState(
     data class TextFieldState(
         val value: String = "",
         val placeholder: String = "",
+        val readOnly: Boolean = false
     )
 }
 

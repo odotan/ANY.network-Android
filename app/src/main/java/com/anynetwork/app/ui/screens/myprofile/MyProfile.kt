@@ -898,9 +898,13 @@ private fun MyProfile(
                             },
                         )
                     }
-                    facebookCellPosition.isSame(column, row) -> remember(mode, itemAlpha, alpha) {
+                    facebookCellPosition.isSame(column, row) &&
+                            (
+                                    ((mode == MyProfileMode.Normal || mode is MyProfileMode.Edit) && viewState.facebookProfileName?.log { "fbName" }?.isNotEmpty() == true)
+                                            || mode is MyProfileMode.Connect) -> remember(mode, itemAlpha, alpha) {
                         val itemAlpha = when {
                             mode == MyProfileMode.Connect -> 1f
+//                            viewState.facebookProfileName?.isEmpty() == null || viewState.facebookProfileName!!.isEmpty() ->
                             else -> itemAlpha
                         }
                         IconHexagonContentStyle(
@@ -930,7 +934,7 @@ private fun MyProfile(
                             } else null
                         )
                     }
-                    messengerCellPosition.isSame(column, row) -> remember(mode, itemAlpha, alpha) {
+                    messengerCellPosition.isSame(column, row) && mode is MyProfileMode.Connect -> remember(mode, itemAlpha, alpha) {
                         IconHexagonContentStyle(
                             id = cellIndex,
                             background = SingleColor(MessengerColor.copy(alpha = itemAlpha * alpha)),
@@ -954,7 +958,7 @@ private fun MyProfile(
                             } else null
                         )
                     }
-                    instagramCellPosition.isSame(column, row) -> remember(mode, itemAlpha, alpha) {
+                    instagramCellPosition.isSame(column, row) && mode is MyProfileMode.Connect -> remember(mode, itemAlpha, alpha) {
                         IconHexagonContentStyle(
                             id = cellIndex,
                             background = SingleColor(InstagramColor.copy(alpha = itemAlpha * alpha)),
@@ -978,7 +982,10 @@ private fun MyProfile(
                             } else null
                         )
                     }
-                    emailCellPosition.isSame(column, row) -> remember(mode, itemAlpha, alpha) {
+                    emailCellPosition.isSame(column, row) &&
+                            (
+                                    ((mode == MyProfileMode.Normal || mode is MyProfileMode.Edit) && viewState.workEmail?.isNotEmpty() == true)
+                                            || mode is MyProfileMode.Connect) -> remember(mode, itemAlpha, alpha) {
                         val itemAlpha = when {
                             mode == MyProfileMode.Connect -> 1f
                             else -> itemAlpha
@@ -1009,7 +1016,10 @@ private fun MyProfile(
                             } else null
                         )
                     }
-                    phoneCellPosition.isSame(column, row) -> remember(mode, itemAlpha, alpha) {
+                    phoneCellPosition.isSame(column, row) &&
+                            (
+                                    ((mode == MyProfileMode.Normal || mode is MyProfileMode.Edit) && viewState.mobilePhone?.isNotEmpty() == true)
+                                            || mode is MyProfileMode.Connect) -> remember(mode, itemAlpha, alpha) {
                         val itemAlpha = when {
                             mode == MyProfileMode.Connect -> 1f
                             else -> itemAlpha
@@ -1040,7 +1050,7 @@ private fun MyProfile(
                             } else null
                         )
                     }
-                    twitterCellPosition.isSame(column, row) -> remember(mode, itemAlpha, alpha) {
+                    twitterCellPosition.isSame(column, row) && mode is MyProfileMode.Connect -> remember(mode, itemAlpha, alpha) {
                         IconHexagonContentStyle(
                             id = cellIndex,
                             background = SingleColor(TwitterColor.copy(alpha = itemAlpha * alpha)),
@@ -1064,7 +1074,7 @@ private fun MyProfile(
                             } else null
                         )
                     }
-                    whatsappCellPosition.isSame(column, row) -> remember(mode, itemAlpha, alpha) {
+                    whatsappCellPosition.isSame(column, row) && mode is MyProfileMode.Connect -> remember(mode, itemAlpha, alpha) {
                         IconHexagonContentStyle(
                             id = cellIndex,
                             background = SingleColor(WhatsappColor.copy(alpha = itemAlpha * alpha)),
@@ -1088,7 +1098,10 @@ private fun MyProfile(
                             } else null
                         )
                     }
-                    telegramCellPosition.isSame(column, row) -> remember(mode, itemAlpha, alpha) {
+                    telegramCellPosition.isSame(column, row) &&
+                            (
+                                    ((mode == MyProfileMode.Normal || mode is MyProfileMode.Edit) && viewState.telegram?.isNotEmpty() == true)
+                                            || mode is MyProfileMode.Connect) -> remember(mode, itemAlpha, alpha) {
                         val itemAlpha = when {
                             mode == MyProfileMode.Connect -> 1f
                             else -> itemAlpha

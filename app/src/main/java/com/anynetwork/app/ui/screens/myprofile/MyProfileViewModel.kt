@@ -7,6 +7,7 @@ import com.anynetwork.app.domain.FetchFacebookProfileNameUseCase
 import com.anynetwork.app.model.Profile
 import com.anynetwork.app.ui.screens.externalprofile.facebookCellPosition
 import com.anynetwork.app.ui.screens.myprofile.MyProfileViewEvent.*
+import com.anynetwork.app.ui.utils.log
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -44,8 +45,8 @@ class MyProfileViewModel @Inject constructor(
                 workEmail = it.workEmail,
                 otherEmail = it.otherEmail,
                 photoUri = it.avatarUri,
-                facebookProfileName = it.facebookProfileName
-
+                facebookProfileName = it.facebookProfileName.log { "fbName" },
+                telegram = it.telegram
             )
         }
     }
@@ -69,7 +70,8 @@ class MyProfileViewModel @Inject constructor(
                         workEmail = _viewState.value.workEmail,
                         otherEmail = _viewState.value.otherEmail,
                         avatarUri = _viewState.value.photoUri,
-                        facebookProfileName = _viewState.value.facebookProfileName
+                        facebookProfileName = _viewState.value.facebookProfileName,
+                        telegram = _viewState.value.telegram
                     )
                 )
                 _viewState.value =
@@ -230,7 +232,8 @@ data class MyProfileViewState(
     val otherEmail: String? = null,
     val address: String? = null,
     val photoUri: String? = null,
-    val facebookProfileName: String? = null
+    val facebookProfileName: String? = null,
+    val telegram: String? = null
 )
 
 sealed class MyProfileViewEvent {
