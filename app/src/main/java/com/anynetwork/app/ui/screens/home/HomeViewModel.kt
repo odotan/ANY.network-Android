@@ -526,14 +526,16 @@ class HomeViewModel @Inject constructor(
                                 Order.Type.FAVORITE_CONTACT,
                                 contact.id
                             )
-                            gridOrder = gridOrder.apply {
-                                toMutableList().removeIf { it.itemType == Order.Type.FAVORITE_CONTACT && it.itemId == contact.id }
-                            }
+                            gridOrder = orderRepository.latestOrder()
                         }
                         contactsRepository.favoriteContact(
                             viewAction.gridItem.contact!!.id,
                             isFavorite = false
                         )
+                        contactsRepository.getContacts().collectLatest { contacts ->
+                            Timber.i("contactsRepository.getContacts() 3")
+                            _contacts.value = contacts
+                        }
                     }
                     else -> {}
                 }

@@ -682,7 +682,7 @@ private fun Home(
                                                     GridItemButtonRemove(gridItem = gridItem)
                                                 )
                                             },
-                                            onClick = onClick,
+                                            onClick = { onClick.invoke(it) },
                                             badgeOverlay = when (gridItem.badge) {
                                                 is GridItem.Badge.PhoneBadge ->
                                                     NontransparentHexagonContentStyle.BadgeOverlay.PhoneBadge(
@@ -742,7 +742,7 @@ private fun Home(
                                         },
                                         text = gridItem.contact!!.name.uppercase(),
                                         maxTextSize = 11.csp * (configuration.screenWidthDp.dp / gridColumns / 79.93f.fdpv) * gridScaling,
-                                        onClick = onClick,
+                                        onClick = { onClick.invoke(it) },
                                         badgeOverlay = when (gridItem.badge) {
                                             is GridItem.Badge.PhoneBadge ->
                                                 NontransparentHexagonContentStyle.BadgeOverlay.PhoneBadge(
@@ -818,7 +818,6 @@ private fun Home(
                 Timber.i("home start animation reload items completed")
                 list
             }
-
 
             LaunchedEffect(items) {
                 items.filterIsInstance<NontransparentHexagonContentStyle>().size.log { "items size" }
