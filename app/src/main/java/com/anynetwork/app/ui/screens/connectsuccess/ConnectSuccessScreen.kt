@@ -51,6 +51,7 @@ import com.anynetwork.app.ui.components.hexagon.IconHexagonContentStyle.Image.Ve
 import com.anynetwork.app.ui.components.hexagon.RoundedHexagon
 import com.anynetwork.app.ui.components.hexagon.RoundedPolygonShape
 import com.anynetwork.app.ui.components.hexagon.createPolygon
+import com.anynetwork.app.ui.navigation.MyProfileRoute
 import com.anynetwork.app.ui.screens.connect.ConnectScreenMode
 import com.anynetwork.app.ui.theme.montserratFontFamily
 import com.anynetwork.app.ui.utils.fdph
@@ -66,7 +67,9 @@ fun ConnectSuccessScreenRoot(navController: NavController, mode: String) {
             val viewEffect by viewEffectFlow.collectAsState()
             when (viewEffect) {
                 is ConnectSuccessScreenViewEffect.NavigateBack -> {
-                    navController.popBackStack()
+                    navController.navigate(MyProfileRoute.MyProfile) {
+                        launchSingleTop = true
+                    }
                 }
                 else -> {}
             }

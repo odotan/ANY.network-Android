@@ -13,7 +13,7 @@ import com.anynetwork.app.db.entity.DbOrder
 import com.anynetwork.app.db.entity.DbInteraction
 import com.anynetwork.app.db.entity.DbProfile
 
-@Database(entities = [DbContact::class, DbProfile::class, DbInteraction::class, DbOrder::class, DbCarouselInteraction::class], version = 1)
+@Database(entities = [DbContact::class, DbProfile::class, DbInteraction::class, DbOrder::class, DbCarouselInteraction::class], version = 2)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun contactDao(): ContactDao
     abstract fun profileDao(): ProfileDao

@@ -78,7 +78,7 @@ class ExternalProfileViewModel @Inject constructor(
                 workEmail = _contact.value?.workPhone(),
                 otherEmail = _contact.value?.otherEmail(),
                 address = _viewState.value.address,
-                photoUri = _contact.value?.avatarUri,
+                photoUri = _contact.value?.avatarUri.log { "profile picture" },
                 isFavorite = _contact.value?.isFavorite ?: false
             )
         } else {
@@ -352,6 +352,7 @@ class ExternalProfileViewModel @Inject constructor(
                 _viewEffectFlow.value = ExternalProfileViewEffect.RequestFocusOnWorkPhoneTextField
             }
             is UpdatePhotoUri -> {
+                event.photoUri.log { "new profile picture" }
                 _viewState.value =
                     _viewState.value.copy(photoUri = event.photoUri)
             }
