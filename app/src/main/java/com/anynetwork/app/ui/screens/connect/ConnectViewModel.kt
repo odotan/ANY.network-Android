@@ -1,6 +1,7 @@
 package com.anynetwork.app.ui.screens.connect
 
 import android.app.Activity
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.anynetwork.app.R
@@ -72,33 +73,50 @@ class ConnectViewModel @Inject constructor(
                     is ConnectScreenMode.Email -> {
                         try {
                             val email = viewState.value.firstTextFieldState!!.value
+
+                            val profile = profileRepository.getOrCreateDefaultProfile()
+                            profileRepository.editProfile(profile.copy(workEmail = email))
                             sendSignInLinkUseCase.execute(email)
                         } catch (e: Exception) {
                             e.printStackTrace()
+                            _viewEffectFlow.value = ConnectScreenViewEffect.ShowError(
+                                errorMessage = e.message ?: "Failed connecting Email address"
+                            )
                         }
                     }
                     is ConnectScreenMode.Phone -> when {
-                        mode.verificationId == null && mode.token == null -> sendVerificationSmsCodeUseCase.execute(
-                            phoneNumber = viewState.value.firstTextFieldState!!.value,
-                            activity = viewEvent.activity
-                        ).collectLatest { event: PhoneNumberNetworkAuthenticationEvent ->
-                            when (event) {
-                                is PhoneNumberNetworkAuthenticationEvent.CodeSend ->
-                                    _viewState.value = viewState.value
-                                        .copy(
-                                            firstTextFieldState = viewState.value.firstTextFieldState?.copy(readOnly = true),
-                                            secondTextFieldState = ConnectScreenViewState.TextFieldState(
-                                                placeholder = "Enter code",
-                                                value = ""
-                                            ),
-                                            mode = (viewState.value.mode as ConnectScreenMode.Phone)
-                                                .copy(
-                                                    verificationId = event.verificationId,
-                                                    token = event.token
-                                                )
+                        mode.verificationId == null && mode.token == null -> try {
+                            sendVerificationSmsCodeUseCase.execute(
+                                phoneNumber = viewState.value.firstTextFieldState!!.value,
+                                activity = viewEvent.activity
+                            ).collectLatest { event: PhoneNumberNetworkAuthenticationEvent ->
+                                when (event) {
+                                    is PhoneNumberNetworkAuthenticationEvent.CodeSend ->
+                                        _viewState.value = viewState.value
+                                            .copy(
+                                                firstTextFieldState = viewState.value.firstTextFieldState?.copy(readOnly = true),
+                                                secondTextFieldState = ConnectScreenViewState.TextFieldState(
+                                                    placeholder = "Enter code",
+                                                    value = ""
+                                                ),
+                                                mode = (viewState.value.mode as ConnectScreenMode.Phone)
+                                                    .copy(
+                                                        verificationId = event.verificationId,
+                                                        token = event.token
+                                                    )
+                                            )
+                                    is PhoneNumberNetworkAuthenticationEvent.Error ->
+                                        _viewEffectFlow.value = ConnectScreenViewEffect.ShowError(
+                                            errorMessage = event.message
                                         )
-                                else -> {  }
+                                    else -> {  }
+                                }
                             }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            _viewEffectFlow.value = ConnectScreenViewEffect.ShowError(
+                                errorMessage = e.localizedMessage ?: "Error"
+                            )
                         }
                         else -> {
                             val result = verifyPhoneUseCase.execute(
@@ -114,6 +132,9 @@ class ConnectViewModel @Inject constructor(
                                 Timber.i("sign in with Firebase through phone success")
                             }.onFailure { exception ->
                                 Timber.i("sign in with Firebase through phone error: ${exception.message}")
+                                _viewEffectFlow.value = ConnectScreenViewEffect.ShowError(
+                                    errorMessage = exception.message ?: "Failed connecting with Phone"
+                                )
                             }
 
                         }
@@ -128,6 +149,9 @@ class ConnectViewModel @Inject constructor(
                             )
                         } catch (e: Exception) {
                             e.printStackTrace()
+                            _viewEffectFlow.value = ConnectScreenViewEffect.ShowError(
+                                errorMessage = e.message ?: "Failed connecting with Telegram"
+                            )
                         }
                         else -> viewState.value.secondTextFieldState?.value?.let {
                             try {
@@ -137,6 +161,9 @@ class ConnectViewModel @Inject constructor(
                                 _viewEffectFlow.value = ConnectScreenViewEffect.NavigateToConnectSuccess
                             } catch (e: Exception) {
                                 e.printStackTrace()
+                                _viewEffectFlow.value = ConnectScreenViewEffect.ShowError(
+                                    errorMessage = e.message ?: "Failed connecting with Telegram"
+                                )
                             }
                         }
                     }
@@ -170,10 +197,10 @@ class ConnectViewModel @Inject constructor(
                 }
             }
             is ConnectScreenViewEvent.LoginWithFacebookError -> {
-
+                _viewEffectFlow.value = ConnectScreenViewEffect.ShowError("Facebook login error: ${viewEvent.error}")
             }
             is ConnectScreenViewEvent.LoginWithFacebookCancel -> {
-
+                _viewEffectFlow.value = ConnectScreenViewEffect.ShowError("Facebook login canceled")
             }
         }
     }
@@ -228,15 +255,26 @@ class ConnectViewModel @Inject constructor(
             Timber.i("verifyEmail - emailSignInLink: $emailSignInLink")
             try {
                 Timber.i("verifyEmail - success")
-                val email = verifyEmailSignInUseCase("talkappdanny@gmail.com", emailSignInLink)
+
                 val profile = profileRepository.getOrCreateDefaultProfile()
-                profileRepository.editProfile(profile.copy(workEmail = email))
-                _viewEffectFlow.value = ConnectScreenViewEffect.NavigateToConnectSuccess
+                profile.workEmail?.log { "submitted_email" }?.let { email ->
+                    verifyEmailSignInUseCase(email, emailSignInLink)
+
+                    _viewEffectFlow.value = ConnectScreenViewEffect.NavigateToConnectSuccess
+                } ?: {
+                    Timber.i("submitted_email is null")
+                }
             } catch (e: EmailError.Unknown) {
                 e.printStackTrace()
+                _viewEffectFlow.value = ConnectScreenViewEffect.ShowError(
+                    errorMessage = e.message ?: "Failed connecting Email address"
+                )
                 Timber.i("verifyEmail - error")
             } catch (e: Exception) {
-
+                e.printStackTrace()
+                _viewEffectFlow.value = ConnectScreenViewEffect.ShowError(
+                    errorMessage = e.message ?: "Failed connecting Email address"
+                )
             }
         }
     }
@@ -256,7 +294,7 @@ sealed class ConnectScreenViewEvent: ViewEvent() {
 sealed class ConnectScreenViewEffect: ViewEffect() {
     data object NavigateBack: ConnectScreenViewEffect()
     data object NavigateToConnectSuccess: ConnectScreenViewEffect()
-    data object LoginWithFacebook: ConnectScreenViewEffect()
+    data class ShowError(val errorMessage: String): ConnectScreenViewEffect()
 }
 
 data class ConnectScreenViewState(

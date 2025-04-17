@@ -1,5 +1,6 @@
 package com.anynetwork.app.ui.screens.connect
 
+import android.widget.Toast
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Image
@@ -31,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -76,6 +78,10 @@ fun ConnectRoot(navController: NavController, mode: String, emailSignInLink: Str
                             emailSignInLink = emailSignInLink)
                         ) { inclusive = true }
                     }
+                is ConnectScreenViewEffect.ShowError -> {
+                    val context = LocalContext.current
+                    Toast.makeText(context, (viewEffect as ConnectScreenViewEffect.ShowError).errorMessage, Toast.LENGTH_SHORT).show()
+                }
                 else -> {}
             }
             onViewEvent(ConnectScreenViewEvent.ClearViewEffect)

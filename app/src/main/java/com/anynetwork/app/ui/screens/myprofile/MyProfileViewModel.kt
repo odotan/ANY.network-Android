@@ -44,7 +44,7 @@ class MyProfileViewModel @Inject constructor(
                 homeEmail = it.homePhone,
                 workEmail = it.workEmail,
                 otherEmail = it.otherEmail,
-                photoUri = it.avatarUri,
+                photoUri = it.avatarUri.log { "provide picture" },
                 facebookProfileName = it.facebookProfileName.log { "fbName" },
                 telegram = it.telegram
             )
@@ -148,6 +148,7 @@ class MyProfileViewModel @Inject constructor(
                 _viewEffectFlow.value = MyProfileViewEffect.RequestFocusOnWorkPhoneTextField
             }
             is UpdatePhotoUri -> {
+                event.photoUri.log { "new profile picture" }
                 _viewState.value =
                     _viewState.value.copy(photoUri = event.photoUri)
             }

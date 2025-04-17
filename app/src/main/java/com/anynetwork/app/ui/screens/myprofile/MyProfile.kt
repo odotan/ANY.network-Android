@@ -405,6 +405,7 @@ private fun MyProfile(
         }
     }
 
+
     // Function to launch the cropper
     fun startCrop(context: Context, sourceUri: Uri) {
         val destinationUri = Uri.fromFile(File(context.cacheDir, "${UUID.randomUUID()}.jpg"))
@@ -775,19 +776,19 @@ private fun MyProfile(
                 val backgroundColor = hexCellsBackgroundColors[cellIndex]
 
                 when {
-                    isCenter -> remember(mode, alpha) {
-                        IconHexagonContentStyle(
-                            id = cellIndex,
-                            modifier = Modifier
-                                .fillMaxWidth(1 / 2f)
-                                .fillMaxSize(43f / 80),
-                            background = SingleColor(Color(0xFF393939).copy(alpha)),
-                            contentDescription = "Any network",
-                            alpha = alpha,
-                            image = VectorResource(id = R.drawable.ic_any_network),
-                            isShakable = true,
-                        )
-                    }
+//                    isCenter -> remember(mode, alpha) {
+//                        IconHexagonContentStyle(
+//                            id = cellIndex,
+//                            modifier = Modifier
+//                                .fillMaxWidth(1 / 2f)
+//                                .fillMaxSize(43f / 80),
+//                            background = SingleColor(Color(0xFF393939).copy(alpha)),
+//                            contentDescription = "Any network",
+//                            alpha = alpha,
+//                            image = VectorResource(id = R.drawable.ic_any_network),
+//                            isShakable = true,
+//                        )
+//                    }
                     profilePictureCellPosition.isSame(column, row) -> remember(mode) {
 //                            TransparentHexagonContentStyle(id = cellIndex,)
                         CustomHexagonContentStyle(
@@ -843,7 +844,9 @@ private fun MyProfile(
                                             Image(
                                                 modifier = Modifier
                                                     .fillMaxSize(),
-                                                painter = rememberAsyncImagePainter(photoUri),
+                                                painter = rememberAsyncImagePainter(photoUri, onError = {
+                                                    Timber.i("error displaying profile picture: $it")
+                                                }),
                                                 contentScale = ContentScale.Crop,
                                                 contentDescription = null,
                                             )

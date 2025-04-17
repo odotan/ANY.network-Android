@@ -45,6 +45,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.anynetwork.app.BuildConfig
 import com.anynetwork.app.R
 import com.anynetwork.app.ui.components.Screen
 import com.anynetwork.app.ui.components.hexagon.CoverBox
@@ -130,7 +131,7 @@ private fun Onboarding(navController: NavHostController) {
     var slideOtherContactAvatarToCenterAnimationDuration = 800
     var showContactFlowerAnimationDuration = 800
 
-    val fastPace = false//BuildConfig.DEBUG
+    val fastPace = BuildConfig.DEBUG
     val fastPaceDelay = 200L
 
     val currentConfiguration = LocalConfiguration.current
