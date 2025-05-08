@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
@@ -8,6 +11,9 @@ plugins {
     id("com.google.gms.google-services")
 }
 
+val localProperties = Properties().apply {
+    load(rootProject.file("local.properties").inputStream())
+}
 android {
     namespace = "com.anynetwork.app"
     compileSdk = 35
@@ -23,6 +29,10 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        resValue("string", "facebook_app_id", localProperties["facebookAppId"] as String)
+        resValue("string", "fb_login_protocol_scheme", localProperties["fbLoginProtocolScheme"] as String)
+        resValue("string", "facebook_client_token", localProperties["facebookClientToken"] as String)
     }
 
     buildTypes {
