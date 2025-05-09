@@ -1,4 +1,5 @@
 package com.anynetwork.app.data.networkauth
+import com.anynetwork.app.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.*
@@ -12,7 +13,7 @@ import javax.inject.Inject
 class TelegramNetworkAuthentication @Inject constructor() {
 
     private val baseUrl = "https://gatewayapi.telegram.org/"
-    private val token = "AAEFFgAATO8mQF-nt7GVNmWSey3HV5RkMDT6HpAWpOsxJA"
+    private val token = BuildConfig.TELEGRAM_BOT_TOKEN
 
     private val client = OkHttpClient()
     private val gson = Gson()

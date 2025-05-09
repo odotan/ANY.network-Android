@@ -33,6 +33,11 @@ android {
         resValue("string", "facebook_app_id", localProperties["facebookAppId"] as String)
         resValue("string", "fb_login_protocol_scheme", localProperties["fbLoginProtocolScheme"] as String)
         resValue("string", "facebook_client_token", localProperties["facebookClientToken"] as String)
+        buildConfigField(
+            "String",
+            "TELEGRAM_BOT_TOKEN",
+            "\"${localProperties["telegramToken"]}\""
+        )
     }
 
     buildTypes {
