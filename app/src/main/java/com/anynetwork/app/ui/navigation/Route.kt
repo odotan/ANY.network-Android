@@ -4,6 +4,9 @@ import kotlinx.serialization.Serializable
 
 object Route {
     @Serializable
+    object HashSearch
+
+    @Serializable
     object Splash
 
     @Serializable

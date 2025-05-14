@@ -42,6 +42,7 @@ import com.anynetwork.app.ui.navigation.Route
 import com.anynetwork.app.ui.screens.connect.ConnectRoot
 import com.anynetwork.app.ui.screens.connectsuccess.ConnectSuccessScreenRoot
 import com.anynetwork.app.ui.screens.externalprofile.ExternalProfileRoot
+import com.anynetwork.app.ui.screens.hashsearch.HashSearchScreen
 import com.anynetwork.app.ui.screens.home.HomeRoot
 import com.anynetwork.app.ui.screens.home.HomeViewModel
 import com.anynetwork.app.ui.screens.myprofile.MyProfileRoot
@@ -100,7 +101,7 @@ class MainActivity : ComponentActivity() {
 
                 NavHost(
                     navController = navController,
-                    startDestination = Route.Splash,
+                    startDestination = /*Route.Splash*/Route.HashSearch,
                     enterTransition = {
                         fadeIn()
                     },
@@ -112,6 +113,8 @@ class MainActivity : ComponentActivity() {
                         fadeOut()
                     }
                 ) {
+                    composable<Route.HashSearch> { HashSearchScreen() }
+
                     composable<Route.Splash> { SplashRoot(navController) }
 
                     composable<Route.GridPlayground> {
